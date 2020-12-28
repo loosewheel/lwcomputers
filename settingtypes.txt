@@ -1,0 +1,32 @@
+# Seconds delay after mods are loaded to restart any running computers from last session
+lwcomputers_startup_delay (Restart delay on startup) float 3.0
+
+# Horizontal character size of terminal display
+lwcomputers_term_hres (Terminal horizontal resolution) int 50
+
+# Vertical character size of terminal display
+lwcomputers_term_vres (Terminal vertical resolution) int 19
+
+# Interval for every computer running tick in seconds
+lwcomputers_running_tick (Running interval seconds) float 0.1
+
+# Maximum seconds a single computer tick can run before being stopped
+lwcomputers_max_no_yield_secs (Maximum no yield seconds) float 5.0
+
+# Generate terminal click events
+lwcomputers_click_events (Generate click events) bool true
+
+# Double click time in seconds
+lwcomputers_double_click_time (Double click seconds) float 0.5
+
+# Maximum length of string for string.rep
+lwcomputers_max_string_rep_size (Maximum string.rep length) int 64000
+
+# Maximum clipboard content length
+lwcomputers_max_clipboard_length (Maximum clipboard content length) int 64000
+
+# Game epoch year
+lwcomputers_epoch_year (The year the in game calendar begins >= 1970) int 2000
+
+# HTTP white list, space separated list eg. *here.com* https://www.there.com*
+lwcomputers_http_white_list (HTTP white list, space separated list) string
