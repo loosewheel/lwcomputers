@@ -144,7 +144,7 @@ Lua disk
 --------
 The lua disk boots into a lua prompt.
 
-Enter: If the line ends with "/" (must be last character) continues on the
+Enter: If the line ends with "\" (must be last character) continues on the
 	next line, otherwise runs the entered code.
 Backspace: Remove the last character entered.
 Escape: Aborts the current line and displays "ABORT" if multi-line input
