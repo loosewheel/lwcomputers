@@ -1,0 +1,897 @@
+lwcomputer computer API reference.
+==================================
+
+
+assert (v [, message])
+	Std lua.
+
+collectgarbage ([opt [, arg]])
+	Omitted.
+
+dofile (filename)
+	Routs file path to computers file system, calls `loadfile`.
+	Opens the named file and executes its contents as a Lua chunk.
+	Files only, no std input. Returns all values returned by the chunk.
+	In case of errors, dofile propagates the error to its caller (that is,
+	dofile does not run in protected mode).
+
+environs
+	Added table for environment variables. See `os.getenv` and `os.setenv`.
+
+error (message [, level])
+	Std lua.
+
+_G
+	Refers to computer's environment table.
+
+getfenv ([f])
+	Std lua.
+
+getmetatable (object)
+	Std lua.
+
+ipairs (t)
+	Std lua.
+
+load (func [, chunkname])
+	Same as std lua but environment of returned function is set to the computer's
+	environment.
+
+loadfile (filename)
+	Routs file path to computers file system, loads and calls `loadstring`.
+	Files only, no std input.
+
+loadstring (string [, chunkname])
+	Same as std lua but environment of returned function is set to the computer's
+	environment.
+
+next (table [, index])
+	Std lua.
+
+pairs (t)
+	Std lua.
+
+pcall (f, arg1, ···)
+	Std lua.
+
+print (fmt, ... )
+	Calls `term.print`. Not as std, parameters as for `string.format`.
+
+rawequal (v1, v2)
+	Std lua.
+
+rawget (table, index)
+	Std lua.
+
+rawset (table, index, value)
+	Std lua.
+
+require
+	Omitted.
+
+select (index, ···)
+	Std lua.
+
+setfenv (f, table)
+	Std lua.
+
+setmetatable (table, metatable)
+	Std lua.
+
+tonumber (e [, base])
+	Std lua.
+
+tostring (e)
+	Std lua.
+
+type (v)
+	Std lua.
+
+unpack (list [, i [, j]])
+	Std lua.
+
+_VERSION
+	Std lua.
+
+xpcall (f, err)
+	Std lua.
+
+
+coroutine
+---------
+	Std lua interface.
+
+
+package
+-------
+	Omitted.
+
+
+string
+------
+	Std lua interface, including minetest string.split, except for the following.
+
+string.rep (str, n)
+	The same as std but length of returned string is limited to the
+	`lwcomputers_max_string_rep_size` setting (default 64000). That is
+	`str:len () * n`. If the requested size is greater a
+	"string.rep string too long" error is generated.
+
+string.find (str, pattern , init)
+	The same as std but the forth argument is omitted and is always set to
+	true (plain text search only).
+
+
+table
+-----
+	Std lua interface.
+
+
+math
+----
+	Std lua interface.
+
+
+debug
+-----
+	Omitted.
+
+
+jit
+---
+	Std lua interface.
+
+
+vector
+------
+	Std minetest interface.
+
+
+io
+--
+
+io.close (file)
+	Closes the given file. Given file only, no default output file.
+	Equivalent of `file:close ()`.
+
+io.flush ()
+	Omitted.
+
+io.input ([file])
+	Omitted.
+
+io.lines (filename)
+	Routs file path to computers file system. Given file only, no default input file.
+	Opens the given file name in read mode and returns an iterator function that,
+	each time it is called, returns a new line from the file. When the iterator
+	function detects the end of file, it returns nil (to finish the loop) and
+	automatically closes the file.
+
+io.open (filename [, mode])
+	Routs file path to computers file system.
+	This function opens a file, in the mode specified in the string mode.
+	It returns a new file handle, or, in case of errors, nil plus an error message.
+	The mode string can be any of the following:
+		"r": read mode (the default);
+		"w": write mode;
+		"a": append mode;
+		"r+": update mode, all previous data is preserved;
+		"w+": update mode, all previous data is erased;
+		"a+": append update mode, previous data is preserved, writing is only
+				allowed at the end of file.
+	The mode string can also have a 'b' at the end, which is needed in some systems
+	to open the file in binary mode. This string is exactly what is used in the
+	standard C function fopen.
+
+	* Returned file objects are std lua.
+
+io.output ([file])
+	Omitted.
+
+io.read (···)
+	Omitted.
+
+io.type (obj)
+	Std lua.
+
+io.write (···)
+	Omitted.
+
+
+os
+--
+
+os.clock ()
+	Seconds since lwcomputer computer was started.
+
+os.computer_id ()
+	Returns the computer's unique id number.
+
+os.copy_to_clipboard (contents)
+	Copies the contents string to the first clipboard in the computer's slot.
+	Returns true if successful, false if not (no clipboard).
+	* The length of the contents is limited to the "Maximum clipboard content length"
+	setting (default 64000).
+	See "clipboard" event.
+
+os.date ([format [, time]])
+	Without time argument uses minetest world time (see os.time). First
+	character of format is set to "!" if not already, so is always GMT time
+	(only one timezone in minetest). Otherwise same as std lua.
+
+os.difftime (t2, t1)
+	Std lua.
+
+os.getenv (varname)
+	Queries the added `environs` table.
+	Returns the value of the environment variable varname, or nil if the
+	variable is not defined.
+
+os.get_event ()
+	Returns the next queued event.
+	The first value is a string of the type of event. The following values
+	vary depending on the event type. Typical usage:
+
+	local event = { os.get_event () }
+	if event[1] == "char" then ... end
+
+	See events.
+	* This function yields.
+
+os.get_name ()
+	Returns the computer's string name. This is an arbitrary value. An empty
+	string is returned if the name has not been set.
+
+os.key_state (key)
+	Returns the current state of the queried key, true for down or false for up.
+	key: if one of `keys.KEY_CTRL`, `keys.KEY_ALT`, `keys.KEY_SHIFT` or `keys.KEY_CAPS`
+	the state of that key is returned. If nil the state of all four keys is returned
+	as `ctrl, alt, shift, caps`. If an invalid key is queried nil is returned.
+
+os.kill_timer (id)
+	Cancels the identified timer. This id is returned by `os.start_timer`.
+	Ignored if the timer doesn't exist.
+
+os.peek_event ()
+	Returns the next queued event without removing it from the queue. If
+	no event is available nil is returned.
+	See events.
+	* This function does not yield.
+
+os.queue_event (event, ... )
+	Queues an event.
+	The first argument must be a string of the event type, followed by any
+	additional values for that event.
+	See events.
+
+os.reboot ()
+	Reboots the computer.
+
+os.remove (path)
+	Routs file path to computers file system.
+	Deletes the file or directory with the given name. Directories must be
+	empty to be removed. If this function fails, it returns nil, plus a string
+	describing the error.
+
+os.rename (oldname, newname)
+	Routs file paths to computers file system.
+	Renames file or directory named oldname to newname. If this function fails,
+	it returns nil, plus a string describing the error.
+
+os.setenv (varname, value)
+	Added to set a variable in the added `environs` table.
+	Sets the value of the environment variable varname to value. If value
+	is nil the environment variable is cleared.
+
+os.setlocale (locale [, category])
+	Omitted.
+
+os.set_name (name)
+	Sets the computer's string name. If nil an empty string is used (the
+	named is cleared).
+
+os.shutdown ()
+	Shuts down the computer.
+
+os.sleep (secs)
+	Pauses code execution for the given number of seconds (real world), which
+	can be fractional. The time paused may not be exact, but extended to the
+	nearest processing tick (0.1 second intervals).
+	* This function yields.
+
+os.start_timer (secs)
+	Starts a single elapse timer. Seconds can be fractional. Returns an integer
+	identifier value that can be used with `os.kill_timer`.
+	* Timers elapse on tick boundaries (0.1 seconds).
+	* For repeat timer, re-start it in the event handler.
+
+os.time ([table])
+	Without argument returns minetest world time (seconds since system's epoch,
+	usually from beginning of 1970). Otherwise same as std lua.
+
+os.tmpname ()
+	Omitted.
+
+os.to_worldtime (secs)
+	Returns in games seconds converted from real world seconds.
+	* If the setting 'time_speed' is zero, `secs` is returned.
+
+os.to_realtime (secs)
+	Returns real world seconds converted from in games seconds.
+	* If the setting 'time_speed' is zero, `secs` is returned.
+
+
+fs
+--
+Added interface to handle file system operations.
+
+fs.copy_file (srcpath, destpath)
+	Copies file at srcpath to destpath, overwriting if it exists. Routs file
+	paths to computers file system.
+	Returns true on success, or false and an error message.
+
+fs.file_exists (path, types)
+	Routs file path to computers file system.
+	Returns true if file/folder at path exists or false if not.
+	types: nil = any, true = only dir, false = only file
+
+fs.file_size (path)
+	Routs file path to computers file system.
+	Returns size of the file, or nil if not a file or error.
+
+fs.file_type (path)
+	Routs file path to computers file system.
+	Returns "file", "dir" or nil.
+
+fs.get_drive_id (drivepath)
+	Returns the id number of the specified drive, or nil and error message on failure.
+	drivepath can be:
+		*	A zero based ordinal number of the drive to fetch. Zero is the computers
+			hard drive. Floppies are numbered in order from the inventory slots,
+			as found - not by slot number.
+		*	A base path string for the drive. "/" is the computers hard drive.
+			"/<mount>" for floppies.
+
+fs.get_label (drivepath)
+	Returns the label of the specified drive, or nil and error message on failure.
+	drivepath can be:
+		*	A zero based ordinal number of the drive to fetch. Zero is the computers
+			hard drive. Floppies are numbered in order from the inventory slots,
+			as found - not by slot number.
+		*	A base path string for the drive. "/" is the computers hard drive.
+			"/<mount>" for floppies.
+
+fs.ls (path, types)
+	Routs file path to computers file system.
+	Returns directory listing as an indexed table, or nil and error message on failure.
+	types: nil = all, true = only dirs, false = only files.
+	If path is nil, types is ignored and a list as an indexed table of the
+	drive base paths is returned.
+	eg:
+		{
+			"/", -- root of hdd always first
+			"/<mount 1>",
+			...
+		}
+
+fs.mkdir (path)
+	Calls `minetest.mkdir`. Routs file path to computers file system.
+	Creates a directory specified by `path`, creating parent directories
+	if they don't exist.
+
+fs.path_extension (path)
+	Returns the path's file extension or nil if path is malformed.
+	Eg. fs.path_folder ("/here/there/file.txt") returns "txt".
+	Routs file path to computers file system.
+
+fs.path_folder (path)
+	Returns the path's folder or nil if path is malformed.
+	Eg. fs.path_folder ("/here/there/file.txt") returns "/here/there".
+	Routs file path to computers file system.
+
+fs.path_name (path)
+	Returns the path's file name or nil if path is malformed.
+	Eg. fs.path_folder ("/here/there/file.txt") returns "file.txt".
+	Routs file path to computers file system.
+
+fs.path_title (path)
+	Returns the path's file title or nil if path is malformed.
+	Eg. fs.path_folder ("/here/there/file.txt") returns "file".
+	Routs file path to computers file system.
+
+fs.remove (path)
+	Calls `os.remove`. Routs file path to computers file system.
+	Deletes the file or directory with the given name. Directories must be
+	empty to be removed. If this function fails, it returns nil, plus a string
+	describing the error.
+
+fs.rename (oldname, newname)
+	Calls `os.rename`. Routs file path to computers file system.
+	Renames file or directory named oldname to newname. If this function fails,
+	it returns nil, plus a string describing the error.
+
+fs.set_label (drivepath, label)
+	Sets the label of the specified drive, returning true on success or false and
+	an error message on failure.
+	drivepath can be:
+		*	A zero based ordinal number of the drive to fetch. Zero is the computers
+			hard drive. Floppies are numbered in order from the inventory slots,
+			as found - not by slot number.
+		*	A base path string for the drive. "/" is the computers hard drive.
+			"/<mount>" for floppies.
+	If label is nil an empty string is set (the label is cleared).
+
+
+term
+----
+	Added terminal interface.
+	Terminal coordinates are zero based, left top corner.
+
+term.colors
+	Table of colors used by terminal, as `term.colors.<color>`.
+
+black = 0,
+orange = 1,
+magenta = 2,
+sky = 3,
+yellow = 4,
+pink = 5,
+cyan = 6,
+gray = 7,
+silver = 8,
+red = 9,
+green = 10,
+blue = 11,
+brown = 12,
+lime = 13,
+purple = 14,
+white = 15
+
+
+term.get_cursor ()
+	Returns x, y of current cursor position.
+
+term.set_cursor (x, y)
+	Sets cursors current position. Position is clipped to terminal resolution.
+
+term.set_blink (blink)
+	Sets the visible state of the cursor (true or false).
+
+term.get_blink ()
+	Returns the visible state of the cursor (true or false).
+
+term.get_resolution ()
+	Returns width, height of the terminal display.
+
+term.get_colors ()
+	Returns the current forecolor, backcolor colors.
+
+term.set_colors (fg, bg)
+	Sets the current forecolor, backcolor colors.
+	If either color is nil, that color is not changed.
+
+term.set_char (x, y, char, fg, bg)
+	Sets the character at zero based coordinate x, y.
+	char: the ascii code to set (0 to 255), or nil for no change.
+	fg: the forecolor to set or nil for no change.
+	bg: the backcolor to set or nil for no change.
+
+term.get_char (x, y)
+	Returns the character at zero based coordinate x, y as
+	asciicode, forecolor, backcolor or nil, nil, nil if
+	x or y are out of range.
+
+term.write (str, fg, bg)
+	Write the string at the current cursor position. Lines wrap but terminal
+	doesn't scroll. Excess is not written.
+	str: the string to write.
+	fg: forecolor to use or nil to use currently set.
+	bg: backcolor to use or nil to use currently set.
+	* Cursor position is not updated.
+
+term.blit (buff, x, y, w, h)
+	Blits a rectangular section to the terminal from a buffer.
+	Returns true if successful, or false and an error message if not.
+	buff: The buffer holding the data to write.
+	x: zero based left coordinate to write to.
+	y: zero based top coordinate to write to.
+	w: the width of the rectangular section to write to.
+	h: the height of the rectangular section to write to.
+	Any section of the rectangle which is not on the screen is omitted. x and y
+	can be negative.
+	The buffer is an indexed table of character data from left to right, top
+	to bottom in order. Each character data should be formed as:
+	{ char = <asciicode>, fg = <forecolor>, bg = <backcolor> }. If any table
+	cell is not a table that character is not altered (transparent).
+
+term.cache (x, y, w, h)
+	Returns a buffer of the character data from the terminal buffer, of the
+	form used by `term.blit`, or nil if w * h has no size.
+	x: zero based left coordinate to read from.
+	y: zero based top coordinate to read from.
+	w: the width of the rectangular section to read from.
+	h: the height of the rectangular section to read from.
+	Any section of the rectangle which is not on the screen is set to zer
+	(not a table, will blit as transparent).
+	x and y can be negative.
+
+term.clear (char, fg, bg, x, y, w, h)
+	Clears a rectangular section of the terminal display.
+	char: the ascii code to set for each character, nil defaults to zero.
+	fg: forecolor to set, nil defaults to `term.colors.white`.
+	bg: backcolor to set, nil defaults to `term.colors.black`.
+	x: zero based left coordinate to clear, nil defaults to zero.
+	y: zero based top coordinate to clear, nil defaults to zero.
+	w: width of recangular section to clear, nil defaults to terminal right.
+	h: height of recangular section to clear, nil defaults to terminal bottom.
+	`term.clear ()` will clear to whole terminal to black.
+	* The cursor position is not moved.
+
+term.scroll (lines, x, y, w, h)
+	Scrolls a rectangular section the given lines.
+	lines: the lines to scroll, negative moves up, positive moves down.
+	x: zero based left coordinate to scroll, nil defaults to zero.
+	y: zero based top coordinate to scroll, nil defaults to zero.
+	w: width of recangular section to scroll, nil defaults to terminal right.
+	h: height of recangular section to scroll, nil defaults to terminal bottom.
+	`term.scroll (-1)` scrolls the whole terminal up one line.
+	* Lines not overwritten by the scrolling are not cleared.
+
+term.print (fmt, ... )
+	Writes the string to the current cursor position, using the current forecolor
+	and backcolor, updating the cursor position. Lines wrap and the terminal scrolls
+	if the write goes beyond the bottom line.
+	Parameter are as for `string.format`. The function `print` calls this function.
+
+term.redraw (force)
+	Redraws the terminal. If force is false the terminal is redrawn if it
+	has been invalidated. If true the terminal is redrawn immediately.
+
+term.invalidate ()
+	Flags that the terminal needs to be redrawn. The terminal is automatically
+	redrawn if needed internally at every tick. Terminal functions that change
+	to the terminal buffer invalidate the terminal. This function is usually
+	not needed.
+
+
+utils
+-----
+	Added utilities interface.
+
+utils.serialize (data)
+	Serializes a table to a string.
+	Calls `minetest.serialize`.
+
+utils.deserialize (str)
+	Deserializes a string to a table.
+	Calls `minetest.deserialize`.
+
+utils.parse_json (str, nullvalue)
+	Convert a string containing JSON data into the Lua equivalent
+	`nullvalue`: returned in place of the JSON null; defaults to `nil`
+	On success returns a table, a string, a number, a boolean or `nullvalue`
+	On failure outputs an error message and returns `nil`
+	Example: `parse_json("[10, {\"a\":false}]")`, returns `{10, {a = false}}`
+	Calls `minetest.parse_json`.
+
+utils.write_json (data, styled)
+	Returns a string or `nil` and an error message.
+	Convert a Lua table into a JSON string
+	styled: Outputs in a human-readable format if this is set, defaults to false.
+	Unserializable things like functions and userdata will cause an error.
+	**Warning**: JSON is more strict than the Lua table format.
+		1. You can only use strings and positive integers of at least one as keys.
+		2. You can not mix string and integer keys.
+			This is due to the fact that JSON has two distinct array and object values.
+	Example: `write_json({10, {a = false}})`,
+				returns `"[10, {\"a\": false}]"`
+	Calls `minetest.write_json`.
+
+utils.compress (data, method, ... )
+	Returns `compressed_data`
+	Compress a string of data.
+	method: a string identifying the compression method to be used.
+		Supported compression methods:
+			Deflate (zlib): "deflate"
+	...: indicates method-specific arguments. Currently defined arguments are:
+		Deflate: `level` - Compression level, `0`-`9` or `nil`.
+	Calls `minetest.compress`.
+
+utils.decompress (compressed_data, method, ... )
+	Returns data
+	Decompress a string of data (using ZLib).
+	See documentation on `minetest.compress()` for supported compression methods.
+	...: indicates method-specific arguments. Currently, no methods use this.
+	Calls `minetest.decompress`.
+
+
+wireless
+--------
+	Added wireless communications interface.
+
+wireless.send_message (msg, target_id)
+	Sends a message to another or all other computers.
+	msg: the string message to send.
+	target_id: id of the computer to send the message to, or nil to send it to all
+	other computers.
+	Return true if the message was successfully sent to the target computer, or false
+	if failed. This is only the success of the send, not whether the target processed
+	the message, it could be turned off. false is returned if the target id is invalid
+	or it is in an unloaded chunk. If the message is broadcast true is always returned.
+
+wireless.lookup_name (id)
+	Returns the string name of the computer with the given id, or nil if it
+	couldn't be found.
+
+wireless.lookup_id (name)
+	Returns the id of the computer with the given name, or nil if not found
+	or in an unloaded chunk.
+	* Computer names may not be unique. If more than one computer has the same name
+	only one of them is returned.
+
+
+http
+----
+	Only function if the lwcomputers mod has been granted access by being listed
+	in the `secure.http_mods` or `secure.trusted_mods` setting.
+
+http.fetch (request)
+	Performs given request and returns the HTTPRequestResult result.
+	request: see HTTPRequest for details.
+	If the call fails nil and an error message is retuned.
+	"no url": the request doesn't have a url.
+	"denied": the requested url is not in the white list.
+	"no http": http is not enabled for the mod.
+	"timed out": the call timed out. This is an internal limit, not the result
+	from the call.
+	* Timeout values are limited to a maximum of 30 seconds.
+
+http.get (url, timeout, extra_headers, user_agent)
+	On success returns the data and code from the request. On failure returns
+	nil and an error message.
+	"no url": the request doesn't have a url.
+	"denied": the requested url is not in the white list.
+	"no http": http is not enabled for the mod.
+	"timed out": the call timed out. Internal limit or request result.
+	"incomplete" : the result returned incomplete.
+	<code>: the code returned from the server. eg. "404".
+	"request failed": undetermined request error.
+	* Timeout values are limited to a maximum of 30 seconds.
+	url: string of the requested url.
+	timeout: timeout seconds for the call. Limited to maximum of 30 seconds.
+	If nil defaults to 3 seconds.
+	extra_headers: table of extra headers for the request. See HTTPRequest.
+	Can be nil for none.
+	user_agent: string of user agent for the request. If nil the minetest
+	user agent is used.
+
+
+mesecon
+-------
+	Interface is always defined but is inactive if mesecon mod is not present.
+
+mesecon.supported ()
+	Returns true if mesecon interface is active, otherwise false.
+
+mesecon.get (side)
+	Returns true if mesecon state is currently on, false if off or not supported.
+	side: the side of the computer to check (looking at front). Can be -
+			"up"
+			"left"
+			"right"
+			"front"
+			"back"
+			nil - true if any side is on.
+
+mesecon.set (state, side)
+	If state is true, turns the mesecon state to on. Otherwise turns it off.
+	side: the side of the computer to action (looking at front). Can be -
+			"up"
+			"left"
+			"right"
+			"front"
+			"back"
+			nil - actions all above sides
+	This call is ignored if not supported.
+
+
+digilines
+---------
+	Interface is always defined but is inactive if digilines mod is not present.
+	See "digilines" event.
+
+digilines.supported ()
+	Returns true if digilines interface is active, otherwise false.
+
+digilines.get_channel ()
+	Returns the digilines channel as a string. An empty string is returned
+	if the channel has not been set or digilines is not supported .
+
+digilines.set_channel (channel)
+	Sets the digilines channel to the string given. If channel is nil or an
+	empty string the channel is cleared. This call is ignored if not supported.
+
+digilines.send (channel, msg)
+	Sends a message to the given digilines channel. This call is ignored if not
+	supported.
+
+
+keys
+----
+	Table of keyboard key codes, as `keys.<key>`:
+
+KEY_BACKSPACE		= 8,
+KEY_TAB				= 9,
+KEY_LINE				= 10,
+KEY_ENTER			= 13,
+KEY_ESC				= 27,
+KEY_SPACE			= 32,
+KEY_EXCLAIM			= 33,
+KEY_QUOTE			= 34,
+KEY_HASH				= 35,
+KEY_CURRENCY		= 36,
+KEY_PERCENT			= 37,
+KEY_AMP				= 38,
+KEY_APOSTROPHE		= 39,
+KEY_OPENPAREN		= 40,
+KEY_CLOSEPAREN		= 41,
+KEY_MULTIPLY		= 42,
+KEY_ADD				= 43,
+KEY_COMMA			= 44,
+KEY_SUBTRACT		= 45,
+KEY_DOT				= 46,
+KEY_DIVIDE			= 47,
+KEY_0					= 48,
+KEY_1					= 49,
+KEY_2					= 50,
+KEY_3					= 51,
+KEY_4					= 52,
+KEY_5					= 53,
+KEY_6					= 54,
+KEY_7					= 55,
+KEY_8					= 56,
+KEY_9					= 58,
+KEY_COLON			= 58,
+KEY_SEMICOLON		= 59,
+KEY_LESS				= 60,
+KEY_EQUAL			= 61,
+KEY_GREATER			= 62,
+KEY_QUESTION		= 63,
+KEY_AT				= 64,
+KEY_A					= 65,
+KEY_B					= 66,
+KEY_C					= 67,
+KEY_D					= 68,
+KEY_E					= 69,
+KEY_F					= 70,
+KEY_G					= 71,
+KEY_H					= 72,
+KEY_I					= 73,
+KEY_J					= 74,
+KEY_K					= 75,
+KEY_L					= 76,
+KEY_M					= 77,
+KEY_N					= 78,
+KEY_O					= 79,
+KEY_P					= 80,
+KEY_Q					= 81,
+KEY_R					= 82,
+KEY_S					= 83,
+KEY_T					= 84,
+KEY_U					= 85,
+KEY_V					= 86,
+KEY_W					= 87,
+KEY_X					= 88,
+KEY_Y					= 89,
+KEY_Z					= 90,
+KEY_OPENSQUARE		= 91,
+KEY_SLASH			= 92,
+KEY_CLOSESQUARE	= 93,
+KEY_CARET			= 94,
+KEY_UNDERSCORE		= 95,
+KEY_TICK				= 96,
+KEY_OPENBRACE		= 123,
+KEY_BAR				= 124,
+KEY_CLOSEBRACE		= 125,
+KEY_TILDE			= 126,
+KEY_DELETE			= 127,
+KEY_INSERT			= 128,
+KEY_HOME				= 129,
+KEY_END				= 130,
+KEY_PAGEUP			= 131,
+KEY_PAGEDOWN		= 132,
+KEY_SHIFT			= 133,
+KEY_CAPS				= 134,
+KEY_CTRL				= 135,
+KEY_ALT				= 136,
+KEY_UP				= 137,
+KEY_DOWN				= 138,
+KEY_LEFT				= 139,
+KEY_RIGHT			= 140,
+KEY_F1				= 141,
+KEY_F2				= 142,
+KEY_F3				= 143,
+KEY_F4				= 144,
+KEY_F5				= 145,
+KEY_F6				= 146,
+KEY_F7				= 147,
+KEY_F8				= 148,
+KEY_F9				= 149,
+KEY_F10				= 150,
+KEY_F11				= 151,
+KEY_F12				= 152
+
+
+Events
+======
+	See `os.get_event`.
+
+"key", key_code, ctrl, alt, shift
+	Queued when a key is pressed.
+	key_code: the key code (see keys)
+	ctrl: true if ctrl key is currently down, false if up.
+	alt: true if alt key is currently down, false if up.
+	shift: true if shift key is currently down, false if up.
+
+"char", char, ascii
+	Queued after a key has been pressed, no repeats. Not queued if the ctrl
+	and/or alt keys are down.
+	char: single character string with the character.
+	ascii: the ascii code of the character (0 to 255).
+	Not all key presses generate a char event, if there is not character
+	for that key (eg. ctrl key).
+	If either the ctrl or alt key are down a char event is not generated.
+
+"click", x, y, count
+	Queued when the terminal screen is clicked (if enabled)
+	x: zero based column clicked
+	y: zero based row clicked
+	count: the number of times this same position was repeatedly clicked,
+	with each successive click within the `double_click_time`.
+
+"wireless", msg, sender_id, target_id
+	Queued when a computer sends a message with `wireless.send_message`.
+	msg: the string message sent.
+	sender_id: the number id of the computer that sent the message.
+	target_id: the number id of the target computer (this computer). This will
+	be nil if the message was broadcast.
+
+"timer", id
+	Queued on the elapse of a timer.
+	id: the timer integer identifier, return by `os.start_timer`.
+	* Timers are single elapse timers. For repeated action re-start the timer
+	from the event handler.
+
+"clipboard", contents
+	Queued when a LWComputer Clipboard is in one of the computer's slots
+	and the 'v' key is pressed with ctrl and alt keys active.
+	contents: string from the clipboard being pasted.
+	See `os.copy_to_clipboard`.
+
+"disk", action
+	Queued when a floppy is placed in or removed from a slot.
+	action: true if placed in or false if removed.
+
+"digilines", msg, sender, channel
+	Queued when the computer receives a digilines message.
+	msg: the message string or table received.
+	sender: the digilines channel of the message sender.
+	channel: the computer's digilines channel. This will be an empty string
+	if not set.
+	* This event is not fired if the digilines mod is not loaded.
+	See `digilines.send`.
+
+
+Booting
+=======
+	The computer looks for a file named `boot` in the root folder of the
+	drives in order slot 1, slot 2, slot 3, internal hard drive. The first
+	one found is loaded and run. If none is found the computer halts and
+	displays "No boot media ...".
+	When a world is restarted, any computers running from last shut down is
+	rebooted. It does not keep running from where it left off, but boots
+	clean.
+
+
+
+--
