@@ -15,9 +15,6 @@ dofile (filename)
 	In case of errors, dofile propagates the error to its caller (that is,
 	dofile does not run in protected mode).
 
-environs
-	Added table for environment variables. See `os.getenv` and `os.setenv`.
-
 error (message [, level])
 	Std lua.
 
@@ -215,12 +212,18 @@ os.copy_to_clipboard (contents)
 	See "clipboard" event.
 
 os.date ([format [, time]])
-	Without time argument uses minetest world time (see os.time). First
-	character of format is set to "!" if not already, so is always GMT time
-	(only one timezone in minetest). Otherwise same as std lua.
+	Without time argument uses minetest world time (see os.time). Otherwise
+	same as std lua.
 
 os.difftime (t2, t1)
 	Std lua.
+
+os.environs
+	Added table for environment variables. See `os.getenv` and `os.setenv`.
+
+os.envstr (str)
+	Returns the string with any environment variables replaced with their
+	value. Environment names of the form "$<name>".
 
 os.getenv (varname)
 	Queries the added `environs` table.
@@ -325,6 +328,20 @@ fs
 --
 Added interface to handle file system operations.
 
+fs.abs_path (basepath, relpath)
+	On success returns the full absolute path, or nil and an error message.
+	basepath: the base path relied on for interpretation, should start at root.
+	relpath: the relative path, if starts at root "/" it is returned.
+	eg.
+		fs.abs_path ("/here/there", "everywhere")
+			returns "/here/there/everywhere"
+
+		fs.abs_path ("/here/there", "../everywhere")
+			returns "/here/everywhere"
+
+		fs.abs_path ("/here/there", "/everywhere")
+			returns "/everywhere"
+
 fs.copy_file (srcpath, destpath)
 	Copies file at srcpath to destpath, overwriting if it exists. Routs file
 	paths to computers file system.
@@ -377,10 +394,11 @@ fs.ls (path, types)
 fs.mkdir (path)
 	Calls `minetest.mkdir`. Routs file path to computers file system.
 	Creates a directory specified by `path`, creating parent directories
-	if they don't exist.
+	if they don't exist. Returns true on success.
 
 fs.path_extension (path)
-	Returns the path's file extension or nil if path is malformed.
+	Returns the path's file extension or nil if path is malformed. If the
+	path has no extension "" is returned.
 	Eg. fs.path_folder ("/here/there/file.txt") returns "txt".
 	Routs file path to computers file system.
 
@@ -548,7 +566,7 @@ term.redraw (force)
 	has been invalidated. If true the terminal is redrawn immediately.
 
 term.invalidate ()
-	Flags that the terminal needs to be redrawn. The terminal is automatically
+	Flag that the terminal needs to be redrawn. The terminal is automatically
 	redrawn if needed internally at every tick. Terminal functions that change
 	to the terminal buffer invalidate the terminal. This function is usually
 	not needed.
@@ -632,8 +650,8 @@ wireless.lookup_id (name)
 
 http
 ----
-	Only function if the lwcomputers mod has been granted access by being listed
-	in the `secure.http_mods` or `secure.trusted_mods` setting.
+	Only functional if the lwcomputers mod has been granted access by being
+	listed in the `secure.http_mods` or `secure.trusted_mods` setting.
 
 http.fetch (request)
 	Performs given request and returns the HTTPRequestResult result.
@@ -891,7 +909,3 @@ Booting
 	When a world is restarted, any computers running from last shut down is
 	rebooted. It does not keep running from where it left off, but boots
 	clean.
-
-
-
---

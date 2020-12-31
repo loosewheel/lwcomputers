@@ -1,0 +1,321 @@
+
+Los disk
+========
+The los disk boots to a command prompt.
+
+Enter: If the line ends with "\" (must be last character) continues on the
+	next line, otherwise runs the entered command. If multi-line each line is
+	run as a separate command.
+Backspace: Remove the last character entered.
+Escape: Aborts the current line and displays "ABORT" for multi-line or
+	"ESC" for single  line. If the command is multi-lined and pressed on an
+	empty line the whole command is aborted and displays "ABORT".
+Up arrow: The last code run is added to the current line.
+Ctrl+Alt+V: If a clipboard is in a slot its contents are copied to the
+	command line. This content can be lengthy. New lines in the content are
+	separate commands.
+
+
+Command batch files
+-------------------
+Batch files contain a list of commands to run in order, as if typed on the
+command line. Each command must be on a separate line. Empty lines are
+ignored.
+
+
+Startup
+-------
+When los boots it runs the first found file named 'startup', in the root
+directory of, in order, slot 1 (left), slot 2, slot 3, hard drive.
+
+The startup file must be a command batch file.
+
+
+To run a program file
+---------------------
+path [args]
+The $PATH environment variable is used to located the program file.
+
+
+To set an environment variable
+------------------------------
+$<name> = <value>
+If value is omitted the variable is cleared (deleted).
+
+
+Commands
+--------
+
+cd [-h] [dir]
+	Change current dir.
+		-h		show help\n"..
+		dir	dir path, abs or rel
+				can have .. for up one
+
+clear [-h]
+	Clears the screen.
+		-h  show help
+
+cp [-h] src dest
+	Copy file or dir, overwriting.
+		-h		show help
+		-r		recursive copy sub dirs
+		src	src can be
+				dir path - copy contents
+				file path - copy one file
+				if name has any * as match above
+		dest	dest path
+				if src has * dir path
+				if src is dir then dir path
+				if src is file then file path
+	If paths are rel current dir used
+
+digilines -h
+	Show help
+
+digilines able
+	If digilines is loaded.
+
+digilines send 'channel' 'msg'
+	Send digilines message.
+		channel	target channel
+		msg		message to send
+
+digilines listen [secs]
+	Listen for a digilines message.
+		secs     seconds to listen for
+					if zero or omitted endless
+	* esc key cancels
+
+dl [-h -t<n>] url path
+	Download a file and save it.
+		-h		show help
+		-t		immediately followed by timeout seconds
+		url	url to download
+		path	file to save data
+* HTTP privileges must be set for this to work.
+
+dump [-h] path
+	Shows a file's contents.
+		-h		show help
+		path	file to show
+	escape key at more to quit, any other key scrolls.
+
+echo [-h] [str]
+	Prints the string, expands environment variables.
+		-h		show help
+		str	the string to print
+	eg. echo $PATH
+	prints the PATH variable
+
+help
+	Prints out commands.
+
+id [-h] [drive]
+	Shows a drive or computer's id.
+		-h		show help
+		drive	drive number (0-3)
+				or mount eg. /<label>
+				if omitted computer's id
+
+label [-h] drive action [value]
+	Set or get label of a drive.
+		-h			show help
+		action	set or get
+		drive		drive number (0-3)
+					or mount eg. /<label>
+		value		the new label to set
+					if omitted name is cleared
+
+ls [-l -d -f] [path]
+	Show file list.
+		-l		long info
+		-d		show dirs only
+		-f		show files only
+		-h		show help
+		path	path to show, can be file or dir
+				can have any * in last name
+				if omitted shows current dir
+
+mesecon -h
+	Show help
+
+mesecon able
+	If mesecon is loaded.
+
+mesecon get [side]
+	If mesecon is on or off.
+		side	up, front, back, left, right
+				if omitted if any are on
+
+mesecon on|off [side]
+	Set mesecon on or off.
+		side	up, front, back, left, right
+				if omitted acts on all
+
+mkdir [-h] dir
+	Make dir including parents.
+		-h		show help
+		dir	dir path to make
+				if rel current dir used
+
+mounts [-h]
+	Show list of mounted drive.
+	-h		show help
+
+name [-h] action [value]
+	Set or get the computer's name.
+		-h			show help
+		action	set or get
+		value		the new name to set
+					if omitted name is cleared
+
+reboot [-h]
+	Reboots the computer.
+		-h	show help
+
+rename [-h] oldname newname
+	Rename a file.
+		-h			show help
+		oldname	file to rename
+		newname	new file name
+
+rm [-r -h] [path]
+	Remove files and dirs.
+		-r		remove sub dir contents
+		-h		show help
+		path	path to remove
+				can be files or dirs
+				can have any * in last name
+
+sh [-h -s] path
+	Runs a batch command file.
+		-h		show help
+		-s		don't show command, output and errors still print
+		path	path of file, $PATH is used to help locate
+
+shutdown [-h]
+	Turns the computer off.
+		-h	show help
+
+time [-h -l -s -d -t]
+	Prints the time and/or date.
+		-h	show help
+		-d	print date
+		-t	print time
+	no args defaults to -t
+
+wireless -h
+	Show help
+
+wireless send 'msg' [target]
+	Send wireless message.
+		msg      message to send
+		target   id or name of target computer
+					if omitted msg is broadcast
+
+wireless listen [secs]
+	Listen for a wireless message.
+		secs     seconds to listen for
+					if zero or omitted endless
+	* esc key cancels
+
+
+Exposed interface
+-----------------
+The following are exposed to any programs running in the los environment:
+
+shell.current_dir ()
+	Returns the current directory.
+
+shell.version ()
+	Returns the los version as a string.
+
+shell.result_code ()
+	Returns the result code of the last program or command run.
+
+shell.run_program (path, ... )
+	Runs a program file.
+		path	path of the program file, $PATH is used to locate it.
+		...	any arguments to pass to the program.
+	Returns 0 and any results from the program. If the call fails an error
+	code (see below) and a message are returned.
+
+shell.system (cmdln)
+	Runs the command line, as if type in at the command prompt.
+
+
+Result codes used by los
+------------------------
+0	success
+1	invalid arg
+2	bad param - invalid path
+3	mkdir error
+4	copy error
+5	rename error
+6	remove error
+7	label error
+8	exec error
+9	file error
+10	download error
+11	wireless error
+
+
+Programs
+--------
+
+LUA
+
+lua [-h | <code>]
+	-h			show help
+	<code>	runs the code without starting the lua prompt.
+
+If no arguments runs a lua prompt.
+
+Enter: If the line ends with "\" (must be last character) continues on the
+	next line, otherwise runs the entered code.
+Backspace: Remove the last character entered.
+Escape: Aborts the current line and displays "ABORT" if multi-line input,
+	or "ESC" for single line. If the code is multi-lined and pressed on an
+	empty line the whole code is aborted and displays "ABORT".
+Up arrow: The last code run is added to the current line.
+Ctrl+Alt+V: If a clipboard is in a slot its contents are copied to the
+	code line. This content can be lengthy. New lines in the content are
+	input as is (new line, not as an enter press).
+
+Enter 'exit' to quit the program and return to the command prompt.
+
+
+EDIT
+
+edit [-h] path
+	-h		show help
+	path	the file to open or create. Can be relative to current directory.
+
+Action keys:
+left          move char left
+right         move char right
+up            move line up
+down          move line down
+pgup          move page up
+pgdown        move page up
+home          move to line start
+end           move to line end
+click         move to char
+Shift+left    sel char left
+Shift+right   sel char right
+Shift+up      sel line up
+Shift+down    sel line down
+Shift+pgup    sel page up
+Shift+pgdown  sel page up
+Shift+home    sel to line start
+Shift+end     sel to line end
+Shift+click   sel to char
+Ctrl+Q        exit app
+Ctrl+S        save file
+Ctrl+X        cut to clipboard
+Ctrl+C        copy to clipboard
+Ctrl+V        paste clipboard
+Ctrl+A        select all
+Ctrl+Alt+V    paste slot clipboard
+Ctrl+Alt+C    copy slot clipboard
