@@ -1,0 +1,35 @@
+   edit [-h] path
+
+Edit a file.
+
+Command line args:
+ -h    show help
+ path  file to open/create
+
+Action keys:
+left          move char left
+right         move char right
+up            move line up
+down          move line down
+pgup          move page up
+pgdown        move page up
+home          move to line start
+end           move to line end
+click         move to char
+Shift+left    sel char left
+Shift+right   sel char right
+Shift+up      sel line up
+Shift+down    sel line down
+Shift+pgup    sel page up
+Shift+pgdown  sel page up
+Shift+home    sel to line start
+Shift+end     sel to line end
+Shift+click   sel to char
+Ctrl+Q        exit app
+Ctrl+S        save file
+Ctrl+X        cut to clipboard
+Ctrl+C        copy to clipboard
+Ctrl+V        paste clipboard
+Ctrl+A        select all
+Ctrl+Alt+V    paste slot clipboard
+Ctrl+Alt+C    copy slot clipboard

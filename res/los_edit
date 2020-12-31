@@ -1,0 +1,923 @@
+-- edit program
+
+
+local edit = { }
+
+
+-- constructor
+function edit:new ( ... )
+	local args = { ... }
+	local obj = { }
+
+   setmetatable(obj, self)
+   self.__index = self
+
+	obj.help = false
+   obj.cur_col = 0
+   obj.cur_line = 0
+   obj.scroll_col = 0
+   obj.scroll_line = 0
+   obj.last_col = 0
+   obj.sel_start_line = 0
+   obj.sel_start_col = 0
+   obj.sel_end_line = 0
+   obj.sel_end_col = 0
+   obj.clipboard = nil
+   obj.width = nil
+   obj.height = nil
+   obj.fg_color = term.colors.silver
+   obj.bg_color = term.colors.black
+   obj.selfg_color = term.colors.white
+   obj.selbg_color = term.colors.blue
+   obj.error_color = term.colors.red
+   obj.filepath = nil
+   obj.lines = { }
+
+   obj.width, obj.height = term.get_resolution ()
+
+	if not args[1] or args[1] == "-h" then
+		obj.help = true
+	else
+		obj.filepath = fs.abs_path (shell.current_dir (), args[1])
+	end
+
+	return obj
+end
+
+
+
+function edit:sel_none ()
+	self.sel_start_line = self.cur_line
+	self.sel_start_col = self.cur_col
+	self.sel_end_line = self.sel_start_line
+	self.sel_end_col = self.sel_start_col
+end
+
+
+
+function edit:has_sel ()
+	return self.sel_end_line > self.sel_start_line or
+			 self.sel_end_col > self.sel_start_col
+end
+
+
+
+function edit:get_sel_text ()
+	if self:has_sel () then
+		if self.sel_start_line == self.sel_end_line then
+			return self.lines[self.sel_start_line + 1]:sub (self.sel_start_col + 1, self.sel_end_col)
+		else
+			local sel = self.lines[self.sel_start_line + 1]:sub (self.sel_start_col + 1)
+
+			for l = 1, (self.sel_end_line - self.sel_start_line - 2) do
+				sel = sel.."\n"..self.lines[self.sel_start_line + 1 + l]
+			end
+
+			sel = sel.."\n"..self.lines[self.sel_end_line + 1]:sub (1, self.sel_end_col)
+
+			return sel
+		end
+	end
+
+	return nil
+end
+
+
+
+function edit:clear_sel ()
+	local sel = self:get_sel_text ()
+
+	if self:has_sel () then
+		if self.sel_start_line == self.sel_end_line then
+			local pre =  self.lines[self.sel_start_line + 1]:sub (1, self.sel_start_col)
+			local post = self.lines[self.sel_start_line + 1]:sub (self.sel_end_col + 1, -1)
+
+			self.lines[self.sel_start_line + 1] = pre..post
+		else
+			local pre =  self.lines[self.sel_start_line + 1]:sub (1, self.sel_start_col)
+			local post = self.lines[self.sel_end_line + 1]:sub (self.sel_end_col + 1, -1)
+
+			for l = 0, (self.sel_end_line - self.sel_start_line - 1) do
+				table.remove (self.lines, self.sel_start_line + 1)
+			end
+
+			self.lines[self.sel_start_line + 1] = pre..post
+		end
+
+		self.sel_end_line = self.sel_start_line
+		self.sel_end_col = self.sel_start_col
+		self.cur_line = self.sel_start_line
+		self.cur_col = self.sel_start_col
+	end
+
+	return sel
+end
+
+
+
+function edit:sel_all ()
+	self.sel_start_line = 0
+	self.sel_start_col = 0
+	self.sel_end_line = #self.lines - 1
+	self.sel_end_col = self.lines[#self.lines]:len ()
+	self.cur_line = self.sel_end_line
+	self.cur_col = self.sel_end_col
+	self:scroll_to_view ()
+end
+
+
+
+function edit:update_cursor ()
+	term.set_cursor (self.cur_col - self.scroll_col, self.cur_line - self.scroll_line)
+end
+
+
+
+function edit:draw ()
+	term.set_blink (false)
+
+	local blank = string.rep (" ", self.width)
+
+	for l = 0, self.height - 1 do
+		local ln = l + self.scroll_line
+
+		term.set_cursor (0, l)
+		term.write (blank, self.fg_color, self.bg_color)
+
+		if ln < #self.lines then
+			local line = self.lines[ln + 1]:sub (self.scroll_col + 1, self.scroll_col + self.width)
+
+			if self:has_sel () and ln >= self.sel_start_line and ln <= self.sel_end_line then
+				local ss = self.sel_start_col - self.scroll_col
+				local se = self.sel_end_col - self.scroll_col
+
+				if self.sel_start_line == self.sel_end_line then
+					if ss > 0 then
+						local s = line:sub (1, ss)
+						term.set_cursor (0, l)
+						term.write (s, self.fg_color, self.bg_color)
+					end
+
+					if se > 0 then
+						if ss < 0 then
+							local s = line:sub (1, se + ss)
+							term.set_cursor (0, l)
+							term.write (s, self.selfg_color, self.selbg_color)
+						else
+							local s = line:sub (ss + 1, se)
+							term.set_cursor (ss, l)
+							term.write (s, self.selfg_color, self.selbg_color)
+						end
+					end
+
+					if se < 0 then
+						local s = line
+						term.set_cursor (0, l)
+						term.write (s, self.fg_color, self.bg_color)
+					else
+						local s = line:sub (se + 1, -1)
+						term.set_cursor (se, l)
+						term.write (s, self.fg_color, self.bg_color)
+					end
+
+				elseif ln == self.sel_start_line then
+					if ss > 0 then
+						local s = line:sub (1, ss + 1)
+						term.set_cursor (0, l)
+						term.write (s, self.fg_color, self.bg_color)
+					end
+
+					if ss < 0 then
+						local s = line
+
+						if s:len () < self.width then
+							s = s.." "
+						end
+
+						term.set_cursor (0, l)
+						term.write (s, self.selfg_color, self.selbg_color)
+					else
+						local s = line:sub (ss + 1, -1)
+
+						if (s:len () + ss) < self.width then
+							s = s.." "
+						end
+
+						term.set_cursor (ss, l)
+						term.write (s, self.selfg_color, self.selbg_color)
+					end
+
+				elseif ln == self.sel_end_line then
+					if se > 0 then
+						local s = line:sub (1, se)
+						term.set_cursor (0, l)
+						term.write (s, self.selfg_color, self.selbg_color)
+					end
+
+					if se < 0 then
+						local s = line
+						term.set_cursor (0, l)
+						term.write (s, self.fg_color, self.bg_color)
+					else
+						local s = line:sub (se + 1, -1)
+						term.set_cursor (se, l)
+						term.write (s, self.fg_color, self.bg_color)
+					end
+
+				else
+					local s = line
+
+					if s:len () < self.width then
+						s = s.." "
+					end
+
+					term.set_cursor (0, l)
+					term.write (s, self.selfg_color, self.selbg_color)
+
+				end
+
+			else
+				term.set_cursor (0, l)
+				term.write (line, self.fg_color, self.bg_color)
+			end
+		end
+	end
+
+	term.set_blink (true)
+end
+
+
+
+function edit:scroll_to_view ()
+	if (self.cur_col - self.scroll_col) >= self.width then
+		self.scroll_col = self.cur_col - self.width + 10
+	elseif self.cur_col < self.scroll_col then
+		self.scroll_col = ((self.cur_col > 10) and (self.cur_col - 10)) or 0
+	end
+
+	if (self.cur_line - self.scroll_line) >= self.height then
+		self.scroll_line = self.cur_line - self.height + 1
+	elseif self.cur_line < self.scroll_line then
+		self.scroll_line = self.cur_line
+	end
+
+	self:draw ()
+	self:update_cursor ()
+end
+
+
+
+function edit:replace_sel (str)
+	local added = string.split (str or "", "\n", true)
+
+	self:clear_sel ()
+
+	self.cur_col = self.sel_start_col
+	self.cur_line = self.sel_start_line
+
+	if #added < 2 then
+		local pre = self.lines[self.cur_line + 1]:sub (1, self.cur_col)
+		local post = self.lines[self.cur_line + 1]:sub (self.cur_col + 1, -1)
+
+		self.lines[self.cur_line + 1] = pre..added[1]..post
+
+		self.cur_col = self.cur_col + added[1]:len ()
+	else
+		local pre = self.lines[self.cur_line + 1]:sub (1, self.cur_col)
+		local post = self.lines[self.cur_line + 1]:sub (self.cur_col + 1, -1)
+
+		table.insert (self.lines, self.cur_line + 2, added[#added]..post)
+		self.lines[self.cur_line + 1] = pre..added[1]
+
+		for l = 2, #added - 1 do
+			table.insert (self.lines, self.cur_line + l, added[l])
+		end
+
+		self.cur_line = self.cur_line + #added - 1
+		self.cur_col = added[#added]:len ()
+	end
+
+	self:sel_none ()
+	self:scroll_to_view ()
+end
+
+
+
+function edit:cut ()
+	self.clipboard = self:clear_sel ()
+end
+
+
+
+function edit:copy ()
+	self.clipboard = self:get_sel_text ()
+end
+
+
+
+function edit:paste ()
+	if self.clipboard then
+		self:replace_sel (self.clipboard)
+	end
+end
+
+
+
+function edit:sys_copy ()
+	if self:has_sel () then
+		os.copy_to_clipboard (self:get_sel_text ())
+	end
+end
+
+
+
+function edit:char_after (line, col)
+	if (line + 1) > #self.lines then
+		return #self.lines - 1, self.lines[#self.lines]:len ()
+	end
+
+	if line < 0 then
+		return 0, 0
+	end
+
+	if col < 0 then
+		col = 0
+	end
+
+	if col < self.lines[line + 1]:len () then
+		return line, col + 1
+	end
+
+	if (line + 1) < #self.lines then
+		return line + 1, 0
+	end
+
+	return #self.lines - 1, self.lines[#self.lines]:len ()
+end
+
+
+
+function edit:char_before (line, col)
+	if (line + 1) > #self.lines then
+		return #self.lines - 1, self.lines[#self.lines]:len ()
+	end
+
+	if line < 0 then
+		return 0, 0
+	end
+
+	if col < 0 then
+		col = 0
+	end
+
+	if col > 0 then
+		return line, col - 1
+	end
+
+	if (line + 1) > 0 then
+		return line - 1, self.lines[line]:len ()
+	end
+
+	return 0, 0
+end
+
+
+
+function edit:char_from_point (x, y)
+	local line = y + self.scroll_line
+	local col = x + self.scroll_col
+
+	if (line + 1) > #self.lines then
+		line = #self.lines - 1
+	end
+
+	if col > self.lines[line + 1]:len () then
+		col = self.lines[line + 1]:len ()
+	end
+
+	return line, col
+end
+
+
+
+function edit:move_to_point (x, y)
+	local ctrl, alt, shift = os.key_state ()
+	local line, col = self:char_from_point (x, y)
+
+	if ctrl or alt then
+		alt = false
+	end
+
+	if shift then
+		if line < self.sel_start_line or (line == self.sel_start_line and col < self.sel_start_col) then
+			self.sel_start_line = line
+			self.sel_start_col = col
+		else
+			self.sel_end_line = line
+			self.sel_end_col = col
+		end
+
+		self.cur_line = line
+		self.cur_col = col
+		self.last_col = self.cur_col
+	else
+		self.cur_line = line
+		self.cur_col = col
+		self.last_col = self.cur_col
+		self:sel_none ()
+	end
+
+	self:scroll_to_view ()
+end
+
+
+
+function edit:move_right (sel)
+	local line, col = self:char_after (self.cur_line, self.cur_col)
+
+	if sel then
+		if self.sel_end_line == self.cur_line and self.sel_end_col == self.cur_col then
+			self.sel_end_line = line
+			self.sel_end_col = col
+		else
+			self.sel_start_line = line
+			self.sel_start_col = col
+		end
+
+		self.cur_line = line
+		self.cur_col = col
+		self.last_col = col
+	else
+		self.cur_line = line
+		self.cur_col = col
+		self.last_col = col
+		self:sel_none ()
+	end
+
+	self:scroll_to_view ()
+end
+
+
+
+function edit:move_left (sel)
+	local line, col = self:char_before (self.cur_line, self.cur_col)
+
+	if sel then
+		if self.sel_start_line == self.cur_line and self.sel_start_col == self.cur_col then
+			self.sel_start_line = line
+			self.sel_start_col = col
+		else
+			self.sel_end_line = line
+			self.sel_end_col = col
+		end
+
+		self.cur_line = line
+		self.cur_col = col
+		self.last_col = col
+	else
+		self.cur_line = line
+		self.cur_col = col
+		self.last_col = col
+		self:sel_none ()
+	end
+
+	self:scroll_to_view ()
+end
+
+
+
+function edit:move_up (sel)
+	if self.cur_line > 0 then
+		local line = self.cur_line - 1
+		local col = self.last_col
+
+		if col > self.lines[line + 1]:len () then
+			col = self.lines[line + 1]:len ()
+		end
+
+		if sel then
+			if self.sel_start_line == self.cur_line and self.sel_start_col == self.cur_col then
+				self.sel_start_line = line
+				self.sel_start_col = col
+			elseif line < self.sel_start_line or (line == self.sel_start_line and col < self.sel_start_col) then
+				self.sel_end_line = self.sel_start_line
+				self.sel_end_col = self.sel_start_col
+				self.sel_start_line = line
+				self.sel_start_col = col
+			else
+				self.sel_end_line = line
+				self.sel_end_col = col
+			end
+
+			self.cur_line = line
+			self.cur_col = col
+		else
+			self.cur_line = line
+			self.cur_col = col
+			self:sel_none ()
+		end
+
+		self:scroll_to_view ()
+	end
+end
+
+
+
+function edit:move_down (sel)
+	if (self.cur_line + 1) < #self.lines then
+		local line = self.cur_line + 1
+		local col = self.last_col
+
+		if col > self.lines[line + 1]:len () then
+			col = self.lines[line + 1]:len ()
+		end
+
+		if sel then
+			if self.sel_end_line == self.cur_line and self.sel_end_col == self.cur_col then
+				self.sel_end_line = line
+				self.sel_end_col = col
+			elseif line > self.sel_end_line or (line == self.sel_end_line and col > self.sel_end_col) then
+				self.sel_start_line = self.sel_end_line
+				self.sel_start_col = self.sel_end_col
+				self.sel_end_line = line
+				self.sel_end_col = col
+			else
+				self.sel_start_line = line
+				self.sel_start_col = col
+			end
+
+			self.cur_line = line
+			self.cur_col = col
+		else
+			self.cur_line = line
+			self.cur_col = col
+			self:sel_none ()
+		end
+
+		self:scroll_to_view ()
+	end
+end
+
+
+
+function edit:page_up (sel)
+	if self.cur_line > 0 then
+		local line = self.cur_line - self.height + 1
+		local col = self.last_col
+
+		if line < 0 then
+			line = 0
+		end
+
+		if col > self.lines[line + 1]:len () then
+			col = self.lines[line + 1]:len ()
+		end
+
+		if sel then
+			if self.sel_start_line == self.cur_line and self.sel_start_col == self.cur_col then
+				self.sel_start_line = line
+				self.sel_start_col = col
+			elseif line < self.sel_start_line or (line == self.sel_start_line and col < self.sel_start_col) then
+				self.sel_end_line = self.sel_start_line
+				self.sel_end_col = self.sel_start_col
+				self.sel_start_line = line
+				self.sel_start_col = col
+			else
+				self.sel_end_line = line
+				self.sel_end_col = col
+			end
+
+			self.cur_line = line
+			self.cur_col = col
+		else
+			self.cur_line = line
+			self.cur_col = col
+			self:sel_none ()
+		end
+
+		self:scroll_to_view ()
+	end
+end
+
+
+
+function edit:page_down (sel)
+	if (self.cur_line + 1) < #self.lines then
+		local line = self.cur_line + self.height - 1
+		local col = self.last_col
+
+		if (line + 1) > #self.lines then
+			line = #self.lines - 1
+		end
+
+		if col > self.lines[line + 1]:len () then
+			col = self.lines[line + 1]:len ()
+		end
+
+		if sel then
+			if self.sel_end_line == self.cur_line and self.sel_end_col == self.cur_col then
+				self.sel_end_line = line
+				self.sel_end_col = col
+			elseif line > self.sel_end_line or (line == self.sel_end_line and col > self.sel_end_col) then
+				self.sel_start_line = self.sel_end_line
+				self.sel_start_col = self.sel_end_col
+				self.sel_end_line = line
+				self.sel_end_col = col
+			else
+				self.sel_start_line = line
+				self.sel_start_col = col
+			end
+
+			self.cur_line = line
+			self.cur_col = col
+		else
+			self.cur_line = line
+			self.cur_col = col
+			self:sel_none ()
+		end
+
+		self:scroll_to_view ()
+	end
+end
+
+
+
+function edit:move_home (sel)
+	if self.cur_col > 0 then
+		local line = self.cur_line
+		local col = 0
+
+		if sel then
+			if self.sel_start_line == self.cur_line and self.sel_start_col == self.cur_col then
+				self.sel_start_line = line
+				self.sel_start_col = col
+			else
+				self.sel_end_line = line
+				self.sel_end_col = col
+			end
+
+			self.cur_line = line
+			self.cur_col = col
+			self.last_col = col
+		else
+			self.cur_line = line
+			self.cur_col = col
+			self.last_col = col
+			self:sel_none ()
+		end
+
+		self:scroll_to_view ()
+	end
+end
+
+
+
+function edit:move_end (sel)
+	if self.cur_col < self.lines[self.cur_line + 1]:len () then
+		local line = self.cur_line
+		local col = self.lines[self.cur_line + 1]:len ()
+
+		if sel then
+			if self.sel_end_line == self.cur_line and self.sel_end_col == self.cur_col then
+				self.sel_end_line = line
+				self.sel_end_col = col
+			else
+				self.sel_start_line = line
+				self.sel_start_col = col
+			end
+
+			self.cur_line = line
+			self.cur_col = col
+			self.last_col = col
+		else
+			self.cur_line = line
+			self.cur_col = col
+			self.last_col = col
+			self:sel_none ()
+		end
+
+		self:scroll_to_view ()
+	end
+end
+
+
+
+function edit:on_save (sel)
+	local file = io.open (self.filepath, "w")
+
+	if not file then
+		local x, y = term.get_cursor ()
+
+		term.set_colors (self.error_color, self.bg_color)
+		term.set_cursor (0, height - 1)
+		term.write ("Could not save '%s'", self.filepath)
+
+		os.start_timer (1.0)
+		return
+	end
+
+	for l = 1, #self.lines do
+		file:write (self.lines[l], "\n")
+	end
+
+	file:close ()
+end
+
+
+
+function edit:on_timer (tid)
+	self:draw ()
+	self:update_cursor ()
+end
+
+
+
+function edit:on_exit ()
+	shell.system ("clear")
+end
+
+
+
+function edit:delete ()
+	if not self:has_sel () then
+		if self.cur_col == self.lines[self.cur_line + 1]:len () then
+			if (self.cur_line + 1) >= #self.lines then
+				return
+			end
+
+			self.sel_start_line = self.cur_line
+			self.sel_end_line = self.cur_line + 1
+			self.sel_start_col = self.cur_col
+			self.sel_end_col = 0
+		else
+			self.sel_start_line = self.cur_line
+			self.sel_end_line = self.cur_line
+			self.sel_start_col = self.cur_col
+			self.sel_end_col = self.cur_col + 1
+		end
+	end
+
+	self:replace_sel ("")
+end
+
+
+
+function edit:backspace ()
+	if not self:has_sel () then
+		if self.cur_col <= 0 and self.cur_line <= 0 then
+			return
+		end
+
+		self:move_left (false)
+	end
+
+	self:delete ()
+end
+
+
+
+function edit:run ()
+	if self.help then
+		print ("   edit [-h] path\n"..
+				 "Edit a file.\n"..
+				 " -h    show help\n"..
+				 " path  file to open/create\n"..
+				 "Action keys:\n"..
+				 " Ctrl+Q      exit\n"..
+				 " Ctrl+S      save\n"..
+				 "dump edit.man for more\n")
+
+		return 0
+	end
+
+	-- create if doesn't exist
+	if fs.file_type (self.filepath) ~= "file" then
+		local file = io.open (self.filepath, "w")
+
+		if not file then
+			term.set_colors (term.colors.red, term.colors.black)
+			print ("Could not create '%s'\n", self.filepath)
+			return 9
+		end
+
+		file:close ()
+	end
+
+	term.clear (0, self.fg_color, self.bg_color)
+	term.set_cursor (0, 0)
+	term.set_blink (true)
+	term.set_colors (self.fg_color, self.bg_color)
+
+	-- load file
+	self.lines = { }
+	for line in io.lines (self.filepath) do
+		self.lines[#self.lines + 1] = line
+	end
+
+	if not self.lines[1] then
+		self.lines[1] = ""
+	end
+
+	self:draw ()
+	self:update_cursor ()
+
+	while true do
+		local event = { os.get_event () }
+
+		if event[1] == "key" then
+			if not event[3] and not event[4] and not event[5] then
+				if event[2] == keys.KEY_LEFT then
+					self:move_left (false)
+				elseif event[2] == keys.KEY_RIGHT then
+					self:move_right (false)
+				elseif event[2] == keys.KEY_UP then
+					self:move_up (false)
+				elseif event[2] == keys.KEY_DOWN then
+					self:move_down (false)
+				elseif event[2] == keys.KEY_PAGEUP then
+					self:page_up (false)
+				elseif event[2] == keys.KEY_PAGEDOWN then
+					self:page_down (false)
+				elseif event[2] == keys.KEY_HOME then
+					self:move_home (false)
+				elseif event[2] == keys.KEY_END then
+					self:move_end (false)
+				elseif event[2] == keys.KEY_DELETE then
+					self:delete ()
+				end
+
+			elseif event[3] and not event[4] and not event[5] then
+				-- ctrl
+				if event[2] == keys.KEY_Q then
+					self:on_exit ()
+					return 0
+				elseif event[2] == keys.KEY_S then
+					self:on_save ()
+				elseif event[2] == keys.KEY_X then
+					self:cut ()
+				elseif event[2] == keys.KEY_C then
+					self:copy ()
+				elseif event[2] == keys.KEY_V then
+					self:paste ()
+				elseif event[2] == keys.KEY_A then
+					self:sel_all ()
+				end
+
+			elseif not event[3] and not event[4] and event[5] then
+				-- shift
+				if event[2] == keys.KEY_LEFT then
+					self:move_left (true)
+				elseif event[2] == keys.KEY_RIGHT then
+					self:move_right (true)
+				elseif event[2] == keys.KEY_UP then
+					self:move_up (true)
+				elseif event[2] == keys.KEY_DOWN then
+					self:move_down (true)
+				elseif event[2] == keys.KEY_PAGEUP then
+					self:page_up (true)
+				elseif event[2] == keys.KEY_PAGEDOWN then
+					self:page_down (true)
+				elseif event[2] == keys.KEY_HOME then
+					self:move_home (true)
+				elseif event[2] == keys.KEY_END then
+					self:move_end (true)
+				end
+
+			elseif event[3] and event[4] and not event[5] then
+				-- ctrl alt
+				if event[2] == keys.KEY_C then
+					self:sys_copy ()
+				end
+
+			end
+
+		elseif event[1] == "char" then
+			if event[3] >= keys.KEY_SPACE and event[3] <= keys.KEY_TILDE then
+				self:replace_sel (event[2])
+			elseif event[3] == keys.KEY_ENTER then
+				self:replace_sel ("\n")
+			elseif event[3] == keys.KEY_BACKSPACE then
+				self:backspace ()
+			end
+
+		elseif event[1] == "clipboard" then
+			self:replace_sel (string.gsub (string.gsub (event[2] or "", "\r\n", "\n"), "\r", "\n"))
+
+		elseif event[1] == "timer" then
+			self:on_timer (event[2])
+
+		elseif event[1] == "click" then
+			self:move_to_point (event[2], event[3])
+
+		end
+	end
+end
+
+
+
+
+return edit:new ( ... ):run ()
+
+
+
+--

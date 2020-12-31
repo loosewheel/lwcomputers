@@ -1,0 +1,2117 @@
+-- los
+
+local _LOS = "1.0"
+
+local fg_color = term.colors.silver
+local bg_color = term.colors.black
+local prompt_color = term.colors.green
+local error_color = term.colors.red
+local abort_color = term.colors.orange
+local ok_color = term.colors.blue
+local file_color = term.colors.silver
+local dir_color = term.colors.sky
+local bold_color = term.colors.white
+
+
+term.clear (0, fg_color, bg_color)
+term.set_cursor (0, 0)
+term.set_blink (true)
+term.set_colors (fg_color, bg_color)
+print ("%d: %s\nBooting LOS %s\n\n%s\n",
+		 os.computer_id (),
+		 os.get_name (),
+		 _LOS,
+		 os.date ("%a %d %b %Y %I:%M:%S %p"))
+
+
+--[[-----------------------------
+err codes
+0	success
+1	invalid arg
+2	bad param - invalid path
+3	mkdir error
+4	copy error
+5	rename error
+6	remove error
+7	label error
+8	exec error
+9	file error
+10	download error
+11 wireless error
+-------------------------------]]
+
+
+local _CWD = ""
+local _result_code = 0
+
+shell = { }
+
+
+function shell.current_dir ()
+	return "/".._CWD
+end
+
+
+
+function shell.version ()
+	return _LOS
+end
+
+
+
+function shell.result_code ()
+	return _result_code
+end
+
+
+
+local function print_prompt ()
+	term.set_colors (prompt_color, bg_color)
+	print ("%s%c", _CWD, 155)
+	term.set_blink (true)
+end
+
+
+
+local function print_abort ( ... )
+	term.set_colors (abort_color, bg_color)
+	print ( ... )
+end
+
+
+
+local function print_error ( ... )
+	term.set_colors (error_color, bg_color)
+	print ( ... )
+end
+
+
+
+local function print_text ( ... )
+	term.set_colors (fg_color, bg_color)
+	print ( ... )
+end
+
+
+
+local function print_bold ( ... )
+	term.set_colors (bold_color, bg_color)
+	print ( ... )
+end
+
+
+
+local function print_ok ( ... )
+	term.set_colors (ok_color, bg_color)
+	print ( ... )
+end
+
+
+
+local function print_file ( ... )
+	term.set_colors (file_color, bg_color)
+	print ( ... )
+end
+
+
+
+local function print_dir ( ... )
+	term.set_colors (dir_color, bg_color)
+	print ( ... )
+end
+
+
+
+local function path_filepath (path)
+	local fullpath, msg = fs.abs_path ("/".._CWD, path)
+
+	if not fullpath or fs.file_type (fullpath) ~= "file" then
+		local found = false
+		local PATH = os.getenv ("PATH")
+
+		if PATH then
+			paths = string.split (PATH, ":")
+		end
+
+		if paths then
+			local idx = 1
+
+			while not found and idx <= #paths do
+				if paths[idx]:sub (1, 1) ~= "/" then
+					paths[idx] = "/"..paths[idx]
+				end
+
+				fullpath = fs.abs_path (paths[idx], path)
+
+				if fullpath and fs.file_type (fullpath) == "file" then
+					found = true
+				end
+
+				idx = idx + 1
+			end
+		end
+
+		if not found then
+			return nil, msg or "invalid path"
+		end
+	end
+
+	return fullpath
+end
+
+
+
+local function string_trim (str)
+   return (str:gsub ("^%s*(.-)%s*$", "%1"))
+end
+
+
+
+local function cd (path)
+	if path == "-h" or not path then
+		print_text ("   cd [-h] [dir]\n"..
+						"Change current dir.\n"..
+						" -h   show help\n"..
+						" dir  dir path, abs or rel\n"..
+						"      can have .. for up one\n")
+		return 0
+	end
+
+	local cwd, msg = fs.abs_path ("/".._CWD, path)
+
+	if not cwd then
+		print_error ("%s", msg)
+		print_text ("\n")
+
+		return 1
+	end
+
+	if fs.file_type (cwd) ~= "dir" then
+		print_error ("invalid path")
+		print_text ("\n")
+
+		return 2
+	end
+
+	_CWD = cwd:sub (2)
+
+	return 0
+end
+
+
+
+local function ls ( ... )
+	local args = { ... }
+	local long = false
+	local types = nil
+	local path = ""
+	local help = false
+
+	for i = 1, #args do
+		if args[i] == "-l" then
+			long = true
+		elseif args[i] == "-d" then
+			types = true
+		elseif args[i] == "-f" then
+			types = false
+		elseif args[i] == "-h" then
+			help = true
+		elseif args[i]:sub (1, 1) == "-" then
+			print_error ("invalid option")
+			print_text ("\n")
+			return 1
+		else
+			path = args[i]
+		end
+	end
+
+	if help then
+		print_text ("   ls [-l -d -f] [path]\n"..
+						"Show file list.\n"..
+						" -l   long info\n"..
+						" -d   show dirs only\n"..
+						" -f   show files only\n"..
+						" -h   show help\n"..
+						" path path to show, can be file or dir\n"..
+						"      can have any * in last name\n"..
+						"      if omitted shows current dir\n")
+		return 0
+	end
+
+	if path:len () < 1 then
+		path = "/".._CWD
+	else
+		local fullpath, msg = fs.abs_path ("/".._CWD, path)
+
+		if not fullpath then
+			print_error ("invalid path")
+			print_text ("\n")
+			return 2
+		end
+
+		path = fullpath
+	end
+
+	if path:len () > 1 and path:sub (-1) == "/" then
+		path = path:sub (1, -2)
+	end
+
+	local name = fs.path_name (path)
+
+	-- wild
+	if not fs.file_exists (path) and name:find ("*") then
+		local folder = fs.path_folder (path)
+
+		if not folder or fs.file_type (folder) ~= "dir" then
+			print_error ("invalid path")
+			print_text ("\n")
+			return 2
+		end
+
+		name = path:sub (folder:len () + 2)
+
+		if not name then
+			print_error ("invalid path")
+			print_text ("\n")
+			return 2
+		end
+
+		if name:sub (-1) == "/" then
+			name = name:sub (1, -2)
+		end
+
+		if name:len () < 1 then
+			print_error ("invalid path")
+			print_text ("\n")
+			return 2
+		end
+
+		name = string.gsub (name, "*", ".*")
+
+		local list = fs.ls (folder, types)
+
+		if not list then
+			print_error ("invalid path")
+			print_text ("\n")
+			return 2
+		end
+
+		for i = #list, 1, -1 do
+			if not string.match (list[i], name) then
+				table.remove (list, i)
+			end
+		end
+
+		local w, h = term.get_resolution ()
+		local line = 2
+		local pre = ""
+
+		for i = 1, #list do
+			local full = folder.."/"..list[i]
+
+			if fs.file_type (full) == "file" then
+				term.set_colors (file_color, bg_color)
+
+				if long then
+					print_file ("% 7d %s\n", fs.file_size (full) or 0, list[i])
+					line = line + 1
+					pre = "\n"
+				else
+					local x = term.get_cursor ()
+
+					if (x + list[i]:len ()) >= w then
+						print_text ("\n")
+					end
+
+					print_file ("%s%s", pre, list[i])
+					pre = " "
+					line = line + 1
+				end
+
+				term.set_colors (fg, bg)
+
+			elseif fs.file_type (full) == "dir" then
+				term.set_colors (dir_color, bg_color)
+
+				if long then
+					print_dir ("dir     %s\n", list[i])
+					line = line + 1
+					pre = "\n"
+				else
+					local x = term.get_cursor ()
+
+					if (x + list[i]:len ()) >= w then
+						print_text ("\n")
+					end
+
+					print_dir ("%s%s", pre, list[i])
+					pre = " "
+					line = line + 1
+				end
+
+				term.set_colors (fg, bg)
+
+			end
+
+			if line >= (h - 2)  and i < #list then
+				local event = nil
+				print_bold ("more")
+
+				repeat
+					event = { os.get_event () }
+				until event[1] == "key"
+
+				print_text ("\r     \r")
+				line = 0
+
+				if event[2] == keys.KEY_ESC then
+					return 0
+				end
+			end
+		end
+
+		if long then
+			print_text ("   %d files\n", #list)
+		else
+			print_text ("\n")
+		end
+
+		return 0
+	end
+
+
+	-- file
+	if fs.file_type (path) == "file" then
+		if types ~= true then
+			term.set_colors (file_color, bg_color)
+
+			if long then
+				print_file ("% 7d %s\n", fs.file_size (path) or 0, fs.path_name (path))
+			else
+				print_file ("%s", fs.path_name (path))
+			end
+
+			term.set_colors (fg, bg)
+		else
+			print_error ("invalid path")
+			print_text ("\n")
+			return 2
+		end
+
+		if long then
+			print_text ("   %d files\n", #list)
+		else
+			print_text ("\n")
+		end
+
+		return 0
+	end
+
+
+	-- dir
+	if fs.file_type (path) == "dir" then
+		local list = fs.ls (path, types)
+
+		if not list then
+			print_error ("invalid path")
+			print_text ("\n")
+			return 2
+		end
+
+		local w, h = term.get_resolution ()
+		local line = 2
+		local pre = ""
+
+		for i = 1, #list do
+			local full = path.."/"..list[i]
+
+			if fs.file_type (full) == "file" then
+				term.set_colors (file_color, bg_color)
+
+				if long then
+					print_file ("% 7d %s\n", fs.file_size (full) or 0, list[i])
+					line = line + 1
+				else
+					local x = term.get_cursor ()
+
+					if (x + list[i]:len ()) >= w then
+						print_text ("\n")
+					end
+
+					print_file ("%s%s", pre, list[i])
+					pre = " "
+					line = line + 1
+				end
+
+				term.set_colors (fg, bg)
+
+			elseif fs.file_type (full) == "dir" then
+				term.set_colors (dir_color, bg_color)
+
+				if long then
+					print_dir ("dir     %s\n", list[i])
+					line = line + 1
+				else
+					local x = term.get_cursor ()
+
+					if (x + list[i]:len ()) >= w then
+						print_text ("\n")
+					end
+
+					print_dir ("%s%s", pre, list[i])
+					pre = " "
+					line = line + 1
+				end
+
+				term.set_colors (fg, bg)
+
+			end
+
+			if line >= (h - 2)  and i < #list then
+				local event = nil
+				print_bold ("more")
+
+				repeat
+					event = { os.get_event () }
+				until event[1] == "key"
+
+				print_text ("\r     \r")
+				line = 0
+
+				if event[2] == keys.KEY_ESC then
+					return 0
+				end
+			end
+		end
+
+		if long then
+			print_text ("   %d files\n", #list)
+		else
+			print_text ("\n")
+		end
+
+		return 0
+	end
+
+	print_error ("invalid path")
+	print_text ("\n")
+
+	return 2
+end
+
+
+
+local function clear (option)
+	if option == "-h" then
+		print_text ("   clear [-h]\n"..
+						"Clears the screen.\n"..
+						" -h  show help\n")
+		return 0
+	end
+
+	term.clear (0, fg_color, bg_color)
+	term.set_cursor (0, 0)
+	term.set_blink (true)
+
+	return 0
+end
+
+
+
+local function mkdir (path)
+	if path == "-h" or not path then
+		print_text ("   mkdir [-h] dir\n"..
+						"Make dir including parents.\n"..
+						" -h   show help\n"..
+						" dir  dir path to make\n"..
+						"      if rel current dir used\n")
+		return 0
+	end
+
+	if not path then
+		print_error ("invalid path %s", path or "<nil>")
+		print_text ("\n")
+		return 2
+	end
+
+	local fullpath, msg = fs.abs_path ("/".._CWD, path)
+
+	if not fullpath then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 2
+	end
+
+	if not fs.mkdir (fullpath) then
+		print_error ("invalid path %s", path or "<nil>")
+		print_text ("\n")
+		return 3
+	end
+end
+
+
+
+local function copy_dir (srcpath, destpath, recurse)
+	local copied = 0
+	local list = fs.ls (srcpath)
+
+	if not list then
+		return nil, "read error"
+	end
+
+	for i = 1, #list do
+		local srcfull = srcpath.."/"..list[i]
+		local destfull = destpath.."/"..list[i]
+
+		if fs.file_type (srcfull) == "file" then
+			local result, msg = fs.copy_file (srcfull, destfull)
+
+			if not result then
+				return nil, msg
+			end
+
+			copied = copied + 1
+
+		elseif fs.file_type (srcfull) == "dir" then
+			if not fs.mkdir (destfull) then
+				return nil, "dir error"
+			end
+
+			copied = copied + 1
+
+			if recurse then
+				local result, msg = copy_dir (srcfull, destfull, true)
+
+				if not result then
+					return nil, msg
+				end
+
+				count = count + result
+			end
+		end
+	end
+
+	return copied
+end
+
+
+
+local function cp ( ... )
+	local args = { ... }
+	local help = false
+	local recurse = false
+	local srcpath = nil
+	local destpath = nil
+
+	for i = 1, #args do
+		if args[i] == "-r" then
+			recurse = true
+		elseif args[i] == "-h" then
+			help = true
+		elseif args[i]:sub (1, 1) == "-" then
+			print_error ("invalid option")
+			print_text ("\n")
+			return 1
+		else
+			if srcpath and #srcpath > 0 then
+				if destpath and #destpath > 0 then
+					print_error ("invalid arg")
+					print_text ("\n")
+					return
+				else
+					destpath = args[i]
+				end
+			else
+				srcpath = args[i]
+			end
+
+		end
+	end
+
+	if help or not srcpath or not destpath then
+		print_text ("   cp [-h] src dest\n"..
+						"Copy file or dir, overwriting.\n"..
+						" -h    show help\n"..
+						" -r    recursive copy sub dirs\n"..
+						" src   src can be\n"..
+						"       dir path - copy contents\n"..
+						"       file path - copy one file\n"..
+						"       if name has any * as match above\n"..
+						" dest  dest path\n"..
+						"       if src has * dir path\n"..
+						"       if src is dir then dir path\n"..
+						"       if src is file then file path\n"..
+						"If paths are rel current dir used\n")
+		return 0
+	end
+
+	local copied = 0
+	local destfull;
+	local srcfull, msg = fs.abs_path ("/".._CWD, srcpath)
+
+	if not srcfull then
+		print_error ("%s", msg)
+		print_text ("\n")
+
+		return 2
+	end
+
+	destfull, msg = fs.abs_path ("/".._CWD, destpath)
+
+	if not destfull then
+		print_error ("%s", msg)
+		print_text ("\n")
+
+		return 2
+	end
+
+
+	local name = fs.path_name (srcfull)
+
+	if not fs.file_exists (srcfull) and name:find ("*") then
+		-- wild
+		if fs.file_type (destfull) == "file" then
+			print_error ("invalid paths")
+			print_text ("\n")
+			return 2
+		end
+
+		local folder = fs.path_folder (srcfull)
+		local list, msg = fs.ls (folder, false)
+
+		if not list then
+			print_error ("%s", msg)
+			print_text ("\n")
+			return 2
+		end
+
+		if not fs.mkdir (destfull) then
+			print_error ("dir error")
+			print_text ("\n")
+			return 3
+		end
+
+		name = string.gsub (name, "*", ".*")
+
+		for i = #list, 1, -1 do
+			if not string.match (list[i], name) then
+				table.remove (list, i)
+			end
+		end
+
+
+		for i = 1, #list do
+			local src = folder.."/"..list[i]
+			local dest = destfull.."/"..list[i]
+
+			if fs.file_type (src) == "file" then
+				local result, msg = fs.copy_file (src, dest)
+
+				if not result then
+					print_error ("%s", msg)
+					print_text ("\n")
+					return 4
+				end
+
+				copied = copied + 1
+
+			elseif fs.file_type (src) == "dir" then
+				if not fs.mkdir (destfull) then
+					print_error ("dir error")
+					print_text ("\n")
+					return 3
+				end
+
+				copied = copied + 1
+
+				local result, msg = copy_dir (srcfull, destfull, recurse)
+
+				if not result then
+					print_error ("%s", msg)
+					print_text ("\n")
+					return 4
+				end
+
+				copied = copied + result
+
+			end
+		end
+
+		print_text ("%d files copied\n", copied)
+
+		return 0
+
+	else
+		if srcfull == destfull then
+			print_error ("invalid paths")
+			print_text ("\n")
+			return 2
+		end
+
+
+		if fs.file_type (srcfull) == "file" then
+			if fs.file_type (destfull) == "dir" then
+				destfull = destfull.."/"..fs.path_name (srcfull)
+			end
+
+			local result, msg = fs.copy_file (srcfull, destfull)
+
+			if not result then
+				print_error ("%s", msg)
+				print_text ("\n")
+				return 4
+			end
+
+			print_text ("1 file copied\n")
+
+			return 0
+		end
+
+
+		if fs.file_type (srcfull) == "dir" then
+			if not fs.mkdir (destfull) then
+				print_error ("dir error")
+				print_text ("\n")
+				return 3
+			end
+
+			copied, msg = copy_dir (srcfull, destfull, recurse)
+
+			if not copied then
+				print_error ("%s", msg)
+				print_text ("\n")
+				return 4
+			end
+
+			print_text ("%d files copied\n", copied + 1)
+
+			return 0
+		end
+	end
+
+	print_error ("invalid path %s", srcpath or "<nil>")
+	print_text ("\n")
+
+	return 2
+end
+
+
+
+local function id (drive)
+	if drive == "-h" then
+		print_text ("   id [-h] [drive]\n"..
+						"Shows a drive or computer's id.\n"..
+						" -h     show help\n"..
+						" drive  drive number (0-3)\n"..
+						"        or mount eg. /<label>\n"..
+						"        if omitted computer's id\n")
+		return 0
+	end
+
+	if drive then
+		if drive:len () == 1 then
+			local c = drive:byte (1, 1)
+
+			if c >= keys.KEY_0 and c <= keys.KEY_9 then
+				drive = tonumber (drive)
+			end
+		end
+
+		local ident, msg = fs.get_drive_id (drive)
+
+		if not ident then
+			print_error ("%s", msg)
+			print_text ("\n")
+
+			return 2
+		end
+
+		print_text ("id:%s\n", ident)
+	else
+		print_text ("id:%s\n", os.computer_id ())
+	end
+
+	return 0
+end
+
+
+
+local function name (action, value)
+	if action == "-h" or not action then
+		print_text ("   name [-h] action [value]\n"..
+						"Set or get the computer's name.\n"..
+						" -h      show help\n"..
+						" action  set or get\n"..
+						" value   the new name to set\n"..
+						"         if omitted name is cleared\n")
+		return 0
+	end
+
+	if action == "set" then
+		os.set_name (value)
+	elseif action == "get" then
+		print_text ("name:%s\n", os.get_name ())
+	else
+		print_error ("invalid action")
+		print_text ("\n")
+		return 1
+	end
+
+	return 0
+end
+
+
+
+local function rename (oldname, newname)
+	if oldname == "-h" or not oldname or not newname then
+		print_text ("   rename [-h] oldname newname\n"..
+						"Rename a file.\n"..
+						" -h      show help\n"..
+						" oldname  file to rename\n"..
+						" newname  new file name\n")
+
+		return 0
+	end
+
+	local newfull;
+	local oldfull, msg = fs.abs_path ("/".._CWD, oldname)
+
+	if not oldfull then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 2
+	end
+
+	newfull, msg = fs.abs_path ("/".._CWD, newname)
+
+	if not newfull then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 2
+	end
+
+	if not fs.file_exists (oldfull) then
+		print_error ("invalid path")
+		print_text ("\n")
+		return 2
+	end
+
+	local result, msg = fs.rename (oldfull, newfull)
+
+	if not result then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 5
+	end
+
+	return 0
+end
+
+
+
+local function rm_dir (path)
+	local removed = 0
+	local list = fs.ls (path)
+
+	if not list then
+		return nil, msg
+	end
+
+	for i = 1, #list do
+		local full = path.."/"..list[i]
+
+		if fs.file_type (full) == "dir" then
+			local result, msg = rm_dir (full)
+
+			if not result then
+				return nil, msg
+			end
+
+			removed = removed + result
+
+		else
+			local result, msg = fs.remove (full)
+
+			if not result then
+				return nil, msg
+			end
+
+			removed = removed + 1
+		end
+	end
+
+	return removed
+end
+
+
+
+local function rm ( ... )
+	local args = { ... }
+	local recurse = false
+	local path = ""
+	local help = false
+
+	for i = 1, #args do
+		if args[i] == "-r" then
+			recurse = true
+		elseif args[i] == "-h" then
+			help = true
+		elseif args[i]:sub (1, 1) == "-" then
+			print_error ("invalid option")
+			print_text ("\n")
+			return 1
+		else
+			if path and #path > 0 then
+				print_error ("invalid arg")
+				print_text ("\n")
+				return 1
+			end
+
+			path = args[i]
+		end
+	end
+
+	if help or #path < 1 then
+		print_text ("   rm [-r -h] [path]\n"..
+						"Remove files and dirs.\n"..
+						" -r   remove sub dir contents\n"..
+						" -h   show help\n"..
+						" path path to remove\n"..
+						"      can be files or dirs\n"..
+						"      can have any * in last name\n")
+		return 0
+	end
+
+	local removed = 0
+	local mounts;
+	local pathfull, msg = fs.abs_path ("/".._CWD, path)
+
+	if not pathfull then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 2
+	end
+
+	mounts, msg = fs.ls ()
+
+	if not mounts then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 2
+	end
+
+	for i = 1, #mounts do
+		if pathfull == mounts[i] then
+			print_error ("can't remove root")
+			print_text ("\n")
+			return 2
+		end
+	end
+
+	if pathfull:sub (-1) == "/" then
+		print_error ("invalid path")
+		print_text ("\n")
+		return 2
+	end
+
+
+	local name = fs.path_name (pathfull)
+
+	if not fs.file_exists (pathfull) and name:find ("*") then
+		-- wild
+		local folder = fs.path_folder (pathfull)
+		local list, msg = fs.ls (folder)
+
+		if not list then
+			print_error ("%s", msg)
+			print_text ("\n")
+			return 2
+		end
+
+		name = string.gsub (name, "*", ".*")
+
+		for i = #list, 1, -1 do
+			if not string.match (list[i], name) then
+				table.remove (list, i)
+			elseif folder == "/" then
+				for m = 1, #mounts do
+					if list[i] and "/"..list[i] == mounts[m] then
+						table.remove (list, i)
+					end
+				end
+			end
+		end
+
+		for i = 1, #list do
+			local full = folder.."/"..list[i]
+
+			if fs.file_type (full) == "dir" then
+				if recurse then
+					local result, msg = rm_dir (full)
+
+					if not result then
+						print_error ("%s", msg)
+						print_text ("\n")
+						return 6
+					end
+
+					removed = removed + result
+				end
+
+				local result, msg = fs.remove (full)
+
+				if result then
+					removed = removed + 1
+				end
+
+			else
+				local result, msg = fs.remove (full)
+
+				if not list then
+					print_error ("%s", msg)
+					print_text ("\n")
+					return 6
+				end
+
+				removed = removed + 1
+			end
+		end
+
+		print_text ("%d files removed\n", removed)
+
+		return 0
+
+	elseif fs.file_type (pathfull) == "file" then
+		local result, msg = fs.remove (pathfull)
+
+		if not result then
+			print_error ("%s", msg)
+			print_text ("\n")
+			return 6
+		end
+
+		print_text ("1 file removed\n")
+
+		return
+
+	elseif fs.file_type (pathfull) == "dir" then
+		if recurse then
+			local result, msg = rm_dir (pathfull)
+
+			if not result then
+				print_error ("%s", msg)
+				print_text ("\n")
+				return 6
+			end
+
+			removed = removed + result
+		end
+
+		local result, msg = fs.remove (pathfull)
+
+		if result then
+			removed = removed + 1
+		end
+
+		print_text ("%d files removed\n", removed)
+
+		return 0
+
+	end
+
+	print_error ("invalid path %s", path)
+	print_text ("\n")
+
+	return 2
+end
+
+
+
+local function label (action, drive, value)
+	if action == "-h" or not drive or not action then
+		print_text ("   label [-h] action drive [value]\n"..
+						"Set or get label of a drive.\n"..
+						" -h      show help\n"..
+						" action  set or get\n"..
+						" drive   drive number (0-3)\n"..
+						"         or mount eg. /<label>\n"..
+						" value   the new label to set\n"..
+						"         if omitted name is cleared\n")
+		return 0
+	end
+
+	if drive then
+		if drive:len () == 1 then
+			local c = drive:byte (1, 1)
+
+			if c >= keys.KEY_0 and c <= keys.KEY_9 then
+				drive = tonumber (drive)
+			end
+		end
+
+		if type (drive) == "string" and drive:sub (1, 1) ~= "/" then
+			print_error ("invalid drive")
+			print_text ("\n")
+			return 2
+		end
+	end
+
+	if action == "set" then
+		local result, msg = fs.set_label (drive, value)
+
+		if not result then
+			print_error ("%s", msg)
+			print_text ("\n")
+			return 7
+		end
+	elseif action == "get" then
+		print_text ("label:%s\n", fs.get_label (drive))
+	else
+		print_error ("invalid action")
+		print_text ("\n")
+		return 1
+	end
+
+	return 0
+end
+
+
+
+local function mounts (option)
+	if option == "-h" then
+		print_text ("   mounts [-h]\n"..
+						"Show list of mounted drive.\n"..
+						" -h      show help\n")
+		return 0
+	end
+
+	local list = fs.ls ()
+
+	for i = 1, #list do
+		print_text ("%d  %s\n", i - 1, list[i])
+	end
+
+	return 0
+end
+
+
+
+local function echo (str)
+	if str == "-h" then
+		print_text ("   echo [-h] [str]\n"..
+						"Prints the string, expands env.\n"..
+						" -h   show help\n"..
+						" str  the string to print\n")
+		return 0
+	end
+
+	str = os.envstr (tostring (str or ""))
+	print_text ("%s\n", str)
+
+	return 0
+end
+
+
+
+local function setenv ( ... )
+	local args = { ... }
+
+	if not args[1] or #args < 1 then
+		print_error ("no env name")
+		print_text ("\n")
+		return 2
+	end
+
+	if args[1]:sub (1, 1) == "$" then
+		args[1] = args[1]:sub (2)
+	end
+
+	if #args < 1 then
+		print_error ("no env name")
+		print_text ("\n")
+		return 2
+	end
+
+	if args[2] ~= "=" then
+		print_error ("invalid env opertaion")
+		print_text ("\n")
+		return 1
+	end
+
+	if args[3] then
+		args[3] = os.envstr (args[3])
+	end
+
+	os.setenv (args[1], args[3])
+
+	return 0
+end
+
+
+
+local function time ( ... )
+	local args = { ... }
+	local dt = false
+	local tm = false
+	local help = false
+
+	for i = 1, #args do
+		if args[i] == "-d" then
+			dt = true
+		elseif args[i] == "-t" then
+			tm = true
+		elseif args[i] == "-h" then
+			help = true
+		else
+			print_error ("invalid arg")
+			print_text ("\n")
+			return 1
+		end
+	end
+
+	if help then
+		print_text ("   time [-h -l -s -d -t]\n"..
+						"Prints the time and/or date.\n"..
+						" -h   show help\n"..
+						" -d   print date\n"..
+						" -t   print time\n"..
+						"no args defaults to -t\n")
+		return 0
+	end
+
+	local fmt = "%I:%M:%S %p"
+
+	if dt and tm then
+		fmt = "%a %d %b %Y %I:%M:%S %p"
+	elseif dt then
+		fmt = "%a %d %b %Y"
+	end
+
+	print_text ("%s\n", os.date (fmt))
+
+	return 0
+end
+
+
+
+local function reboot (option)
+	if option == "-h" then
+		print_text ("   reboot [-h]\n"..
+						"Reboots the computer.\n"..
+						" -h  show help\n")
+		return 0
+	end
+
+	os.reboot ()
+end
+
+
+
+local function shutdown (option)
+	if option == "-h" then
+		print_text ("   shutdown [-h]\n"..
+						"Turns the computer off.\n"..
+						" -h  show help\n")
+		return 0
+	end
+
+	os.shutdown ()
+end
+
+
+
+local function dl ( ... )
+	local args = { ... }
+	local timeout = 3
+	local help = false
+	local url = nil
+	local path = nil
+
+	for i = 1, #args do
+		if args[i] == "-h" then
+			help = true
+		elseif args[i]:sub (1, 2) == "-t" then
+			timeout = tonumber (args[i]:sub (3) or 0)
+
+			if timeout <= 0 then
+				print_error ("invalid timeout")
+				print_text ("\n")
+				return 1
+			end
+		elseif args[i]:sub (1, 1) == "-" then
+			print_error ("invalid option")
+			print_text ("\n")
+			return 1
+		else
+			if url and #url > 0 then
+				if path and #path > 0 then
+					print_error ("invalid arg")
+					print_text ("\n")
+					return
+				else
+					path = args[i]
+				end
+			else
+				url = args[i]
+			end
+
+		end
+	end
+
+	if help or not url or not path then
+		print_text ("   dl [-h -t<n>] url path\n"..
+						"Download a file and save it.\n"..
+						" -h    show help\n"..
+						" -t    followed by timeout seconds\n"..
+						" url   url to download\n"..
+						" path  file to save data\n")
+		return 0
+	end
+
+	local data;
+	local file;
+	local pathfull, msg = fs.abs_path ("/".._CWD, path)
+
+	if not pathfull or fs.file_type (pathfull) == "dir" then
+		print_error ("%s", msg or "invalid path")
+		print_text ("\n")
+		return 2
+	end
+
+
+	data, msg = http.get (url, timeout)
+
+	if not data then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 10
+	end
+
+	msg = string_trim (tostring (msg or ""))
+
+	if msg ~= "200" then
+		print_error ("failed %s", msg)
+		print_text ("\n")
+		return 10
+	end
+
+	file, msg = io.open (pathfull, "w")
+
+	if not file then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 9
+	end
+
+	file:write (data)
+	file:close ()
+
+	return 0
+end
+
+
+
+local function dump (path)
+	if path == "-h" then
+		print_text ("   dump [-h] path\n"..
+						"Shows a file's contents.\n"..
+						" -h    show help\n"..
+						" path  file to show\n"..
+						"esc at more to quit\n"..
+						"any other key scrolls\n")
+		return 0
+	end
+
+	local pathfull, msg = fs.abs_path ("/".._CWD, path)
+
+	if not pathfull or fs.file_type (pathfull) ~= "file" then
+		print_error ("%s", msg or "invalid path")
+		print_text ("\n")
+		return 2
+	end
+
+	local w, h = term.get_resolution ()
+	local linen = 0
+	local nl = true
+
+	for line in io.lines (pathfull) do
+		print_text ("%s\n", line)
+		linen = linen + math.max (math.ceil (line:len () / w), 1)
+		nl = true
+
+		if linen >= (h - 2) then
+			local event = nil
+			print_bold ("more")
+
+			repeat
+				event = { os.get_event () }
+			until event[1] == "key"
+
+			print_text ("\r     \r")
+			nl = false
+			linen = 0
+
+			if event[2] == keys.KEY_ESC then
+				return 0
+			end
+		end
+	end
+
+	if nl then
+		print_text ("\n")
+	end
+
+	return 0
+end
+
+
+
+local function mese ( ... )
+	local args = { ... }
+
+	if args[1] == "-h" then
+		print_text ("   mesecon -h\n"..
+						"Show help\n"..
+						"   mesecon able\n"..
+						"If mesecon is loaded.\n"..
+						"   mesecon get [side]\n"..
+						"If mesecon is on or off.\n"..
+						"   mesecon on|off [side]\n"..
+						"Set mesecon on or off.\n"..
+						" side   up front back left right\n"..
+						"        if omitted acts on all/any\n")
+		return 0
+	end
+
+	if args[1] == "able" then
+		print_text ("%s\n", ((mesecon.supported () and "yes") or "no"))
+		return 0
+	end
+
+	if args[1] == "get" then
+		print_text ("%s\n", ((mesecon.get (args[2]) and "on") or "off"))
+		return 0
+	end
+
+	if args[1] == "on" then
+		mesecon.set (true, args[2])
+		return 0
+	end
+
+	if args[1] == "off" then
+		mesecon.set (false, args[2])
+		return 0
+	end
+
+	print_error ("invalid action")
+	print_text ("\n")
+
+	return 1
+end
+
+
+
+local function digi ( ... )
+	local args = { ... }
+
+	if args[1] == "-h" then
+		print_text ("   digilines -h\n"..
+						"Show help\n"..
+						"   digilines able\n"..
+						"If digilines is loaded.\n"..
+						"   digilines send 'channel' 'msg'\n"..
+						"Send digilines message.\n"..
+						" channel  target channel\n"..
+						" msg      message to send\n"..
+						"   digilines listen [secs]\n"..
+						"Listen for a digilines message.\n"..
+						" secs     seconds to listen for\n"..
+						"          if zero or omitted endless\n"..
+						" * esc key cancels\n")
+		return 0
+	end
+
+	if args[1] == "able" then
+		print_text ("%s\n", ((digilines.supported () and "yes") or "no"))
+		return 0
+	end
+
+	if args[1] == "send" then
+		if not args[2] or args[2]:len () < 1 then
+			print_error ("invalid channel")
+			print_text ("\n")
+			return 2
+		end
+
+		digilines.send (args[2], args[3] or "")
+		return 0
+	end
+
+	if args[1] == "listen" then
+		local secs = tonumber (args[2] or -1)
+		local counter = 0
+
+		repeat
+			local event = os.peek_event ()
+
+			if event then
+				event = { os.get_event () }
+
+				if event[1] == "digilines" then
+					print_dir ("%s:\"%s\"\n",
+								  tostring (event[3] or ""),
+								  tostring (event[2] or ""))
+
+				elseif event[1] == "key" and event[2] == keys.KEY_ESC then
+					print_abort ("aborted")
+					print_text ("\n")
+					return 0
+				end
+
+			else
+				os.sleep (0.5)
+			end
+
+			counter = counter + 1
+		until secs > 0 and counter >= secs
+
+		print_text ("timed out\n")
+		return 0
+	end
+
+	print_error ("invalid action")
+	print_text ("\n")
+
+	return 1
+end
+
+
+
+local function wire ( ... )
+	local args = { ... }
+
+	if args[1] == "-h" then
+		print_text ("   wireless -h\n"..
+						"Show help\n"..
+						"   wireless send 'msg' [target]\n"..
+						"Send wireless message.\n"..
+						" msg      message to send\n"..
+						" target   id or name of target computer\n"..
+						"          if omitted msg is broadcast\n"..
+						"   wireless listen [secs]\n"..
+						"Listen for a wireless message.\n"..
+						" secs     seconds to listen for\n"..
+						"          if zero or omitted endless\n"..
+						" * esc key cancels\n")
+		return 0
+	end
+
+	if args[1] == "send" then
+		if not args[2] or args[2]:len () < 1 then
+			print_error ("no msg")
+			print_text ("\n")
+			return 2
+		end
+
+		local target = args[3]
+
+		if target ~= nil then
+			target = tonumber (target)
+
+			if target == nil then
+				local id = wireless.lookup_id (args[3])
+
+				if not id then
+					print_error ("invalid name %s", args[3] or "nil")
+					print_text ("\n")
+					return 2
+				end
+
+				target = id
+			end
+		end
+
+		if not wireless.send_message (args[2], target) then
+			print_error ("failed")
+			print_text ("\n")
+			return 11
+		end
+
+		return 0
+	end
+
+	if args[1] == "listen" then
+		local secs = tonumber (args[2] or -1)
+		local counter = 0
+
+		repeat
+			local event = os.peek_event ()
+
+			if event then
+				event = { os.get_event () }
+
+				if event[1] == "wireless" then
+					print_dir ("%s:\"%s\"\n",
+								  tostring (event[3] or ""),
+								  tostring (event[2] or ""))
+
+				elseif event[1] == "key" and event[2] == keys.KEY_ESC then
+					print_abort ("aborted")
+					print_text ("\n")
+					return 0
+				end
+
+			else
+				os.sleep (0.5)
+			end
+
+			counter = counter + 1
+		until secs > 0 and counter >= secs
+
+		print_text ("timed out\n")
+		return 0
+	end
+
+	print_error ("invalid action")
+	print_text ("\n")
+
+	return 1
+end
+
+
+
+local commands =
+{
+	cd = cd,
+	clear = clear,
+	cp = cp,
+	digilines = digi,
+	dl = dl,
+	dump = dump,
+	echo = echo,
+	help = function () end,
+	id = id,
+	label = label,
+	ls = ls,
+	mesecon = mese,
+	mkdir = mkdir,
+	mounts = mounts,
+	name = name,
+	reboot = reboot,
+	rename = rename,
+	rm = rm,
+	sh = function () end,
+	shutdown = shutdown,
+	time = time,
+	wireless = wire,
+}
+
+
+
+local function help ()
+	local cmds =
+	{
+		"cd",
+		"clear",
+		"cp",
+		"digilines",
+		"dl",
+		"dump",
+		"echo",
+		"help",
+		"id",
+		"label",
+		"ls",
+		"mesecon",
+		"mkdir",
+		"mounts",
+		"name",
+		"reboot",
+		"rename",
+		"rm",
+		"sh",
+		"shutdown",
+		"time",
+		"wireless",
+	}
+
+	local w = term.get_resolution ()
+	local pre = ""
+
+	for i = 1, #cmds do
+		local x = term.get_cursor ()
+
+		if (cmds[i]:len () + 1 + x) > w then
+			print_text ("\n")
+			pre = ""
+		end
+
+		print_text ("%s%s", pre, cmds[i])
+		pre = " "
+	end
+	print_text ("\n")
+
+	print_bold ("<command> -h") print_text (" to see help\n")
+	print_bold ("$<name> = <value>") print_text (" to set env var\n")
+	print_bold ("<path> [args]") print_text (" to run program\n")
+
+	return 0
+end
+
+commands.help = help
+
+
+
+local function parse_cmdline (cmdline)
+	local idx = 1
+	local params = { }
+	local delim = nil
+
+	for i = 1, #cmdline do
+		local c = string.sub (cmdline, i, i)
+
+		if c == "\"" or c == "'" then
+			if not delim then
+				if params[idx] then
+					idx = idx + 1
+				end
+
+				params[idx] = ""
+
+				delim = c
+
+			elseif delim == c then
+				idx = idx + 1
+				delim = nil
+
+			else
+				if not params[idx] then
+					params[idx] = ""
+				end
+
+				params[idx] = params[idx]..c
+			end
+
+		else
+			if delim then
+				if not params[idx] then
+					params[idx] = ""
+				end
+
+				params[idx] = params[idx]..c
+
+			elseif c == " " or c == "\t" then
+				if params[idx] then
+					idx = idx + 1
+				end
+
+			else
+				if not params[idx] then
+					params[idx] = ""
+				end
+
+				params[idx] = params[idx]..c
+
+			end
+		end
+	end
+
+	if #params < 1 then
+		return nil
+	end
+
+	return params
+end
+
+
+
+function shell.run_program (path, ... )
+	local fxn;
+	local fullpath, msg = path_filepath (path)
+
+	if not fullpath then
+		if fs.path_extension (path) == "" then
+			fullpath = path_filepath (path..".lua")
+		end
+	end
+
+	if not fullpath then
+		return 2, msg or "unknown program"
+	end
+
+	fxn, msg = loadfile (fullpath)
+
+	if not fxn then
+		return 8, msg
+	end
+
+	local results = { pcall (fxn, ... ) }
+
+	if not results[1] then
+		return 8, results[2]
+	end
+
+	return 0, unpack (results, 2)
+end
+
+
+
+local function run_prog (path, ... )
+	local results = { shell.run_program (path, ... ) }
+
+	if results[1] ~= 0 then
+		print_error ("%s", results[2])
+		print_text ("\n")
+		return results[1]
+	end
+
+	local pre = ""
+	if #results > 1 then
+		for i = 2, #results do
+			print_ok ("%s%s", pre, tostring (results[i] or "nil"))
+			pre = " "
+		end
+	end
+
+	print_text ("\n")
+
+	return 0
+end
+
+
+
+local function sh ( ... )
+	local args = { ... }
+	local path = nil
+	local silent = false
+	local help = false
+
+	for i = 1, #args do
+		if args[i] == "-s" then
+			silent = true
+		elseif args[i] == "-h" then
+			help = true
+		elseif args[i]:sub (1, 1) == "-" then
+			print_error ("invalid option")
+			print_text ("\n")
+			return 1
+		else
+			if path then
+				print_error ("invalid arg")
+				print_text ("\n")
+				return 2
+			end
+
+			path = args[i]
+		end
+	end
+
+	if not path or help then
+		print_text ("   sh [-h -s] path\n"..
+						"Runs a batch cmd file.\n"..
+						" -h    show help\n"..
+						" -s    don't show cmds\n"..
+						" path  path of file\n")
+		return 0
+	end
+
+	local fullpath, msg = path_filepath (path)
+
+	if not fullpath then
+		print_error ("%s", msg)
+		print_text ("\n")
+		return 2
+	end
+
+	for line in io.lines (fullpath) do
+		local cline = string_trim (line)
+
+		if cline:len () > 0 then
+			local cmdcall = parse_cmdline (cline)
+
+			if cmdcall and #cmdcall > 0 then
+				local cmd = commands[cmdcall[1]]
+
+				if not silent then
+					print_prompt ()
+					print_text ("%s\n", cline)
+				end
+
+				if cmd then
+					cmd (unpack (cmdcall, 2))
+
+				elseif cmdcall[1]:sub (1, 1) == "$" then
+					setenv (unpack (cmdcall))
+
+				else
+					run_prog (unpack (cmdcall))
+				end
+			end
+		end
+	end
+
+	return 0
+end
+
+
+commands.sh = sh
+
+
+
+function shell.system (cmdln)
+	local cline = string_trim (cmdln)
+
+	if cline:len () > 0 then
+		local cmdcall = parse_cmdline (cline)
+
+		if cmdcall and #cmdcall > 0 then
+			local cmd = commands[cmdcall[1]]
+
+			if cmd then
+				cmd (unpack (cmdcall, 2))
+
+			elseif cmdcall[1]:sub (1, 1) == "$" then
+				setenv (unpack (cmdcall))
+
+			else
+				run_prog (unpack (cmdcall))
+			end
+		end
+	end
+end
+
+
+
+local function run_startup ()
+	local path = nil
+	local drives = fs.ls ()
+
+	if drives then
+		for i = 2, #drives do
+			if not path and fs.file_type (drives[i].."/startup") == "file" then
+				path = drives[i].."/startup"
+			end
+		end
+
+		if not path and fs.file_type ("/startup") == "file" then
+			path = "/startup"
+		end
+	end
+
+	if path then
+		sh ("-s", path)
+	end
+end
+
+
+
+local lastcmd = ""
+local cmdline = ""
+local curline = ""
+
+print_text ("\n")
+run_startup ()
+print_prompt ()
+
+
+while true do
+	local event = { os.get_event () }
+
+	if event[1] == "key" then
+		if event[2] == keys.KEY_UP then
+			curline = curline..lastcmd
+			print_text ("%s", lastcmd)
+		end
+
+	elseif event[1] == "char" then
+		if event[3] == keys.KEY_ENTER then
+			if curline:sub (-1) == "\\" then
+				cmdline = cmdline..curline:sub (1, -2).."\n"
+				curline = ""
+				print_text ("\n")
+				print_prompt ()
+
+			else
+				local exec = string.split ((cmdline..curline), "\n")
+
+				if exec and #exec > 0 then
+					lastcmd = cmdline..curline
+
+					for i = 1, #exec do
+						local cmdcall = parse_cmdline (exec[i])
+
+						print_text ("\n")
+
+						if cmdcall and #cmdcall > 0 then
+							local cmd = commands[cmdcall[1]]
+
+							if cmd then
+								cmd (unpack (cmdcall, 2))
+
+							elseif cmdcall[1]:sub (1, 1) == "$" then
+								setenv (unpack (cmdcall))
+
+							else
+								run_prog (unpack (cmdcall))
+							end
+						end
+
+						cmdline = ""
+						curline = ""
+						print_prompt ()
+					end
+				end
+			end
+
+		elseif event[3] == keys.KEY_ESC then
+			if cmdline:len () > 0 or curline:len () > 0 then
+				if cmdline:len () < 1 or curline:len () < 1 then
+					cmdline = ""
+					curline = ""
+					print_abort (" ABORT")
+					print_text ("\n")
+					print_prompt ()
+				else
+					curline = ""
+					print_abort (" ESC")
+					print_text ("\n")
+					print_prompt (true)
+				end
+			end
+
+		elseif event[3] == keys.KEY_BACKSPACE then
+			if curline:len () > 0 then
+				curline = curline:sub (1, -2)
+				local x, y = term.get_cursor ()
+
+				if x == 0 then
+					if y > 0 then
+						local w, h = term.get_resolution ()
+						x = w - 1
+						y = y - 1
+
+						term.set_cursor (x - 1, y)
+						print_text (" ")
+						term.set_cursor (x - 1, y)
+					end
+
+				else
+					term.set_cursor (x - 1, y)
+					print_text (" ")
+					term.set_cursor (x - 1, y)
+
+				end
+			end
+
+		elseif event[3] >= keys.KEY_SPACE and event[3] <= keys.KEY_TILDE then
+			curline = curline..event[2]
+			print_text ("%s", event[2])
+
+		end
+
+	elseif event[1] == "clipboard" then
+		curline = curline..event[2]
+		print_text ("%s", event[2])
+
+	end
+end
