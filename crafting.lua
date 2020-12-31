@@ -74,6 +74,15 @@ minetest.register_craft({
 
 
 minetest.register_craft({
+	output = "lwcomputers:floppy_los 1",
+	recipe = {
+		{ "group:floppy", "default:book" },
+		{ "default:book", "" }
+	}
+})
+
+
+minetest.register_craft({
    output = 'lwcomputers:clipboard',
    recipe = {
       { '', 'group:wood', ''},

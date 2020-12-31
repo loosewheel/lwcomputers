@@ -46,7 +46,7 @@ epoch_offset = os.time (
 	min = 0,
 	sec = 0,
 	isdst = false
-}) - 7200
+})
 
 
 
@@ -344,7 +344,7 @@ local function new_computer_env (computer)
 --	ENV.os.time = _G.os.time -- modify
 --	ENV.os.setlocale = _G.os.setlocale -- omitted
 --	ENV.os.tmpname = _G.os.tmpname -- omitted
-	ENV.environs = { }
+	ENV.os.environs = { }
 	ENV.fs = { }
 	ENV.keys = { }
 	ENV.term = { }
@@ -407,22 +407,70 @@ local function new_computer_env (computer)
 			return nil
 		end
 
-		return ENV.environs[tostring (varname)]
+		return ENV.os.environs[tostring (varname)]
 	end
 
 
 	ENV.os.setenv = function (varname, value)
 		if not value then
-			ENV.environs[varname] = nil
+			ENV.os.environs[varname] = nil
 		else
-			ENV.environs[varname] = tostring (value or "")
+			ENV.os.environs[varname] = tostring (value or "")
 		end
+	end
+
+
+	ENV.os.envstr = function (str)
+		for k, v in pairs (ENV.os.environs) do
+			str = string.gsub (str, "$"..k, tostring (v))
+		end
+
+		return str
 	end
 
 
 	ENV.os.time = function (tm)
 		if type (tm) == "table" then
-			return os.time (tm)
+			if tm.year and tm.month and tm.day then
+				local year = math.floor (tm.year)
+				local month = math.floor (tm.month)
+				local day = math.floor (tm.day)
+				local hour = math.floor (tm.hour or 0)
+				local mins = math.floor (tm.min or 0)
+				local sec = math.floor (tm.sec or 0)
+
+				if month >= 1 and month < 13 and
+					day >= 1 and hour >= 0 and hour < 24 and
+					mins >= 0 and mins < 60 and
+					sec >= 0 and sec < 60 then
+
+					local month_days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+
+					if (((year % 4) == 0) and (((year % 100) ~= 0) or ((year % 400) == 0))) then
+						month_days[2] = 29
+					end
+
+					if day <= month_days[month] then
+						local days = (365 * year) +
+										  math.floor ((year - 1) / 4) -
+										  math.floor ((year - 1) / 100) +
+										  math.floor ((year - 1) / 400) +
+										  (day - 1) -
+										  719527 -- 1970 base
+
+						for m = 1, month - 1 do
+							days = days + month_days[m]
+						end
+
+						return (days * 86400) +
+								 (hour * 3600) +
+								 (mins * 60) +
+								 sec
+					end
+				end
+			end
+
+			return nil
 		end
 
 		return lwcomputers.get_worldtime ()
@@ -435,13 +483,7 @@ local function new_computer_env (computer)
 		end
 
 		if not fmt then
-			fmt = "!%c"
-		else
-			fmt = tostring (fmt or "!%c")
-
-			if fmt:sub (1, 1) ~= "!" then
-				fmt = "!"..fmt
-			end
+			fmt = "%c"
 		end
 
 		return os.date (fmt, tm)
@@ -631,6 +673,11 @@ local function new_computer_env (computer)
 
 	ENV.fs.path_title = function (path)
 		return computer.filesys:path_title (path)
+	end
+
+
+	ENV.fs.abs_path = function (basepath, relpath)
+		return computer.filesys:abs_path (basepath, relpath)
 	end
 
 
@@ -2467,6 +2514,12 @@ local function on_metadata_inventory_put (pos, listname, index, stack, player)
 
 								if not lwcomputers.filesys:prep_lua_disk (id) then
 									minetest.log ("error", "lwcomputers - could not prep lua disk")
+								end
+							elseif itemname == "lwcomputers:floppy_los" then
+								imeta:set_string ("label", "los_disk")
+
+								if not lwcomputers.filesys:prep_los_disk (id) then
+									minetest.log ("error", "lwcomputers - could not prep los disk")
 								end
 							end
 

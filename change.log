@@ -1,0 +1,10 @@
+
+v 0.1.1
+*	fixed not returning correct time.
+*	fixed os.time.
+*	fixed fs.path_folder.
+*	moved environs to os.environs.
+*	added os.envstr.
+*	added fs.abs_path.
+*	fs.path_extension returns "" if no extension. nil only if malformed.
+*	added LOS cli os disk.

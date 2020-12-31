@@ -115,6 +115,16 @@ minetest.register_craftitem ("lwcomputers:floppy_lua", {
 
 
 
+minetest.register_craftitem ("lwcomputers:floppy_los", {
+   description = S("Los disk"),
+   short_description = S("Los disk"),
+   inventory_image = "floppy_los.png",
+   stack_max = 1,
+   on_use = on_use
+})
+
+
+
 
 
 

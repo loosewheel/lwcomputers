@@ -17,7 +17,7 @@ CC-BY-SA
 
 Version
 =======
-0.1.0
+0.1.1
 
 
 Minetest Version
@@ -140,22 +140,6 @@ If a computer is moved it retains its id and hard drive data. If a computer
 or floppy is disposed of the disk's folder in the world save remains.
 
 
-Lua disk
---------
-The lua disk boots into a lua prompt.
-
-Enter: If the line ends with "\" (must be last character) continues on the
-	next line, otherwise runs the entered code.
-Backspace: Remove the last character entered.
-Escape: Aborts the current line and displays "ABORT" if multi-line input
-	or "ESC" for single line. If the code is multi-lined and pressed on an
-	empty line the whole code is aborted and displays "ABORT".
-Up arrow: The last code run is added to the current line.
-Ctrl+Alt+V: If a clipboard is in a slot its contents are copied to the
-	code line. This content can be lengthy. New lines in the content are
-	input as is (new line, not as an enter press).
-
-
 The mod supports the following settings:
 
 Restart delay on startup (float)
@@ -224,4 +208,22 @@ events. If the terminal is too sluggish, try reducing the character resolution
 and/or disabling click events.
 
 
---
+Lua disk
+--------
+The lua disk boots into a lua prompt.
+
+Enter: If the line ends with "\" (must be last character) continues on the
+	next line, otherwise runs the entered code.
+Backspace: Remove the last character entered.
+Escape: Aborts the current line and displays "ABORT" if multi-line input,
+	or "ESC" for single line. If the code is multi-lined and pressed on an
+	empty line the whole code is aborted and displays "ABORT".
+Up arrow: The last code run is added to the current line.
+Ctrl+Alt+V: If a clipboard is in a slot its contents are copied to the
+	code line. This content can be lengthy. New lines in the content are
+	input as is (new line, not as an enter press).
+
+
+Los disk
+--------
+The los disk boots to a command prompt. See docs/los_ref.txt

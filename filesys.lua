@@ -66,7 +66,33 @@ function filesys:prep_lua_disk (id)
 		return false
 	end
 
-	if not copy_file (lwcomputers.modpath.."/res/lua_disk.lua", root.."/boot") then
+	if not copy_file (lwcomputers.modpath.."/res/lua_boot", root.."/boot") then
+		return false
+	end
+
+	return true
+end
+
+
+
+-- static
+function filesys:prep_los_disk (id)
+	-- create floppy dir
+	if not lwcomputers.filesys:create_floppy (id) then
+		return false
+	end
+
+	local root = filesys:get_floppy_base (id)
+
+	if not root then
+		return false
+	end
+
+	if not copy_file (lwcomputers.modpath.."/res/los_boot", root.."/boot") or
+		not copy_file (lwcomputers.modpath.."/res/los_startup", root.."/startup") or
+		not copy_file (lwcomputers.modpath.."/res/los_lua", root.."/lua") or
+		not copy_file (lwcomputers.modpath.."/res/los_edit", root.."/edit") or
+		not copy_file (lwcomputers.modpath.."/res/los_edit.man", root.."/edit.man") then
 		return false
 	end
 
@@ -99,8 +125,12 @@ function filesys:path_folder (path)
 
 	local tokens = path:split("/", true)
 
-	if #tokens > 1 then
+	if #tokens > 2 then
 		return table.concat (tokens, "/", 1, #tokens - 1)
+	end
+
+	if #tokens == 2 then
+		return "/"..tokens[1]
 	end
 
 	if #tokens == 1 then
@@ -140,6 +170,8 @@ function filesys:path_extension (path)
 			name = name:sub (1, pos - 1)
 
 			return name:reverse ()
+		else
+			return ""
 		end
 	end
 
@@ -167,6 +199,46 @@ function filesys:path_title (path)
 	return nil
 end
 
+
+
+function filesys:abs_path (basepath, relpath)
+	relpath = tostring (relpath or "")
+	basepath = tostring (basepath or "")
+
+	if relpath:len () == 0 then
+		if basepath:len () == 0 then
+			return nil, "invalid path"
+		end
+
+		return basepath
+	end
+
+	if relpath:sub (1, 1) == "/" then
+		return relpath
+	end
+
+	local rel = string.split (relpath, "/", false)
+	local base = string.split (basepath, "/", false)
+	local post = ""
+
+	for i = 1, #rel do
+		if rel[i] == ".." then
+			if #base == 0 then
+				return nil, "invalid path"
+			end
+
+			table.remove (base, #base)
+		else
+			base[#base + 1] = rel[i]
+		end
+	end
+
+	if #relpath > 0 and relpath:sub (-1) == "/" then
+		post = "/"
+	end
+
+	return "/"..table.concat (base, "/")..post
+end
 
 
 
@@ -617,7 +689,7 @@ function filesys:get_drive_id (drivepath)
 	local drives = self:get_drive_list ()
 
 	if not drives then
-		return nil, "no drives"
+		return nil, "no drive"
 	end
 
 	if type (drivepath) == "string" then
@@ -641,7 +713,7 @@ function filesys:get_drive_id (drivepath)
 
 	elseif type (drivepath) == "number" then
 		if drivepath < 0 or drivepath >= #drives then
-			return nil, "invalid drives"
+			return nil, "invalid drive"
 		end
 
 		return drives[drivepath + 1].id
