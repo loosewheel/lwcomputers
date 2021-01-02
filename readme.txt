@@ -48,7 +48,7 @@ Copy the 'lwcomputers' folder to your mods folder.
 
 Bug Report
 ==========
-Don't know
+https://forum.minetest.net/viewtopic.php?f=9&t=25916&sid=7af0bb8a2ac3b9ade7a3f87b7a2463fa
 
 
 Description
