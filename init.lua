@@ -1,4 +1,4 @@
-local version = "0.1.1"
+local version = "0.1.2"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
 
@@ -31,7 +31,6 @@ end
 
 lwcomputers.modpath = minetest.get_modpath("lwcomputers")
 lwcomputers.worldpath = minetest.get_worldpath()
-lwcomputers.mod_storage = mod_storage
 lwcomputers.computer_data = { }
 lwcomputers.computer_list = minetest.deserialize (mod_storage:get_string ("computer_list") or "")
 
@@ -47,6 +46,13 @@ minetest.mkdir (lwcomputers.worldpath.."/lwcomputers")
 
 function lwcomputers.version ()
 	return version
+end
+
+
+function lwcomputers.store_computer_list ()
+	mod_storage:set_string ("computer_list",
+				minetest.serialize (lwcomputers.computer_list))
+
 end
 
 
@@ -300,6 +306,11 @@ dofile(lwcomputers.modpath.."/filesys.lua")
 dofile(lwcomputers.modpath.."/clipboard.lua")
 dofile(lwcomputers.modpath.."/floppy.lua")
 dofile(lwcomputers.modpath.."/computer.lua")
+dofile(lwcomputers.modpath.."/digiswitch.lua")
+dofile(lwcomputers.modpath.."/page.lua")
+dofile(lwcomputers.modpath.."/book.lua")
+dofile(lwcomputers.modpath.."/ink_cartridge.lua")
+dofile(lwcomputers.modpath.."/printer.lua")
 dofile(lwcomputers.modpath.."/crafting.lua")
 
 

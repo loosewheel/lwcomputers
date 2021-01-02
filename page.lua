@@ -1,0 +1,95 @@
+
+
+local S = lwcomputers.S
+
+
+
+local width = 40
+local height = 30
+local hscale = 0.30
+local vscale = hscale * 1.5
+
+
+
+function lwcomputers.page_size ()
+	return width, height
+end
+
+
+
+function lwcomputers.page_scale ()
+	return hscale, vscale
+end
+
+
+
+local function get_page_formspec (raw)
+	local page = { }
+
+	if raw:len () > 0 then
+		page = minetest.deserialize (raw)
+	else
+		for y = 0, height - 1 do
+			for x = 0, width - 1 do
+				page[(y * width) + x + 1] =
+				{
+					fg = lwcomputers.colors.black,
+					bg = lwcomputers.colors.white,
+					char = 0
+				}
+			end
+		end
+	end
+
+	local spec = string.format ("formspec_version[3]\n"..
+										 "size[%f,%f;true]\n"..
+										 "no_prepend[]\n"..
+										 "bgcolor[#DCDCDC]\n"..
+										 "container[0.1,0.1]\n",
+										 (width * hscale) + 0.2, (height * vscale) + 0.2)
+
+	for y = 0, height - 1 do
+		for x = 0, width - 1 do
+			local c = page[(y * width) + x + 1]
+
+			spec = spec..
+			string.format ("animated_image[%f,%f;%f,%f;d;%02d%02d.png;256;0;%d]\n",
+								(x * hscale), (y * vscale),
+								(hscale + 0.03), (vscale + 0.03),
+								c.fg, c.bg, ((c.char % 256) + 1))
+		end
+	end
+
+	spec = spec..
+	"container_end[]\n"
+
+	return spec
+end
+
+
+
+minetest.register_craftitem ("lwcomputers:page", {
+   description = S("LWComputers Page"),
+   short_description = S("LWComputers Page"),
+   inventory_image = "page.png",
+   stack_max = 1,
+   groups = { not_in_creative_inventory = 1 },
+
+   on_use = function (itemstack, user, pointed_thing)
+		if itemstack then
+			local meta = itemstack:get_meta()
+			local contents = meta:get_string ("contents")
+
+
+			minetest.show_formspec(user:get_player_name(),
+										  "lwcomputers:page",
+										  get_page_formspec (meta:get_string ("contents")))
+		end
+
+      return nil
+   end,
+})
+
+
+
+--

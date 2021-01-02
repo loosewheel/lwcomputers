@@ -26,7 +26,19 @@ lwcomputers_max_string_rep_size (Maximum string.rep length) int 64000
 lwcomputers_max_clipboard_length (Maximum clipboard content length) int 64000
 
 # Game epoch year
-lwcomputers_epoch_year (The year the in game calendar begins >= 1970) int 2000
+lwcomputers_epoch_year (The year the in game calendar begins) int 2000
 
 # HTTP white list, space separated list eg. *here.com* https://www.there.com*
 lwcomputers_http_white_list (HTTP white list, space separated list) string
+
+# Maximum hard disk size in bytes
+lwcomputers_max_hard_disk_size (Maximum hard disk size) int 1000000
+
+# Maximum floppy disk size in bytes
+lwcomputers_max_floppy_disk_size (Maximum floppy disk size) int 125000
+
+# Maximum hard disk files and directories
+lwcomputers_max_hard_disk_items (Maximum hard disk items) int 8000
+
+# Maximum floppy disk size files and directories
+lwcomputers_max_floppy_disk_items (Maximum floppy disk items) int 1000

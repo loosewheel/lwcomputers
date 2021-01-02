@@ -83,13 +83,49 @@ minetest.register_craft({
 
 
 minetest.register_craft({
-   output = 'lwcomputers:clipboard',
+   output = "lwcomputers:clipboard 1",
    recipe = {
-      { '', 'group:wood', ''},
-      { '', 'default:paper', ''},
-      { '', '', '' },
+      { "group:wood" },
+      { "default:paper" },
    }
 })
+
+
+minetest.register_craft({
+   output = "lwcomputers:ink_cartridge 1",
+   recipe = {
+      { "dye:black", "dye:red" },
+      { "dye:yellow", "dye:blue" },
+   }
+})
+
+
+if lwcomputers.digilines_supported and lwcomputers.mesecon_supported then
+
+minetest.register_craft({
+   output = "lwcomputers:digiswitch 2",
+   recipe = {
+      { "default:stone", "default:stone" },
+      { "default:copper_ingot", "default:mese_crystal_fragment" },
+      { "default:stick", "default:stick" },
+   }
+})
+
+end
+
+
+if lwcomputers.digilines_supported then
+
+minetest.register_craft({
+   output = "lwcomputers:printer 1",
+   recipe = {
+      { "default:stone", "default:steel_ingot", "default:stick" },
+      { "default:tin_ingot", "default:clay_lump", "default:tin_ingot" },
+      { "default:stick", "default:copper_ingot", "default:coal_lump" },
+   }
+})
+
+end
 
 
 

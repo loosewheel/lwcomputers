@@ -11,13 +11,17 @@ Font images:
 Are derived from Liberation Mono licensed under the Liberation Fonts license,
 see https://fedoraproject.org/wiki/Licensing/LiberationFontLicense
 
+Page and book images:
+Derived from images of default game, licensed CC-BY-SA 3.0,
+see http://creativecommons.org/licenses/by-sa/3.0/
+
 Art licence:
-CC-BY-SA
+CC-BY-SA 3.0
 
 
 Version
 =======
-0.1.1
+0.1.2
 
 
 Minetest Version
@@ -49,7 +53,8 @@ Don't know
 
 Description
 ===========
-LWComputers provides programmable computers and floppy disks.
+LWComputers provides programmable computers, floppy disks, printers and
+a digilines controlled mesecon power switch.
 
 Each computer has an internal hard drive, and 3 slots for floppy disks
 (or a clipboard). The terminal display has a resolution of 50 characters
@@ -188,7 +193,6 @@ Maximum clipboard content length (int)
 
 The year the in-game calendar begins (int)
 	Computer time values are relative to the beginning of the given year.
-	The minimum year is 1970.
 	Default: 2000
 	* Careful being too ambitious with this year. It may exceed the system
 	counter and truncate.
@@ -198,6 +202,22 @@ HTTP white list, space separated list (string)
 	calls. The list entries can contain * wild cards.
 	eg, *here.com* https://www.there.com*
 	Default is an empty list (no permissible addresses)
+
+Maximum hard disk size in bytes (int)
+	Maximum total file storage capacity of a computer's hard disk in bytes.
+	Default: 1000000
+
+Maximum floppy disk size in bytes (int)
+	Maximum total file storage capacity of a floppy disk in bytes.
+	Default: 125000
+
+Maximum hard disk items (int)
+	Maximum hard disk files and directories allowed.
+	Default: 8000
+
+Maximum floppy disk items (int)
+	Maximum floppy disk size files and directories allowed.
+	Default: 1000
 
 
 ** Notes
@@ -227,3 +247,109 @@ Ctrl+Alt+V: If a clipboard is in a slot its contents are copied to the
 Los disk
 --------
 The los disk boots to a command prompt. See docs/los_ref.txt
+
+
+DigiSwitch
+==========
+* This block is only available if both digilines and mesecon are loaded.
+
+Digiswitches act as both a digilines message target and a digilines cable,
+as well as a mesecon power source. They can be placed beside each other
+to form a bank, horizontally or vertically.
+
+Right click the digiswitch to give it a channel.
+
+Mesecon power can be delivered at 5 sides of the digiswitch, the adjacent
+4 in the (x, z) and above. Around the connector on these sides is a colored
+border indicating the side. The sides are named "red", "green", "blue",
+"yellow" and "white".
+
+The digilines message sent to the digiswitch dictates the action, "on" or
+"off". The action can be followed with the side to act upon, separated by
+a space. eg. "on white". If a side is stated only that side is acted upon.
+If the side is omitted (or is invalid) all 5 sides are acted upon.
+
+
+Printer
+=======
+* This block is only available if digilines is loaded.
+
+Printers can print out pages and assemble them into books. They require
+an ink cartridge and paper to print. An ink cartridge prints 200 pages.
+If the book button is pressed, any pages in the out tray are assembled into
+a book in order of the out tray slots. The title of the book is the title
+of the first page.
+
+Printers connect to digilines cables. After setting the channel, send
+messages to operate.
+
+Query messages:
+
+Query messages query the state of the addressed printer. In response they
+send a digilines message, with their own channel, and the queried
+information. All responses are as strings.
+
+"ink"
+	Responds with the number of pages the ink cartridge can still print.
+
+"paper"
+	Responds with the number of sheets of paper in the in tray.
+
+"pages"
+	Responds with the number of free out tray slots.
+
+"size"
+	Responds with the page character width and height, as "w,h".
+
+"status"
+	Responds with:
+	"ready" - the printer is ready to print.
+	"printing" - the printer is currently printing.
+	"no ink" - printer is out of ink.
+	"no paper" - printer is out of paper.
+	"tray full" - printer output tray is full.
+
+Printing commands:
+
+Printing commands are sent to perform the printing operation.
+
+"start:<title>"
+	Takes a page from the in tray to start printing that page. The title
+	is set as the page's title. If none is given "untitled" is used. If a
+	page is already in the printer (start has already been called) this
+	message has no effect. Eg.
+
+	"start:My Page Title"
+
+"color:<forecolor>,<backcolor>"
+	Sets the current colors to print in. forecolor and backcolor must be
+	numbers, and are consistent with the 'term.colors' table. Eg.
+
+	"color:"..tostring (term.colors.black)..","..tostring (term.colors.white)
+
+position:x,y
+	Sets the current character to print. Coordinates are zero based from
+	left, top corner. Eg.
+
+	"position:"..tostring (x)..","..tostring (y)
+
+write:str
+	Prints a string to the page, at the current position, with the current
+	colors. Lines do not wrap, any excess is ignored. The x position is
+	updated with the write. Eg.
+
+	"write:Have a nice day."
+
+end
+	Ends printing the page and delivers it to the out tray, if it can fit.
+
+To print a page:
+
+"start:<title>"
+...
+printing operations
+...
+"end"
+
+Pages print up to their edges, there is no border. To view a page or book
+'use' it (left click).

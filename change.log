@@ -1,4 +1,8 @@
 
+v 0.1.0
+*	initial alpha
+
+
 v 0.1.1
 *	fixed not returning correct time.
 *	fixed os.time.
@@ -8,3 +12,19 @@ v 0.1.1
 *	added fs.abs_path.
 *	fs.path_extension returns "" if no extension. nil only if malformed.
 *	added LOS cli os disk.
+
+
+v0.1.2
+*	added digiswitch.
+*	improved fs.file_size returns total byte size of directories.
+*	added fs.disk_free
+*	added fs.disk_size
+*	implemented maximum disk byte sizes, settable through mod settings.
+*	implemented maximum disk items, settable through mod settings.
+*	added printer, pages and books.
+*	added selective event to os.peek_event and os.get_event
+*	bug fixes to filesys class.
+*	fixed bug called modules not yielding if run too long.
+*	added print program to LOS disk.
+*	improvements to LOS ls and dump.
+*	more work on time/date.

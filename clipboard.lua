@@ -1,4 +1,5 @@
 
+
 local S = lwcomputers.S
 
 
@@ -8,8 +9,8 @@ local max_clipboard_length = tonumber(minetest.settings:get("lwcomputers_max_cli
 
 
 minetest.register_craftitem("lwcomputers:clipboard", {
-   description = S("LWComputers Clipboard"),
-   short_description = S("LWComputers Clipboard"),
+   description = S("Computer Clipboard"),
+   short_description = S("Computer Clipboard"),
    inventory_image = "clipboard_item.png",
    stack_max = 1,
 

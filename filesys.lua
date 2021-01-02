@@ -1,6 +1,13 @@
 
 
-local filesys = { }
+local S = lwcomputers.S
+
+
+-- settings
+local hdd_max_size = tonumber(minetest.settings:get("lwcomputers_max_hard_disk_size") or 1000000)
+local floppy_max_size = tonumber(minetest.settings:get("lwcomputers_max_floppy_disk_size") or 125000)
+local hdd_max_items = tonumber(minetest.settings:get("lwcomputers_max_hard_disk_items") or 8000)
+local floppy_max_items = tonumber(minetest.settings:get("lwcomputers_max_floppy_disk_items") or 1000)
 
 
 
@@ -29,6 +36,154 @@ local function copy_file (srcpath, destpath)
 
 	return success
 end
+
+
+
+-- return (total byte size), (total count of files and dirs)
+local function get_disk_used (dirpath)
+	local size = 0
+	local count = 0
+	local files = minetest.get_dir_list (dirpath, false)
+	local dirs = minetest.get_dir_list (dirpath, true)
+
+	if files then
+		count = count + #files
+
+		for f = 1, #files do
+			local file = io.open (dirpath.."/"..files[f], "r")
+
+			if file then
+				size = size + (file:seek ("end") or 0)
+				file:close ()
+			end
+		end
+	end
+
+	if dirs then
+		count = count + #dirs
+
+		for d = 1, #dirs do
+			local s, c = get_disk_used (dirpath.."/"..dirs[d])
+			size = size + s
+			count = count + c
+		end
+	end
+
+	return size, count
+end
+
+
+
+local function tokenize_path (path)
+	path = tostring (path or "")
+
+	local ts = { }
+
+	if path:sub (1, 1) == "/" then
+		ts[1] = ""
+	end
+
+	for t in string.gmatch (path, "[^/]+") do
+		ts[#ts + 1] = t
+	end
+
+	if path:len () > 1 and path:sub (-1) == "/" then
+		ts[#ts + 1] = ""
+	end
+
+	return ts
+end
+
+
+
+----------------------- safefile -----------------------
+
+
+local safefile = { }
+
+
+
+function safefile:new (file, max_size, root)
+	local obj = { }
+
+   setmetatable(obj, self)
+   self.__index = self
+
+	obj.safefile_obj = true
+	obj.file = file
+	obj.max_size = max_size
+	obj.root = root
+
+	return obj
+end
+
+
+
+function safefile:close ( ... )
+	return self.file:close ( ... )
+end
+
+
+
+function safefile:flush ( ... )
+	return self.file:flush ( ... )
+end
+
+
+
+function safefile:lines ( ... )
+	return self.file:lines ( ... )
+end
+
+
+
+function safefile:read ( ... )
+	return self.file:read ( ... )
+end
+
+
+
+function safefile:seek ( ... )
+	return self.file:seek ( ... )
+end
+
+
+
+function safefile:setvbuf ( ... )
+	return self.file:setvbuf ( ... )
+end
+
+
+
+function safefile:write ( ... )
+	local args = { ... }
+	local used = get_disk_used (self.root)
+	local size = 0
+
+	for i = 1, #args do
+		if type (args[i]) == "string" then
+			size = size + args[i]:len ()
+		elseif type (args[i]) == "number" then
+			size = size + (tostring (args[i])):len ()
+		end
+	end
+
+	if (size + used) > self.max_size then
+		error ("disk full", 2)
+	end
+
+	local result = { self.file:write ( ... ) }
+	self:flush ()
+
+	return unpack (result)
+end
+
+
+
+----------------- filesys -------------------------------
+
+
+local filesys = { }
 
 
 
@@ -92,7 +247,8 @@ function filesys:prep_los_disk (id)
 		not copy_file (lwcomputers.modpath.."/res/los_startup", root.."/startup") or
 		not copy_file (lwcomputers.modpath.."/res/los_lua", root.."/lua") or
 		not copy_file (lwcomputers.modpath.."/res/los_edit", root.."/edit") or
-		not copy_file (lwcomputers.modpath.."/res/los_edit.man", root.."/edit.man") then
+		not copy_file (lwcomputers.modpath.."/res/los_edit.man", root.."/edit.man") or
+		not copy_file (lwcomputers.modpath.."/res/los_print", root.."/print") then
 		return false
 	end
 
@@ -123,18 +279,26 @@ end
 function filesys:path_folder (path)
 	path = tostring (path or "")
 
-	local tokens = path:split("/", true)
+	local tokens = tokenize_path (path)
 
 	if #tokens > 2 then
 		return table.concat (tokens, "/", 1, #tokens - 1)
 	end
 
 	if #tokens == 2 then
-		return "/"..tokens[1]
+		if tokens[1] == "" then
+			return "/"
+		end
+
+		return tokens[1]
 	end
 
 	if #tokens == 1 then
-		return "/"
+		if tokens[1] == "" then
+			return "/"
+		end
+
+		return ""
 	end
 
 	return nil
@@ -144,15 +308,14 @@ end
 
 -- static
 function filesys:path_name (path)
-	path = tostring (path or "")
+	local rpath = tostring (path or ""):reverse ()
+	local pos = rpath:find ("/")
 
-	local tokens = path:split("/", true)
-
-	if #tokens > 0 then
-		return tokens[#tokens]
+	if pos then
+		return rpath:sub (1, pos - 1):reverse ()
 	end
 
-	return nil
+	return path
 end
 
 
@@ -167,9 +330,7 @@ function filesys:path_extension (path)
 		local pos = name:find (".", 1, true)
 
 		if pos then
-			name = name:sub (1, pos - 1)
-
-			return name:reverse ()
+			return name:sub (1, pos - 1):reverse ()
 		else
 			return ""
 		end
@@ -190,10 +351,10 @@ function filesys:path_title (path)
 		local pos = name:find (".", 1, true)
 
 		if pos then
-			name = name:sub (pos + 1)
-
-			return name:reverse ()
+			return name:sub (pos + 1):reverse ()
 		end
+
+		return name:reverse ()
 	end
 
 	return nil
@@ -201,6 +362,7 @@ end
 
 
 
+-- static
 function filesys:abs_path (basepath, relpath)
 	relpath = tostring (relpath or "")
 	basepath = tostring (basepath or "")
@@ -217,13 +379,12 @@ function filesys:abs_path (basepath, relpath)
 		return relpath
 	end
 
-	local rel = string.split (relpath, "/", false)
-	local base = string.split (basepath, "/", false)
-	local post = ""
+	local rel = tokenize_path (relpath)
+	local base = tokenize_path (basepath)
 
 	for i = 1, #rel do
 		if rel[i] == ".." then
-			if #base == 0 then
+			if (#base == 0) or (base[1] == "" and #base == 1) then
 				return nil, "invalid path"
 			end
 
@@ -233,11 +394,11 @@ function filesys:abs_path (basepath, relpath)
 		end
 	end
 
-	if #relpath > 0 and relpath:sub (-1) == "/" then
-		post = "/"
+	if #base == 1 and base[1] == "" then
+		return "/"
 	end
 
-	return "/"..table.concat (base, "/")..post
+	return table.concat (base, "/")
 end
 
 
@@ -318,14 +479,18 @@ end
 
 
 
+-- return fullpath, rootpath, form
 function filesys:get_full_path (path)
 	path = tostring (path or "")
+	local root;
 
 	if path:sub (1, 1) ~= "/" then
 		return nil, "invalid path"
 	end
 
-	local tokens = path:split("/")
+	local tokens = tokenize_path (path)
+	table.remove (tokens, 1)
+
 	local drives = self:get_drive_list ()
 
 	if not drives then
@@ -335,38 +500,55 @@ function filesys:get_full_path (path)
 	if #tokens > 0 then
 		for d = 2, #drives do
 			if drives[d].mount == tokens[1] then
-				local root = self:get_root_path (drives[d].id, drives[d].form)
+				root = self:get_root_path (drives[d].id, drives[d].form)
 
 				if not root then
 					return nil, "invalid path"
 				end
 
 				if #tokens > 1 then
-					return root.."/"..table.concat (tokens, "/", 2)
+					return (root.."/"..table.concat (tokens, "/", 2)), root, drives[d].form
 				end
 
-				return root
+				return root, root, drives[d].form
 			end
 		end
 	end
 
-	if path:len () > 1 then
-		return self:get_root_path (drives[1].id, drives[1].form)..path
+	root = self:get_root_path (drives[1].id, drives[1].form)
+
+	if not root then
+		return nil, "invalid path"
 	end
 
-	return self:get_root_path (drives[1].id, drives[1].form)
+	if path:len () > 1 then
+		return (root..path), root, drives[1].form
+	end
+
+	return root, root, drives[1].form
 end
 
 
 
 function filesys:mkdir (path)
-	local fpath = self:get_full_path (path)
+	local fpath, root, form = self:get_full_path (path)
 
 	if fpath then
+		local used, items = get_disk_used (root)
+		local max_items = hdd_max_items
+
+		if form == "floppy" then
+			max_items = floppy_max_items
+		end
+
+		if items >= max_items then
+			return false, "disk full"
+		end
+
 		return minetest.mkdir (fpath)
 	end
 
-	return false
+	return false, "mkdir error"
 end
 
 
@@ -397,10 +579,45 @@ end
 
 
 function filesys:open (path, mode)
-	local fpath = self:get_full_path (path)
+	local fpath, root, form = self:get_full_path (path)
 
 	if fpath then
-		return io.open (fpath, mode)
+		local max_size = hdd_max_size
+		local max_items = hdd_max_items
+
+		if form == "floppy" then
+			max_size = floppy_max_size
+			max_items = floppy_max_items
+		end
+
+		if mode == "w" or mode == "r+" then
+			local used, items = get_disk_used (root)
+
+			local exists = false
+			local tmp = io.open (fpath, "r")
+			if tmp then
+				tmp:close ()
+				exists = true
+			end
+
+			if not exits and
+				((used >= max_size) or (items >= max_items)) then
+
+				return nil, "disk full"
+			end
+		end
+
+		local file, msg = io.open (fpath, mode)
+
+		if not file then
+			if msg then
+				msg = msg:gsub (root, "")
+			end
+
+			return nil, msg
+		end
+
+		return safefile:new (file, max_size, root)
 	end
 
 	return nil, "invalid path"
@@ -497,6 +714,13 @@ function filesys:file_size (path)
 
 			return size
 		end
+
+	elseif self:file_type (path) == "dir" then
+		local fpath = self:get_full_path (path)
+
+		if fpath then
+			return get_disk_used (fpath)
+		end
 	end
 
 	return nil
@@ -550,7 +774,8 @@ function filesys:get_label (drivepath)
 			return drives[1].label
 		end
 
-		local tokens = drivepath:split("/")
+		local tokens = tokenize_path (drivepath)
+		table.remove (tokens, 1)
 
 		if #tokens ~= 1 then
 			return nil, "invalid path"
@@ -594,7 +819,8 @@ function filesys:set_label (drivepath, label)
 			return true
 		end
 
-		local tokens = drivepath:split("/")
+		local tokens = tokenize_path (drivepath)
+		table.remove (tokens, 1)
 
 		if #tokens ~= 1 then
 			return false, "invalid path"
@@ -624,7 +850,14 @@ function filesys:set_label (drivepath, label)
 							end
 
 							if tokens[1] == mount then
+								local description = label
+
+								if description:len () < 1 then
+									description = S("floppy ")..tostring (imeta:get_int ("lwcomputer_id"))
+								end
+
 								imeta:set_string ("label", label)
+								imeta:set_string ("description", description)
 								inv:set_stack ("main", i, stack)
 
 								return true
@@ -664,7 +897,14 @@ function filesys:set_label (drivepath, label)
 
 						if imeta then
 							if drivepath == 1 then
+								local description = label
+
+								if description:len () < 1 then
+									description = S("floppy ")..tostring (imeta:get_int ("lwcomputer_id"))
+								end
+
 								imeta:set_string ("label", label)
+								imeta:set_string ("description", description)
 								inv:set_stack ("main", i, stack)
 
 								return true
@@ -697,7 +937,8 @@ function filesys:get_drive_id (drivepath)
 			return drives[1].id
 		end
 
-		local tokens = drivepath:split("/")
+		local tokens = tokenize_path (drivepath)
+		table.remove (tokens, 1)
 
 		if #tokens ~= 1 then
 			return nil, "invalid path"
@@ -726,9 +967,41 @@ end
 
 function filesys:copy_file (srcpath, destpath)
 	local src = self:get_full_path (srcpath)
-	local dest = self:get_full_path (destpath)
+	local dest, root, form = self:get_full_path (destpath)
 
 	if src and dest then
+		local used, items = get_disk_used (root)
+		local max_size = hdd_max_size
+		local max_items = hdd_max_items
+
+		if form == "floppy" then
+			max_size = floppy_max_size
+			max_items = floppy_max_items
+		end
+
+		local destcount = 0
+		local destsize = 0
+		local srcsize = 0
+
+		local tmp = io.open (dest, "r")
+		if tmp then
+			destsize = tmp:seek ("end")
+			destcount = 1
+			tmp:close ()
+		end
+
+		tmp = io.open (src, "r")
+		if tmp then
+			srcsize = tmp:seek ("end")
+			tmp:close ()
+		end
+
+		if ((used + srcsize - destsize) >= max_size) or
+			((items + 1 - destcount) >= max_items) then
+
+			return false, "disk full"
+		end
+
 		local result = copy_file (src, dest)
 
 		if not result then
@@ -743,6 +1016,107 @@ end
 
 
 
+function filesys:get_disk_free (drivepath)
+	local path = nil
+	local drives = self:get_drive_list ()
+
+	if not drives then
+		return nil, "no drive"
+	end
+
+	if type (drivepath) == "string" then
+		if drivepath == "/" then
+			path = "/"
+		else
+			local tokens = tokenize_path (drivepath)
+			table.remove (tokens, 1)
+
+			if #tokens ~= 1 then
+				return nil, "invalid path"
+			end
+
+			for d = 2, #drives do
+				if tokens[1] == drives[d].mount then
+					path = "/"..drives[d].mount
+					break
+				end
+			end
+		end
+
+		if not path then
+			return nil, "invalid path"
+		end
+
+	elseif type (drivepath) == "number" then
+		if drivepath < 0 or drivepath >= #drives then
+			return nil, "invalid drive"
+		end
+
+		path = "/"..drives[drivepath + 1].mount
+	end
+
+	local fpath, root, form = self:get_full_path (path)
+
+	if fpath then
+		local used = get_disk_used (fpath)
+		local max_size = hdd_max_size
+
+		if form == "floppy" then
+			max_size = floppy_max_size
+		end
+
+		return ((max_size - used) >= 0 and (max_size - used)) or 0
+	end
+
+	return nil, "invalid drivepath"
+end
+
+
+
+function filesys:get_disk_size (drivepath)
+	local drives = self:get_drive_list ()
+
+	if not drives then
+		return nil, "no drive"
+	end
+
+	if type (drivepath) == "string" then
+		if drivepath == "/" then
+			return hdd_max_size
+		else
+			local tokens = tokenize_path (drivepath)
+			table.remove (tokens, 1)
+
+			if #tokens ~= 1 then
+				return nil, "invalid path"
+			end
+
+			for d = 2, #drives do
+				if tokens[1] == drives[d].mount then
+					return floppy_max_size
+				end
+			end
+		end
+
+	elseif type (drivepath) == "number" then
+		if drivepath < 0 or drivepath >= #drives then
+			return nil, "invalid drive"
+		end
+
+		if drives[drivepath + 1].form == "floppy" then
+			return floppy_max_size
+		else
+			return hdd_max_size
+		end
+	end
+
+	return nil, "invalid drivepath"
+end
+
+
+
 lwcomputers.filesys = filesys
+
+
 
 --

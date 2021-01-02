@@ -18,6 +18,17 @@ local epoch_year = tonumber(minetest.settings:get("lwcomputers_epoch_year") or 2
 local epoch_offset = 0
 
 
+epoch_offset = os.time ({
+	year = epoch_year,
+	month = 1,
+	day = 1,
+	hour = 0,
+	min = 0,
+	sec = 0,
+	isdst = false
+})
+
+
 local term_form_width = 16.8 -- formspec units
 local hscale = term_form_width / term_hres
 local vscale = hscale * 1.5
@@ -29,24 +40,6 @@ local form_footer = ""
 
 -- contains click button array for easy lookup
 local click_buttons = { }
-
-
--- set epoch offset
-if epoch_year < 1970 then
-	epoch_year = 1970
-end
-
-
-epoch_offset = os.time (
-{
-	year = epoch_year,
-	month = 1,
-	day = 1,
-	hour = 0,
-	min = 0,
-	sec = 0,
-	isdst = false
-})
 
 
 
@@ -307,7 +300,7 @@ local function new_computer_env (computer)
 	ENV.getmetatable = _G.getmetatable
 	ENV.error = _G.error
 	ENV._G = ENV
-	ENV.jit = _G.jit
+--	ENV.jit = _G.jit -- omitted
 	ENV.pairs = _G.pairs
 --	ENV.loadstring = _G.loadstring -- modify
 	ENV.table = _G.table
@@ -331,7 +324,7 @@ local function new_computer_env (computer)
 --	ENV.io.open = _G.io.open -- modify
 --	ENV.io.close = _G.io.close -- modify
 --	ENV.io.flush = _G.io.flush -- omitted
-	ENV.io.type = _G.io.type
+--	ENV.io.type = _G.io.type -- modify
 --	ENV.io.lines = _G.io.lines -- modify
 	ENV.os = { }
 --	ENV.os.clock = _G.os.clock -- modify
@@ -354,6 +347,7 @@ local function new_computer_env (computer)
 	ENV.digilines = { }
 	ENV.mesecon = { }
 	ENV.http = { }
+	ENV.printer = { }
 
 
 
@@ -381,6 +375,15 @@ local function new_computer_env (computer)
 
 	ENV.io.open = function (path, mode)
 		return computer.filesys:open (path, mode)
+	end
+
+
+	ENV.io.type = function (obj)
+		if obj and obj.safefile_obj then
+			return io.type (obj.file)
+		end
+
+		return io.type (file)
 	end
 
 
@@ -431,46 +434,7 @@ local function new_computer_env (computer)
 
 	ENV.os.time = function (tm)
 		if type (tm) == "table" then
-			if tm.year and tm.month and tm.day then
-				local year = math.floor (tm.year)
-				local month = math.floor (tm.month)
-				local day = math.floor (tm.day)
-				local hour = math.floor (tm.hour or 0)
-				local mins = math.floor (tm.min or 0)
-				local sec = math.floor (tm.sec or 0)
-
-				if month >= 1 and month < 13 and
-					day >= 1 and hour >= 0 and hour < 24 and
-					mins >= 0 and mins < 60 and
-					sec >= 0 and sec < 60 then
-
-					local month_days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
-
-					if (((year % 4) == 0) and (((year % 100) ~= 0) or ((year % 400) == 0))) then
-						month_days[2] = 29
-					end
-
-					if day <= month_days[month] then
-						local days = (365 * year) +
-										  math.floor ((year - 1) / 4) -
-										  math.floor ((year - 1) / 100) +
-										  math.floor ((year - 1) / 400) +
-										  (day - 1) -
-										  719527 -- 1970 base
-
-						for m = 1, month - 1 do
-							days = days + month_days[m]
-						end
-
-						return (days * 86400) +
-								 (hour * 3600) +
-								 (mins * 60) +
-								 sec
-					end
-				end
-			end
-
-			return nil
+			return os.time (tm)
 		end
 
 		return lwcomputers.get_worldtime ()
@@ -490,13 +454,13 @@ local function new_computer_env (computer)
 	end
 
 
-	ENV.os.get_event = function ()
-		return coroutine.yield ("get_event")
+	ENV.os.get_event = function (event)
+		return coroutine.yield ("get_event", tostring (event or ""))
 	end
 
 
-	ENV.os.peek_event = function ()
-		return computer.peek_event ()
+	ENV.os.peek_event = function (event)
+		return computer.peek_event (tostring (event or ""))
 	end
 
 
@@ -678,6 +642,16 @@ local function new_computer_env (computer)
 
 	ENV.fs.abs_path = function (basepath, relpath)
 		return computer.filesys:abs_path (basepath, relpath)
+	end
+
+
+	ENV.fs.disk_free = function (drivepath)
+		return computer.filesys:get_disk_free (drivepath)
+	end
+
+
+	ENV.fs.disk_size = function (drivepath)
+		return computer.filesys:get_disk_size (drivepath)
 	end
 
 
@@ -1164,6 +1138,10 @@ local function new_computer_env (computer)
 
 		setfenv (fxn, ENV)
 
+		if jit then
+			jit.off (fxn, true)
+		end
+
 		return fxn
 	end
 
@@ -1176,6 +1154,10 @@ local function new_computer_env (computer)
 		end
 
 		setfenv (fxn, ENV)
+
+		if jit then
+			jit.off (fxn, true)
+		end
 
 		return fxn
 	end
@@ -1305,6 +1287,176 @@ local function new_computer_env (computer)
 	end
 
 
+
+	-- printer
+
+	ENV.printer.start_page = function (channel, title, pageno)
+		title = tostring (title or "untitled")
+		pageno = tonumber (pageno or 0) or 0
+
+		if title:len () < 1 then
+			title = "untitled"
+		end
+
+		if pageno > 1 then
+			title = title.." "..tostring (pageno)
+		end
+
+		computer.digilines_send (channel, "start:"..title)
+	end
+
+
+	ENV.printer.end_page = function (channel)
+		computer.digilines_send (channel, "end")
+	end
+
+
+	ENV.printer.color = function (channel, fg, bg)
+		fg = (tonumber (fg) or lwcomputers.colors.black) % 16
+		bg = (tonumber (bg) or lwcomputers.colors.white) % 16
+
+		computer.digilines_send (channel, "color:"..tostring (fg)..","..tostring (bg))
+	end
+
+
+	ENV.printer.position = function (channel, x, y)
+		x = tonumber (x or 0) or 0
+		y = tonumber (y or 0) or 0
+
+		computer.digilines_send (channel, "position:"..tostring (x)..","..tostring (y))
+	end
+
+
+	ENV.printer.write = function (channel, str)
+		str = tostring (str or "")
+
+		computer.digilines_send (channel, "write:"..str)
+	end
+
+
+	ENV.printer.query_ink = function (channel)
+		if lwcomputers.digilines_supported then
+			computer.digilines_send (channel, "ink")
+
+			local stamp = ENV.os.clock ()
+			while (ENV.os.clock () - stamp) < 1.0 do
+				if ENV.os.peek_event ("digilines") then
+					local event = { ENV.os.get_event ("digilines") }
+
+					if event[3] == channel then
+						return tonumber (event[2] or 0) or 0
+					else
+						ENV.os.queue_event (unpack (event))
+					end
+				end
+
+				ENV.os.sleep (0.1)
+			end
+		end
+
+		return nil
+	end
+
+
+	ENV.printer.query_pages = function (channel)
+		if lwcomputers.digilines_supported then
+			computer.digilines_send (channel, "pages")
+
+			local stamp = ENV.os.clock ()
+			while (ENV.os.clock () - stamp) < 1.0 do
+				if ENV.os.peek_event ("digilines") then
+					local event = { ENV.os.get_event ("digilines") }
+
+					if event[3] == channel then
+						return tonumber (event[2] or 0) or 0
+					else
+						ENV.os.queue_event (unpack (event))
+					end
+				end
+
+				ENV.os.sleep (0.1)
+			end
+		end
+
+		return nil
+	end
+
+
+	ENV.printer.query_paper = function (channel)
+		if lwcomputers.digilines_supported then
+			computer.digilines_send (channel, "paper")
+
+			local stamp = ENV.os.clock ()
+			while (ENV.os.clock () - stamp) < 1.0 do
+				if ENV.os.peek_event ("digilines") then
+					local event = { ENV.os.get_event ("digilines") }
+
+					if event[3] == channel then
+						return tonumber (event[2] or 0) or 0
+					else
+						ENV.os.queue_event (unpack (event))
+					end
+				end
+
+				ENV.os.sleep (0.1)
+			end
+		end
+
+		return nil
+	end
+
+
+	ENV.printer.query_size = function (channel)
+		if lwcomputers.digilines_supported then
+			computer.digilines_send (channel, "size")
+
+			local stamp = ENV.os.clock ()
+			while (ENV.os.clock () - stamp) < 1.0 do
+				if ENV.os.peek_event ("digilines") then
+					local event = { ENV.os.get_event ("digilines") }
+
+					if event[3] == channel then
+						local res = string.split (event[2] or "0,0")
+
+						return (tonumber (res[1] or 0) or 0), (tonumber (res[2] or 0) or 0)
+					else
+						ENV.os.queue_event (unpack (event))
+					end
+				end
+
+				ENV.os.sleep (0.1)
+			end
+		end
+
+		return nil
+	end
+
+
+	ENV.printer.query_status = function (channel)
+		if lwcomputers.digilines_supported then
+			computer.digilines_send (channel, "status")
+
+			local stamp = ENV.os.clock ()
+			while (ENV.os.clock () - stamp) < 1.0 do
+				if ENV.os.peek_event ("digilines") then
+					local event = { ENV.os.get_event ("digilines") }
+
+					if event[3] == channel then
+						return event[2]
+					else
+						ENV.os.queue_event (unpack (event))
+					end
+				end
+
+				ENV.os.sleep (0.1)
+			end
+		end
+
+		return nil
+	end
+
+
+
 	return ENV
 end
 
@@ -1365,6 +1517,7 @@ local function new_computer (pos, id, persists)
 		resumed_at = 0,
 		sleep_secs = 0,
 		sleep_start = 0,
+		event_name = "",
 		caps = false,
 		shift = false,
 		ctrl = false,
@@ -1428,9 +1581,19 @@ local function new_computer (pos, id, persists)
 	end
 
 
-	computer.peek_event = function ()
+	computer.peek_event = function (event)
 		if #computer.events > 0 then
-			return unpack (computer.events[1])
+			if event:len () > 0 then
+				for i = 1, #computer.events do
+					if computer.events[i][1] == event then
+						return unpack (computer.events[i])
+					end
+				end
+
+			else
+				return unpack (computer.events[1])
+
+			end
 		end
 
 		return nil
@@ -1458,19 +1621,39 @@ local function new_computer (pos, id, persists)
 
 			if coroutine.status (computer.thread) == "suspended" then
 				local run = false
-				local result, yielded, secs;
+				local result, yielded, secs; --, event_name;
 
 				if computer.yielded == "get_event" then
 					if #computer.events > 0 then
-						run = true
-						local event = table.remove (computer.events, 1)
 
-						computer.resumed_at = minetest.get_us_time ()
-						debug.sethook (computer.thread, computer.overrun, "", 10000)
+						if computer.event_name:len () > 0 then
+							for  i = 1, #computer.events do
+								if computer.events[i][1] == computer.event_name then
+									local event = table.remove (computer.events, i)
+									run = true
 
-						result, yielded, secs = coroutine.resume (computer.thread, unpack (event))
+									computer.resumed_at = minetest.get_us_time ()
+									debug.sethook (computer.thread, computer.overrun, "", 10000)
 
-						debug.sethook ()
+									result, yielded, secs = coroutine.resume (computer.thread, unpack (event))
+
+									debug.sethook ()
+
+									break
+								end
+							end
+						else
+							local event = table.remove (computer.events, 1)
+							run = true
+
+							computer.resumed_at = minetest.get_us_time ()
+							debug.sethook (computer.thread, computer.overrun, "", 10000)
+
+							result, yielded, secs = coroutine.resume (computer.thread, unpack (event))
+
+							debug.sethook ()
+						end
+
 					end
 
 				elseif computer.yielded == "sleep" then
@@ -1522,8 +1705,9 @@ local function new_computer (pos, id, persists)
 				if run then
 					if result then
 						computer.yielded = yielded
-						computer.sleep_secs = secs or 0
+						computer.sleep_secs = tonumber (secs or 0) or 0
 						computer.sleep_start = minetest.get_us_time ()
+						computer.event_name = tostring (secs or "")
 
 						if computer.yielded == "dead" then
 							computer.thread = nil
@@ -1960,8 +2144,7 @@ function lwcomputers.get_computer_data (id, pos, persists)
 			pos = { x = pos.x, y = pos.y, z = pos.z },
 		}
 
-		lwcomputers.mod_storage:set_string ("computer_list",
-					minetest.serialize (lwcomputers.computer_list))
+		lwcomputers.store_computer_list ()
 	end
 
 	return data
@@ -1980,8 +2163,7 @@ function lwcomputers.reset_computer_data (id, pos, persists)
 		pos = { x = pos.x, y = pos.y, z = pos.z },
 	}
 
-	lwcomputers.mod_storage:set_string ("computer_list",
-				minetest.serialize (lwcomputers.computer_list))
+	lwcomputers.store_computer_list ()
 
 	return data
 end
@@ -1993,8 +2175,7 @@ function lwcomputers.remove_computer_data (id)
 
 	lwcomputers.computer_data[name] = nil
 	lwcomputers.computer_list[name] = nil
-	lwcomputers.mod_storage:set_string ("computer_list",
-				minetest.serialize (lwcomputers.computer_list))
+	lwcomputers.store_computer_list ()
 end
 
 
@@ -2134,7 +2315,6 @@ end
 
 
 
-
 function lwcomputers.get_worldtime ()
 	return ((minetest.get_timeofday () + minetest.get_day_count ()) * 86400) + epoch_offset
 end
@@ -2158,8 +2338,6 @@ function lwcomputers.to_realtime (secs)
 
 	return secs
 end
-
-
 
 
 
@@ -2344,6 +2522,11 @@ local function preserve_metadata (pos, oldnode, oldmeta, drops)
 
 			if id > 0 then
 				local imeta = drops[1]:get_meta ()
+				local description = meta:get_string ("label")
+
+				if description:len () < 1 then
+					description = S("Computer ")..tostring (id)
+				end
 
 				imeta:set_int ("lwcomputer_id", id)
 				imeta:set_string ("name", meta:get_string ("name"))
@@ -2351,6 +2534,7 @@ local function preserve_metadata (pos, oldnode, oldmeta, drops)
 				imeta:set_string ("infotext", meta:get_string ("infotext"))
 				imeta:set_string ("inventory", meta:get_string ("inventory"))
 				imeta:set_string ("digilines_channel", meta:get_string ("digilines_channel"))
+				imeta:set_string ("description", description)
 			end
 		end
 	end
@@ -2511,16 +2695,20 @@ local function on_metadata_inventory_put (pos, listname, index, stack, player)
 
 							if itemname == "lwcomputers:floppy_lua" then
 								imeta:set_string ("label", "lua_disk")
+								imeta:set_string ("description", "lua_disk")
 
 								if not lwcomputers.filesys:prep_lua_disk (id) then
 									minetest.log ("error", "lwcomputers - could not prep lua disk")
 								end
 							elseif itemname == "lwcomputers:floppy_los" then
 								imeta:set_string ("label", "los_disk")
+								imeta:set_string ("description", "los_disk")
 
 								if not lwcomputers.filesys:prep_los_disk (id) then
 									minetest.log ("error", "lwcomputers - could not prep los disk")
 								end
+							else
+								imeta:set_string ("description", S("floppy ")..tostring (id))
 							end
 
 							local inv = minetest.get_meta (pos):get_inventory ()
@@ -2562,7 +2750,7 @@ end
 
 
 
-local function digiline_support ()
+local function digilines_support ()
 	if lwcomputers.digilines_supported then
 		return
 		{
@@ -2599,7 +2787,7 @@ end
 
 
 
-local function mesecons_support (node_on, node_off)
+local function mesecon_support ()
 	if lwcomputers.mesecon_supported then
 		return
 		{
@@ -2653,12 +2841,12 @@ minetest.register_node("lwcomputers:computer", {
          {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
       }
    },
-	groups = { choppy = 2, oddly_breakable_by_hand = 2, wood = 1 },
-	sounds = default.node_sound_wood_defaults(),
+	groups = { cracky = 2, oddly_breakable_by_hand = 2 },
+	sounds = default.node_sound_wood_defaults (),
 	paramtype2 = "facedir",
 	param2 = 1,
-	mesecons = mesecons_support ("lwcomputers:computer", "lwcomputers:computer"),
-	digiline = digiline_support (),
+	mesecons = mesecon_support (),
+	digiline = digilines_support (),
 
    on_construct = on_construct,
    on_destruct = on_destruct,
