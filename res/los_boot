@@ -353,7 +353,7 @@ local function ls ( ... )
 
 			end
 
-			if line >= (h - 2)  and i < #list then
+			if long and line >= (h - 1)  and i < #list then
 				local event = nil
 				print_bold ("more")
 
@@ -467,7 +467,7 @@ local function ls ( ... )
 
 			end
 
-			if line >= (h - 2)  and i < #list then
+			if long and line >= (h - 1)  and i < #list then
 				local event = nil
 				print_bold ("more")
 
@@ -1411,6 +1411,31 @@ end
 
 
 
+local function wrap_to_width (lines, width)
+	local l = 1
+	while l <= #lines do
+		if lines[l]:len () > width then
+			line = lines[l]:reverse ()
+			local pos = line:find (" ", line:len () - width)
+
+			if pos then
+				table.insert (lines, l + 1, line:sub (1, pos - 1):reverse ())
+				lines[l] = line:sub (pos + 1):reverse ()
+
+			else
+				table.insert (lines, l + 1, lines[l]:sub (width + 1))
+				lines[l] = lines[l]:sub (1, width)
+			end
+		end
+
+		l = l + 1
+	end
+
+	return lines
+end
+
+
+
 local function dump (path)
 	if path == "-h" then
 		print_text ("   dump [-h] path\n"..
@@ -1431,13 +1456,22 @@ local function dump (path)
 	end
 
 	local w, h = term.get_resolution ()
-	local linen = 0
-	local nl = true
+	lines = { }
 
 	for line in io.lines (pathfull) do
-		print_text ("%s\n", line)
-		linen = linen + math.max (math.ceil (line:len () / w), 1)
-		nl = true
+		lines[#lines + 1] = line
+	end
+
+	lines = wrap_to_width (lines, w)
+
+	local linen = 0
+	for l = 1, #lines do
+		if lines[l]:len () == w then
+			print_text ("%s", lines[l])
+		else
+			print_text ("%s\n", lines[l])
+		end
+		linen = linen + 1
 
 		if linen >= (h - 2) then
 			local event = nil
@@ -1448,17 +1482,12 @@ local function dump (path)
 			until event[1] == "key"
 
 			print_text ("\r     \r")
-			nl = false
 			linen = 0
 
 			if event[2] == keys.KEY_ESC then
 				return 0
 			end
 		end
-	end
-
-	if nl then
-		print_text ("\n")
 	end
 
 	return 0

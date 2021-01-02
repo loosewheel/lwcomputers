@@ -1,0 +1,192 @@
+-- print program
+
+
+local print = { }
+
+
+
+local function wrap_to_width (lines, width)
+	local l = 1
+	while l <= #lines do
+		if lines[l]:len () > width then
+			line = lines[l]:reverse ()
+			local pos = line:find (" ", line:len () - width)
+
+			if pos then
+				table.insert (lines, l + 1, line:sub (1, pos - 1):reverse ())
+				lines[l] = line:sub (pos + 1):reverse ()
+
+			else
+				table.insert (lines, l + 1, lines[l]:sub (width + 1))
+				lines[l] = lines[l]:sub (1, width)
+			end
+		end
+
+		l = l + 1
+	end
+
+	return lines
+end
+
+
+
+function print:new ( ... )
+	local args = { ... }
+	local obj = { }
+
+   setmetatable(obj, self)
+   self.__index = self
+
+   obj.help = false
+   obj.filepath = nil
+   obj.printer = nil
+   obj.pages = { }
+   obj.page_width = nil
+   obj.page_height = nil
+   obj.title = nil
+   obj.error = nil
+   obj.result = 0
+   obj.printer = nil
+
+
+	if not args[1] or not args[2] or args[1] == "-h" then
+		obj.help = true
+		return obj
+	else
+		obj.printer = args[1]
+		obj.page_width, obj.page_height = printer.query_size (obj.printer)
+
+		if not obj.page_width then
+			obj.result = 2
+			obj.error = "printer error"
+			return obj
+		end
+
+		obj.filepath, obj.error = fs.abs_path (shell.current_dir (), args[2])
+
+		if not obj.filepath then
+			obj.result = 2
+			return obj
+		end
+
+		obj.title = args[3]
+
+		if not obj.title then
+			obj.title = fs.path_title (obj.filepath)
+
+			if not obj.title then
+				obj.result = 2
+				return obj
+			end
+		end
+
+		local file;
+		local lines = { }
+
+		file, obj.error = io.open (obj.filepath, "r")
+
+		if not file then
+			obj.result = 9
+			return obj
+		end
+
+		for line in file:lines () do
+			lines[#lines + 1] = line
+		end
+
+		file:close ()
+
+		lines = wrap_to_width (lines, obj.page_width - 2)
+
+		if obj.title:len () >= (obj.page_width - 3) then
+			local title = obj.title:sub (1, obj.page_width - 2)
+			table.insert (lines, 1, title)
+			table.insert (lines, 2, string.rep (string.char (152), title:len ()))
+		else
+			local inset = string.rep (" ", (obj.page_width - obj.title:len () - 2) / 2)
+			table.insert (lines, 1, inset..obj.title)
+			table.insert (lines, 2, inset..string.rep (string.char (151), obj.title:len ()))
+		end
+
+		for l = 1, #lines do
+			local page = math.floor ((l - 1) / (obj.page_height - 2)) + 1
+
+			if not obj.pages[page] then
+				obj.pages[page] = { }
+			end
+
+			obj.pages[page][#obj.pages[page] + 1] = lines[l]
+		end
+	end
+
+   return obj
+end
+
+
+
+function print:run ()
+	if self.help then
+		term.print ("   print [-h] printer path [title]\n"..
+						"Print a file.\n"..
+						" -h       show help\n"..
+						" printer  printer channel\n"..
+						" path     file to print\n"..
+						" title    title for the doc\n"..
+						"          if omitted file title used\n")
+
+		return 0
+	end
+
+	if self.result ~= 0 then
+		return self.result, self.error
+	end
+
+
+	for page = 1, #self.pages do
+		local endloop = false
+
+		repeat
+			local status = printer.query_status (self.printer) or "error"
+
+			if status == "ready" then
+				endloop = true
+				term.print ("\r                        \r")
+			else
+				endloop = false
+				term.print ("\r                        \r%s - esc to abort", status)
+
+				os.sleep (1.0)
+
+				if os.peek_event ("key") then
+					local event = { os.get_event ("key") }
+
+					if event[2] == keys.KEY_ESC then
+						term.print ("\r                        \raborted\n")
+
+						return 0
+					end
+				end
+			end
+		until endloop == true
+
+		printer.start_page (self.printer, self.title, page)
+		printer.color (self.printer, term.colors.black, term.colors.white)
+
+		for line = 1, #self.pages[page] do
+			printer.position (self.printer, 1, line)
+			printer.write (self.printer, self.pages[page][line])
+		end
+
+		printer.end_page (self.printer)
+	end
+
+	return self.result
+end
+
+
+
+local app = print:new ( ... )
+return app:run ()
+
+
+--
