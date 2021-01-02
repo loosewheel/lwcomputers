@@ -265,6 +265,7 @@ Programs
 --------
 
 LUA
+Run lua code.
 
 lua [-h | <code>]
 	-h			show help
@@ -287,6 +288,7 @@ Enter 'exit' to quit the program and return to the command prompt.
 
 
 EDIT
+Opens a file to edit as a text file.
 
 edit [-h] path
 	-h		show help
@@ -319,3 +321,16 @@ Ctrl+V        paste clipboard
 Ctrl+A        select all
 Ctrl+Alt+V    paste slot clipboard
 Ctrl+Alt+C    copy slot clipboard
+
+
+PRINT
+Prints a file.
+
+print [-h] printer path [title]
+	-h			show help
+	printer	printer's digilines channel
+	path		file to print. Can be relative to current directory.
+	title		title for the document, if omitted file title is used.
+
+The first page is printed with the given title. Following pages are printed
+with the title followed by their page number.

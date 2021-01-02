@@ -136,7 +136,7 @@ debug
 
 jit
 ---
-	Std lua interface.
+	Omitted.
 
 
 vector
@@ -180,7 +180,9 @@ io.open (filename [, mode])
 	to open the file in binary mode. This string is exactly what is used in the
 	standard C function fopen.
 
-	* Returned file objects are std lua.
+	* Returned file objects work the same as std lua, except for the following:
+		file:write - throws error "disk full" if the write will exceed disk size.
+						 the file is flush after every write action.
 
 io.output ([file])
 	Omitted.
@@ -189,7 +191,8 @@ io.read (···)
 	Omitted.
 
 io.type (obj)
-	Std lua.
+	Works the same as std lua, but adapted to work with safe file objects
+	returned from io.open as well.
 
 io.write (···)
 	Omitted.
@@ -230,8 +233,11 @@ os.getenv (varname)
 	Returns the value of the environment variable varname, or nil if the
 	variable is not defined.
 
-os.get_event ()
-	Returns the next queued event.
+os.get_event ([event])
+	Returns the next queued event, removing it from the queue.
+	event: if nil the next available event is returned. If event type (should
+	be string) returns the next available event of that type.
+
 	The first value is a string of the type of event. The following values
 	vary depending on the event type. Typical usage:
 
@@ -255,9 +261,11 @@ os.kill_timer (id)
 	Cancels the identified timer. This id is returned by `os.start_timer`.
 	Ignored if the timer doesn't exist.
 
-os.peek_event ()
-	Returns the next queued event without removing it from the queue. If
-	no event is available nil is returned.
+os.peek_event ([event])
+	Checks the event queue and returns the next available event without removing
+	it from the queue. Returns nil if no event is available.
+	event: if nil the next available event is returned, if any. If event type
+	(should be string) returns the next available event of that type, if any.
 	See events.
 	* This function does not yield.
 
@@ -347,6 +355,26 @@ fs.copy_file (srcpath, destpath)
 	paths to computers file system.
 	Returns true on success, or false and an error message.
 
+fs.disk_free (drivepath)
+	Returns the free space of the disk in bytes, or nil and error message
+	on failure.
+	drivepath can be:
+		*	A zero based ordinal number of the drive to fetch. Zero is the computers
+			hard drive. Floppies are numbered in order from the inventory slots,
+			as found - not by slot number.
+		*	A base path string for the drive. "/" is the computers hard drive.
+			"/<mount>" for floppies.
+
+fs.disk_size (drivepath)
+	Returns the total capacity of the disk in bytes, or nil and error message
+	on failure.
+	drivepath can be:
+		*	A zero based ordinal number of the drive to fetch. Zero is the computers
+			hard drive. Floppies are numbered in order from the inventory slots,
+			as found - not by slot number.
+		*	A base path string for the drive. "/" is the computers hard drive.
+			"/<mount>" for floppies.
+
 fs.file_exists (path, types)
 	Routs file path to computers file system.
 	Returns true if file/folder at path exists or false if not.
@@ -354,7 +382,10 @@ fs.file_exists (path, types)
 
 fs.file_size (path)
 	Routs file path to computers file system.
-	Returns size of the file, or nil if not a file or error.
+	Returns:
+		If file, byte size of the file.
+		If directory, total byte size of files under directory (including subs).
+		nil on error.
 
 fs.file_type (path)
 	Routs file path to computers file system.
@@ -394,7 +425,7 @@ fs.ls (path, types)
 fs.mkdir (path)
 	Calls `minetest.mkdir`. Routs file path to computers file system.
 	Creates a directory specified by `path`, creating parent directories
-	if they don't exist. Returns true on success.
+	if they don't exist. Returns true on success or false and error message.
 
 fs.path_extension (path)
 	Returns the path's file extension or nil if path is malformed. If the
@@ -732,6 +763,106 @@ digilines.set_channel (channel)
 digilines.send (channel, msg)
 	Sends a message to the given digilines channel. This call is ignored if not
 	supported.
+
+
+Printer
+-------
+	Interface is always defined but is inactive if digilines mod is not present.
+
+printer.start_page (channel, title, pageno)
+	Sends the start command to the printer to start a page, if one is not
+	already started.
+	channel: the channel of the printer.
+	title: the title of the page. If nil or empty string "untitled" is used.
+	pageno: if > 1 the page number is append to the title.
+
+printer.end_page (channel)
+	Sends the end command to the printer to end the current page and place it
+	in the out tray, if one was started.
+	channel: the channel of the printer.
+
+printer.color (channel, fg, bg)
+	Sends the color command to the printer to set the current colors, if
+	a page was started.
+	channel: the channel of the printer.
+	fg: the forecolor, one of the term.colors
+	bg: the backcolor, one of the term.colors
+
+printer.position (channel, x, y)
+	Sends the position command to the printer to set the current position,
+	if a page was started.
+	channel: the channel of the printer.
+	x: the zero based column of the page.
+	y: the zero based line of the page.
+
+printer.write (channel, str)
+	Sends the write command to the printer to draw the string, if a page
+	was started.
+	channel: the channel of the printer.
+	str: the string to write.
+
+printer.query_ink (channel)
+	Queries the printer for how many pages can still be printer with the ink
+	cartridge.
+	channel: the channel of the printer.
+	Returns the number of pages, or nil if the printer at channel didn't respond
+	or digilines is not loaded.
+	* This function blocks for up to 1.0 second waiting for the response from
+	the printer.
+	* Any digilines messages that are ahead in the event queue but are not
+	from the printer are requeued.
+
+printer.query_pages (channel)
+	Queries the printer for how many page slots are still available in the
+	output tray to take a printed page.
+	channel: the channel of the printer.
+	Returns the number of page slots, or nil if the printer at channel didn't
+	respond or digilines is not loaded.
+	* This function blocks for up to 1.0 second waiting for the response from
+	the printer.
+	* Any digilines messages that are ahead in the event queue but are not
+	from the printer are requeued.
+
+printer.query_paper (channel)
+	Queries the printer for how many sheets of paper are still available in
+	the input tray for printing.
+	channel: the channel of the printer.
+	Returns the number of sheets of paper, or nil if the printer at channel
+	didn't respond or digilines is not loaded.
+	* This function blocks for up to 1.0 second waiting for the response from
+	the printer.
+	* Any digilines messages that are ahead in the event queue but are not
+	from the printer are requeued.
+
+printer.query_size (channel)
+	Queries the printer for the character size of a printed page.
+	channel: the channel of the printer.
+	Returns the width and height, or nil if the printer at channel didn't
+	respond or digilines is not loaded. Eg.
+
+		local width, height = printer.query_size (channel)
+		if width then ... end
+
+	* This function blocks for up to 1.0 second waiting for the response from
+	the printer.
+	* Any digilines messages that are ahead in the event queue but are not
+	from the printer are requeued.
+
+printer.query_status (channel)
+	Queries the printer's status.
+	channel: the channel of the printer.
+	Returns
+		"ready" - the printer is ready to print.
+		"printing" - the printer is currently printing.
+		"no ink" - printer is out of ink.
+		"no paper" - printer is out of paper.
+		"tray full" - printer output tray is full.
+		nil if the printer at channel didn't respond or digilines is not loaded.
+	* This function blocks for up to 1.0 second waiting for the response from
+	the printer.
+	* Any digilines messages that are ahead in the event queue but are not
+	from the printer are requeued.
+
 
 
 keys
