@@ -96,6 +96,35 @@ end
 
 
 
+local function resolve_path (path, root, form)
+	local tokens = tokenize_path (path)
+	local complete = { }
+
+	for i = 1, #tokens do
+		if tokens[i] == ".." then
+			if #complete < 1 then
+				return nil, "invalid path"
+			end
+
+			table.remove (complete, #complete)
+		else
+			complete[#complete + 1] = tokens[i]
+		end
+	end
+
+	local recon = table.concat (complete, "/")
+
+	if recon:len () < root:len () or
+		recon:sub (1, root:len ()) ~= root then
+
+		return nil, "invalid path"
+	end
+
+	return recon, root, form
+end
+
+
+
 ----------------------- safefile -----------------------
 
 
@@ -507,7 +536,8 @@ function filesys:get_full_path (path)
 				end
 
 				if #tokens > 1 then
-					return (root.."/"..table.concat (tokens, "/", 2)), root, drives[d].form
+--					return (root.."/"..table.concat (tokens, "/", 2)), root, drives[d].form
+					return resolve_path (root.."/"..table.concat (tokens, "/", 2), root, drives[d].form)
 				end
 
 				return root, root, drives[d].form
@@ -522,7 +552,8 @@ function filesys:get_full_path (path)
 	end
 
 	if path:len () > 1 then
-		return (root..path), root, drives[1].form
+--		return (root..path), root, drives[1].form
+		return resolve_path (root..path, root, drives[1].form)
 	end
 
 	return root, root, drives[1].form
