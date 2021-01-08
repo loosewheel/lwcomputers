@@ -208,6 +208,7 @@ local function term_formspec (data)
 	local alt_lbl = "Alt"..((data.alt and "*") or "")
 
 	local display = ""
+	local line = ""
 
 	for y = 0, (data.height - 1) do
 		for x = 0, (data.width - 1) do
@@ -222,12 +223,15 @@ local function term_formspec (data)
 				end
 			end
 
-			display = display..
+			line = line..
 			string.format ("animated_image[%1.2f,%1.2f;%1.2f,%1.2f;d;%02d%02d.png;256;0;%d]",
 								(x * hscale), (y * vscale),
 								(hscale + 0.03), (vscale + 0.03),
 								fg, bg, ((c.char % 256) + 1))
 		end
+
+		display = display..line
+		line = ""
 	end
 
 
