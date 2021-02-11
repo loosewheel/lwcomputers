@@ -731,6 +731,8 @@ mesecon.get (side)
 			"front"
 			"back"
 			nil - true if any side is on.
+	* Note: this returns the computer's set state (with mesecon.set). It does
+	not return the state set by an external source.
 
 mesecon.set (state, side)
 	If state is true, turns the mesecon state to on. Otherwise turns it off.
