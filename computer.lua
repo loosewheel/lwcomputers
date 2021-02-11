@@ -1945,7 +1945,7 @@ local function new_computer (pos, id, persists)
 
 	computer.digilines_send = function (channel, msg)
 		if lwcomputers.digilines_supported then
-			lwcomputers.digilines_receptor_send (pos, digiline.rules.default, channel, tostring (msg or ""))
+			lwcomputers.digilines_receptor_send (pos, digiline.rules.default, channel, msg or "")
 		end
 	end
 
@@ -2791,6 +2791,24 @@ end
 
 
 
+local function get_mesecon_side_for_rule (pos, param2, rule)
+	if type (rule) == "table" and param2 >= 1 and param2 <= 4 then
+		if rule.x == -1 then
+			return ({ "right", "left", "back", "front" })[param2]
+		elseif rule.x == 1 then
+			return ({ "left", "right", "front", "back" })[param2]
+		elseif rule.z == -1 then
+			return ({ "back", "front", "left", "right" })[param2]
+		elseif rule.z == 1 then
+			return ({ "front", "back", "right", "left" })[param2]
+		end
+	end
+
+	return nil
+end
+
+
+
 local function mesecon_support ()
 	if lwcomputers.mesecon_supported then
 		return
@@ -2809,22 +2827,27 @@ local function mesecon_support ()
 				}
 			},
 
-			--effector =
-			--{
-				--rules = mesecon.rules.default,
+			effector =
+			{
+				rules = mesecon.rules.flat,
 
-				--action_on = function (pos, node)
-					---- do something to turn the effector on
-				--end,
+				action_change = function (pos, node, rule, new_state)
+					local meta = minetest.get_meta (pos)
 
-				--action_off = function (pos, node)
-					---- do something to turn the effector off
-				--end,
+					if meta then
+						local id = meta:get_int ("lwcomputer_id")
 
-				--action_change = function (pos, node)
-					---- do something whenever any input to the effector changes
-				--end
-			--}
+						if id > 0 then
+							local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+
+							if data then
+								data.queue_event ("mesecon", new_state,
+														get_mesecon_side_for_rule (pos, meta:get_int ("param2"), rule))
+							end
+						end
+					end
+				end
+			}
 		}
 	end
 

@@ -33,3 +33,7 @@ v0.1.2
 v0.1.3
 *	reduced size of computer formspec data to try and speed it up.
 *	added check for file path not below root.
+
+
+v0.1.4
+*	added mesecon event (power to side).
