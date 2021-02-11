@@ -1030,6 +1030,12 @@ Events
 	* This event is not fired if the digilines mod is not loaded.
 	See `digilines.send`.
 
+"mesecon", state, side
+	Queued when the mesecon power state is change on a side of the computer.
+	state: the new state ("on" or "off").
+	side: the side of the computer ("front", "back", "left" or "right").
+	* This event is not fired if the mesecon mod is not loaded.
+
 
 Booting
 =======
