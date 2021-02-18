@@ -21,7 +21,7 @@ CC-BY-SA 3.0
 
 Version
 =======
-0.1.4
+0.1.5
 
 
 Minetest Version
@@ -71,21 +71,11 @@ retained across world startups.
 The Ctrl, Cap, Shift and Alt keys on the keyboard toggle down and up. When
 in the down state the key's label is suffixed with a "*".
 
-If a floppy is "used" (left click) a form displays the floppy's id and
-label. If the floppy has never been put in a computer's slot its id shows
-as "<not used>". If a floppy has no label its label shows as "<no label>".
-
-Each disk has its own directory under the world folder with its contents.
-
 Each computer and floppy disk has a unique integer id assigned to it.
 
-The path to a computers hard drive's contents:
-<minetest path>/worlds/<world>/lwcomputers/computer_<id>
-
-The path to a floppy disk's contents:
-<minetest path>/worlds/<world>/lwcomputers/floppy_<id>
-
-The contents of the disks can be edited with an external editor.
+If a floppy is "dug" (left click) a form displays the floppy's id and
+label. If the floppy has never been put in a computer's slot its id shows
+as "<not used>". If a floppy has no label its label shows as "<no label>".
 
 A computer's hard drive folder is created the first time it is powered up.
 A floppy disk's folder is created the first time it is placed in a computer's
@@ -103,7 +93,7 @@ clean.
 
 The mod also has a clipboard item, and copy and paste actions are possible
 through it. It must be placed in one of the computer's slots to use it.
-"Using" the clipboard (left click) displays its contents.
+"Digging" the clipboard (left click) displays its contents.
 
 The computer can provide a mesecon power source, if mesecon is loaded.
 It can also send digilines messages, and be given a channel and receive
@@ -124,7 +114,7 @@ runs longer than 5 seconds without yielding, the program halts with the error
 settings.
 
 When a program yields through os.get_event the thread is resumed when an
-event is queued. Supported event:
+event is queued. Supported events:
 
 key			key was pressed
 char			character following key press, not queued if the ctrl and/or
@@ -142,8 +132,7 @@ A computers file system starts at a single root "/". Any floppies are
 accessed as "/<mount>". The mount will be the label of the floppy or
 "floppy_<id>" if the label isn't set.
 
-If a computer is moved it retains its id and hard drive data. If a computer
-or floppy is disposed of the disk's folder in the world save remains.
+If a computer is moved it retains its id and hard drive data.
 
 
 The mod supports the following settings:
@@ -217,8 +206,14 @@ Maximum hard disk items (int)
 	Default: 8000
 
 Maximum floppy disk items (int)
-	Maximum floppy disk size files and directories allowed.
+	Maximum floppy disk files and directories allowed.
 	Default: 1000
+
+Store disks in meta data (bool)
+	Store disk data in meta data instead of disk folder under world folder.
+	Default: false
+	* The disk data of any existing worlds will not be accessible if this
+	setting is changed.
 
 
 ** Notes
@@ -227,6 +222,32 @@ The form for the terminal contains many elements. This amount is increased
 with larger terminal character sizes, and is nearly doubled to support click
 events. If the terminal is too sluggish, try reducing the character resolution
 and/or disabling click events.
+
+
+Meta disk v world folder
+
+Meta disk:
+This option stores computer and floppy disk data in the item's meta data.
+This increases burden on the game engine, but ensures that no redundant
+data remains. Contents of the disks are not directly accessible outside
+of the game. This option may be better for multi-player games. Where players
+may be losing items all over the place, and don't have access to the world
+save folder anyway.
+
+World folder:
+This option stores computer and floppy disk data each in its own folder
+under the world save folder. The disk contents are directly accessible
+outside of the game, and generally less data needs to be moved around per
+operation. If a disk item is removed from the world (permanently) the
+disk's contents remain in the world save folder. This option may be better
+for local games, where you want to tinker with your programs to get your
+contraptions to work.
+
+The path to a computers hard drive's contents:
+<minetest path>/worlds/<world>/lwcomputers/computer_<id>
+
+The path to a floppy disk's contents:
+<minetest path>/worlds/<world>/lwcomputers/floppy_<id>
 
 
 Lua disk
@@ -353,4 +374,4 @@ printing operations
 "end"
 
 Pages print up to their edges, there is no border. To view a page or book
-'use' it (left click).
+'dig' it (left click).

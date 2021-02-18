@@ -128,6 +128,7 @@ end
 ----------------------- safefile -----------------------
 
 
+
 local safefile = { }
 
 
@@ -148,20 +149,20 @@ end
 
 
 
-function safefile:close ( ... )
-	return self.file:close ( ... )
+function safefile:close ()
+	return self.file:close ()
 end
 
 
 
-function safefile:flush ( ... )
-	return self.file:flush ( ... )
+function safefile:flush ()
+	return self.file:flush ()
 end
 
 
 
-function safefile:lines ( ... )
-	return self.file:lines ( ... )
+function safefile:lines ()
+	return self.file:lines ()
 end
 
 
@@ -193,7 +194,7 @@ function safefile:write ( ... )
 		if type (args[i]) == "string" then
 			size = size + args[i]:len ()
 		elseif type (args[i]) == "number" then
-			size = size + (tostring (args[i])):len ()
+			size = size + 8
 		end
 	end
 
@@ -210,6 +211,7 @@ end
 
 
 ----------------- filesys -------------------------------
+
 
 
 local filesys = { }
@@ -238,9 +240,9 @@ end
 
 
 -- static
-function filesys:prep_lua_disk (id)
+function filesys:prep_lua_disk (id, meta)
 	-- create floppy dir
-	if not lwcomputers.filesys:create_floppy (id) then
+	if not filesys:create_floppy (id) then
 		return false
 	end
 
@@ -260,9 +262,9 @@ end
 
 
 -- static
-function filesys:prep_los_disk (id)
+function filesys:prep_los_disk (id, meta)
 	-- create floppy dir
-	if not lwcomputers.filesys:create_floppy (id) then
+	if not filesys:create_floppy (id) then
 		return false
 	end
 
@@ -458,7 +460,8 @@ function filesys:get_drive_list ()
 				id = self.id,
 				form = "computer",
 				mount = "",
-				label = label
+				label = label,
+				slot = 0
 			}
 		}
 
@@ -490,7 +493,8 @@ function filesys:get_drive_list ()
 										id = id,
 										form = "floppy",
 										mount = mount,
-										label = label
+										label = label,
+										slot = i
 									}
 								end
 							end
@@ -536,7 +540,6 @@ function filesys:get_full_path (path)
 				end
 
 				if #tokens > 1 then
---					return (root.."/"..table.concat (tokens, "/", 2)), root, drives[d].form
 					return resolve_path (root.."/"..table.concat (tokens, "/", 2), root, drives[d].form)
 				end
 
@@ -552,7 +555,6 @@ function filesys:get_full_path (path)
 	end
 
 	if path:len () > 1 then
---		return (root..path), root, drives[1].form
 		return resolve_path (root..path, root, drives[1].form)
 	end
 
@@ -585,7 +587,11 @@ end
 
 
 function filesys:remove (path)
-	local fpath = self:get_full_path (path)
+	local fpath, root = self:get_full_path (path)
+
+	if fpath == root then
+		return nil, "invalid path"
+	end
 
 	if fpath then
 		return os.remove (fpath)
@@ -597,8 +603,16 @@ end
 
 
 function filesys:rename (oldname, newname)
-	local oldpath = self:get_full_path (oldname)
-	local newpath = self:get_full_path (newname)
+	local oldpath, oldroot = self:get_full_path (oldname)
+	local newpath, newroot = self:get_full_path (newname)
+
+	if oldpath == oldroot then
+		return nil, "invalid src"
+	end
+
+	if newpath == newroot then
+		return nil, "invalid dest"
+	end
 
 	if oldpath and newpath then
 		return os.rename (oldpath, newpath)
@@ -664,7 +678,7 @@ function filesys:ls (path, types)
 		if fpath then
 			local list = minetest.get_dir_list (fpath, types)
 
-			if path:len () == 1 and types ~= false then
+			if path == "/" and types ~= false then
 				local drives = self:get_drive_list ()
 
 				if drives then
@@ -771,9 +785,10 @@ function filesys:get_boot_file ()
 		local file = io.open (path, "r")
 
 		if file then
+			local contents = file:read ("*a")
 			file:close ()
 
-			return path
+			return contents
 		end
 	end
 
@@ -781,9 +796,10 @@ function filesys:get_boot_file ()
 	local file = io.open (path, "r")
 
 	if file then
+		local contents = file:read ("*a")
 		file:close ()
 
-		return path
+		return contents
 	end
 
 

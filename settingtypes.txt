@@ -42,3 +42,6 @@ lwcomputers_max_hard_disk_items (Maximum hard disk items) int 8000
 
 # Maximum floppy disk size files and directories
 lwcomputers_max_floppy_disk_items (Maximum floppy disk items) int 1000
+
+# Store disk data in meta data instead of disk folder under world folder
+lwcomputers_use_meta_disks (Store disks in meta data) bool false

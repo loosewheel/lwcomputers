@@ -37,3 +37,9 @@ v0.1.3
 
 v0.1.4
 *	added mesecon event (power to side).
+
+
+v0.1.5
+*	fixed no duplicates in creative mode.
+*	minor fixes.
+*	added option to store disk data in meta data instead of world folder.

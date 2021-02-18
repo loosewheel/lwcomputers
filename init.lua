@@ -1,4 +1,4 @@
-local version = "0.1.4"
+local version = "0.1.5"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
 
@@ -7,13 +7,8 @@ lwcomputers = { }
 
 
 -- settings
-local startup_delay = tonumber(minetest.settings:get("lwcomputers_startup_delay") or 3.0)
-local http_white_list = minetest.settings:get("lwcomputers_http_white_list") or ""
-
-http_white_list = string.split (http_white_list, " ")
-for l = 1, #http_white_list do
-	http_white_list[l] = string.gsub (http_white_list[l], "*", ".*")
-end
+local startup_delay = tonumber(minetest.settings:get ("lwcomputers_startup_delay") or 3.0)
+local meta_disks = minetest.settings:get_bool ("lwcomputers_use_meta_disks", false)
 
 
 
@@ -40,8 +35,9 @@ end
 
 
 
-minetest.mkdir (lwcomputers.worldpath.."/lwcomputers")
-
+if not meta_disks then
+	minetest.mkdir (lwcomputers.worldpath.."/lwcomputers")
+end
 
 
 function lwcomputers.version ()
@@ -53,56 +49,6 @@ function lwcomputers.store_computer_list ()
 	mod_storage:set_string ("computer_list",
 				minetest.serialize (lwcomputers.computer_list))
 
-end
-
-
-
-function lwcomputers.http_fetch (request, computer)
-	if http_api and computer.id then
-		if not request then
-			return nil, "no request"
-		end
-
-		if type (request.url) ~= "string" then
-			return nil, "no url"
-		end
-
-		if request.url:len () < 1 then
-			return nil, "no url"
-		end
-
-		-- check white list
-		local found = false
-		for l = 1, #http_white_list do
-			if string.match (request.url, http_white_list[l]) then
-				found = true
-			end
-		end
-
-		if not found then
-			return nil, "denied"
-		end
-
-		if request.timeout then
-			if request.timeout > 30 then
-				request.timeout = 30
-			end
-		end
-
-		computer.timed_out = false
-		http_api.fetch (request, computer.http_callback)
-		computer.resumed_at = minetest.get_us_time ()
-
-		local result, msg = coroutine.yield ("http_fetch")
-
-		if result then
-			return computer.http_result
-		end
-
-		return nil, msg
-	end
-
-	return nil, "no http"
 end
 
 
@@ -301,17 +247,20 @@ lwcomputers.shift_keys =
 }
 
 
-
-dofile(lwcomputers.modpath.."/filesys.lua")
-dofile(lwcomputers.modpath.."/clipboard.lua")
-dofile(lwcomputers.modpath.."/floppy.lua")
-dofile(lwcomputers.modpath.."/computer.lua")
-dofile(lwcomputers.modpath.."/digiswitch.lua")
-dofile(lwcomputers.modpath.."/page.lua")
-dofile(lwcomputers.modpath.."/book.lua")
-dofile(lwcomputers.modpath.."/ink_cartridge.lua")
-dofile(lwcomputers.modpath.."/printer.lua")
-dofile(lwcomputers.modpath.."/crafting.lua")
+if meta_disks then
+	dofile (lwcomputers.modpath.."/filesys_meta.lua")
+else
+	dofile (lwcomputers.modpath.."/filesys.lua")
+end
+dofile (lwcomputers.modpath.."/clipboard.lua")
+dofile (lwcomputers.modpath.."/floppy.lua")
+loadfile (lwcomputers.modpath.."/computer.lua") (http_api)
+dofile (lwcomputers.modpath.."/digiswitch.lua")
+dofile (lwcomputers.modpath.."/page.lua")
+dofile (lwcomputers.modpath.."/book.lua")
+dofile (lwcomputers.modpath.."/ink_cartridge.lua")
+dofile (lwcomputers.modpath.."/printer.lua")
+dofile (lwcomputers.modpath.."/crafting.lua")
 
 
 

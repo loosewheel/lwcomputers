@@ -1,4 +1,4 @@
-
+local http_api = ...
 
 local S = lwcomputers.S
 
@@ -15,10 +15,9 @@ local max_string_rep_size = tonumber(minetest.settings:get("lwcomputers_max_stri
 local max_clipboard_length = tonumber(minetest.settings:get("lwcomputers_max_clipboard_length") or 64000)
 local time_scale = tonumber(minetest.settings:get("time_speed") or 0)
 local epoch_year = tonumber(minetest.settings:get("lwcomputers_epoch_year") or 2000)
-local epoch_offset = 0
 
 
-epoch_offset = os.time ({
+local epoch_offset = os.time ({
 	year = epoch_year,
 	month = 1,
 	day = 1,
@@ -29,10 +28,68 @@ epoch_offset = os.time ({
 })
 
 
+local http_white_list = minetest.settings:get("lwcomputers_http_white_list") or ""
+
+http_white_list = string.split (http_white_list, " ")
+for l = 1, #http_white_list do
+	http_white_list[l] = string.gsub (http_white_list[l], "*", ".*")
+end
+
+
+
+local function http_fetch (request, computer)
+	if http_api and computer.id then
+		if not request then
+			return nil, "no request"
+		end
+
+		if type (request.url) ~= "string" then
+			return nil, "no url"
+		end
+
+		if request.url:len () < 1 then
+			return nil, "no url"
+		end
+
+		-- check white list
+		local found = false
+		for l = 1, #http_white_list do
+			if string.match (request.url, http_white_list[l]) then
+				found = true
+			end
+		end
+
+		if not found then
+			return nil, "denied"
+		end
+
+		if request.timeout then
+			if request.timeout > 30 then
+				request.timeout = 30
+			end
+		end
+
+		computer.timed_out = false
+		http_api.fetch (request, computer.http_callback)
+		computer.resumed_at = minetest.get_us_time ()
+
+		local result, msg = coroutine.yield ("http_fetch")
+
+		if result then
+			return computer.http_result
+		end
+
+		return nil, msg
+	end
+
+	return nil, "no http"
+end
+
+
+
 local term_form_width = 16.8 -- formspec units
 local hscale = term_form_width / term_hres
 local vscale = hscale * 1.5
-
 
 -- contains static parts of formspec
 local form_header = ""
@@ -358,22 +415,32 @@ local function new_computer_env (computer)
 	-- io
 
 	ENV.io.close = function (file)
-		if file then
-			io.close (file)
+		if file and file.close then
+			file:close ()
 		end
 	end
 
 
 	ENV.io.lines = function (path)
 		if path then
-			local fpath = computer.filesys:get_full_path (path)
+			local file = computer.filesys:open (path, "r")
 
-			if fpath then
-				return io.lines (fpath)
+			if file then
+				return function ()
+					local line = file:read ("*l")
+
+					if not line then
+						file:close ()
+					end
+
+					return line
+				end
 			end
 		end
 
-		return nil
+		return function ()
+			return nil
+		end
 	end
 
 
@@ -384,10 +451,14 @@ local function new_computer_env (computer)
 
 	ENV.io.type = function (obj)
 		if obj and obj.safefile_obj then
-			return io.type (obj.file)
+			if obj.status then
+				return obj.status
+			else
+				return io.type (obj.file)
+			end
 		end
 
-		return io.type (file)
+		return io.type (obj)
 	end
 
 
@@ -1252,7 +1323,7 @@ local function new_computer_env (computer)
 	-- http
 
 	ENV.http.fetch = function (request)
-		return lwcomputers.http_fetch (request, computer)
+		return http_fetch (request, computer)
 	end
 
 
@@ -1751,17 +1822,7 @@ local function new_computer (pos, id, persists)
 		computer.ENV.term.set_colors (lwcomputers.colors.silver, lwcomputers.colors.black)
 
 		-- boot
-		local bootpath = computer.filesys:get_boot_file ()
-		local src = nil
-
-		if bootpath then
-			local boot = io.open (bootpath, "r")
-
-			if boot then
-				src = boot:read ("*a")
-				boot:close ()
-			end
-		end
+		local src = computer.filesys:get_boot_file ()
 
 		if src then
 			local fxn, status = loadstring (src, "boot")
@@ -2556,12 +2617,16 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	local digilines_channel = ""
 	local inventory = "{ main = { [1] = \"\", [2] = \"\", [3] = \"\" } }"
 
+	local unique = false
+
 	if id > 0 then
 		name = imeta:get_string ("name")
 		label = imeta:get_string ("label")
 		infotext = imeta:get_string ("infotext")
 		inventory = imeta:get_string ("inventory")
 		digilines_channel = imeta:get_string ("digilines_channel")
+
+		unique = true
 	else
 		id = math.random (1000000)
 	end
@@ -2618,6 +2683,15 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 				node.param2 = param2
 			end
 		end
+	end
+
+	if unique and placer:is_player () and
+		minetest.is_creative_enabled (placer:get_player_name ()) then
+
+		-- no duplicates in creative mode
+		itemstack:clear ()
+
+		return true
 	end
 
 	-- If return true no item is taken from itemstack
@@ -2701,14 +2775,14 @@ local function on_metadata_inventory_put (pos, listname, index, stack, player)
 								imeta:set_string ("label", "lua_disk")
 								imeta:set_string ("description", "lua_disk")
 
-								if not lwcomputers.filesys:prep_lua_disk (id) then
+								if not lwcomputers.filesys:prep_lua_disk (id, imeta) then
 									minetest.log ("error", "lwcomputers - could not prep lua disk")
 								end
 							elseif itemname == "lwcomputers:floppy_los" then
 								imeta:set_string ("label", "los_disk")
 								imeta:set_string ("description", "los_disk")
 
-								if not lwcomputers.filesys:prep_los_disk (id) then
+								if not lwcomputers.filesys:prep_los_disk (id, imeta) then
 									minetest.log ("error", "lwcomputers - could not prep los disk")
 								end
 							else
