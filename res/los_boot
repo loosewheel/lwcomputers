@@ -226,7 +226,7 @@ local function ls ( ... )
 	end
 
 	if help then
-		print_text ("   ls [-l -d -f] [path]\n"..
+		print_text ("   ls [-h -l -d -f] [path]\n"..
 						"Show file list.\n"..
 						" -l   long info\n"..
 						" -d   show dirs only\n"..
@@ -586,7 +586,7 @@ local function copy_dir (srcpath, destpath, recurse)
 					return nil, msg
 				end
 
-				count = count + result
+				copied = copied + result
 			end
 		end
 	end
@@ -928,16 +928,15 @@ local function rm_dir (path)
 			end
 
 			removed = removed + result
-
-		else
-			local result, msg = fs.remove (full)
-
-			if not result then
-				return nil, msg
-			end
-
-			removed = removed + 1
 		end
+
+		local result, msg = fs.remove (full)
+
+		if not result then
+			return nil, msg
+		end
+
+		removed = removed + 1
 	end
 
 	return removed
@@ -1136,7 +1135,7 @@ local function label (action, drive, value)
 						" drive   drive number (0-3)\n"..
 						"         or mount eg. /<label>\n"..
 						" value   the new label to set\n"..
-						"         if omitted name is cleared\n")
+						"         if omitted label is cleared\n")
 		return 0
 	end
 
@@ -1178,17 +1177,26 @@ end
 
 
 local function mounts (option)
+	local sizes = false
+
 	if option == "-h" then
-		print_text ("   mounts [-h]\n"..
-						"Show list of mounted drive.\n"..
-						" -h      show help\n")
+		print_text ("   mounts [-h -s]\n"..
+						"Show list of mounted drives.\n"..
+						" -h      show help\n"..
+						" -s      show free and total sizes\n")
 		return 0
+	elseif option == "-s" then
+		sizes = true
 	end
 
 	local list = fs.ls ()
 
 	for i = 1, #list do
 		print_text ("%d  %s\n", i - 1, list[i])
+
+		if sizes then
+			print_text ("      %d/%d\n", fs.disk_free (i - 1), fs.disk_size (i - 1))
+		end
 	end
 
 	return 0
@@ -1270,7 +1278,7 @@ local function time ( ... )
 	end
 
 	if help then
-		print_text ("   time [-h -l -s -d -t]\n"..
+		print_text ("   time [-h -d -t]\n"..
 						"Prints the time and/or date.\n"..
 						" -h   show help\n"..
 						" -d   print date\n"..
@@ -1489,6 +1497,21 @@ local function dump (path)
 			end
 		end
 	end
+
+	return 0
+end
+
+
+
+local function version (option)
+	if option == "-h" then
+		print_text ("   version [-h]\n"..
+						"Show LOS version.\n"..
+						" -h      show help\n")
+		return 0
+	end
+
+	print_text ("%s\n", shell.version ())
 
 	return 0
 end
@@ -1732,6 +1755,7 @@ local commands =
 	sh = function () end,
 	shutdown = shutdown,
 	time = time,
+	version = version,
 	wireless = wire,
 }
 
@@ -1761,6 +1785,7 @@ local function help ()
 		"sh",
 		"shutdown",
 		"time",
+		"version",
 		"wireless",
 	}
 

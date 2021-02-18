@@ -69,7 +69,7 @@ function edit:get_sel_text ()
 		else
 			local sel = self.lines[self.sel_start_line + 1]:sub (self.sel_start_col + 1)
 
-			for l = 1, (self.sel_end_line - self.sel_start_line - 2) do
+			for l = 1, (self.sel_end_line - self.sel_start_line - 1) do
 				sel = sel.."\n"..self.lines[self.sel_start_line + 1 + l]
 			end
 
@@ -716,9 +716,16 @@ function edit:on_save (sel)
 		return
 	end
 
-	for l = 1, #self.lines do
-		file:write (self.lines[l], "\n")
+	if #self.lines > 0 then
+		for l = 1, #self.lines - 1 do
+			file:write (self.lines[l], "\n")
+		end
+
+		if self.lines[#self.lines]:len () > 0 then
+			file:write (self.lines[#self.lines])
+		end
 	end
+
 
 	file:close ()
 end
@@ -810,8 +817,28 @@ function edit:run ()
 
 	-- load file
 	self.lines = { }
-	for line in io.lines (self.filepath) do
-		self.lines[#self.lines + 1] = line
+	do
+		local file = io.open (self.filepath, "r")
+
+		if file then
+			for line in file:lines () do
+				self.lines[#self.lines + 1] = line
+			end
+
+			local pos = file:seek ("end", 0)
+
+			if pos > 0 then
+				file:seek ("set", pos - 1)
+
+				local last = file:read (1)
+
+				if last == "\r" or last == "\n" then
+					self.lines[#self.lines + 1] = ""
+				end
+			end
+
+			file:close ()
+		end
 	end
 
 	if not self.lines[1] then
