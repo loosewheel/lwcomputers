@@ -181,8 +181,11 @@ io.open (filename [, mode])
 	standard C function fopen.
 
 	* Returned file objects work the same as std lua, except for the following:
-		file:write - throws error "disk full" if the write will exceed disk size.
-						 the file is flush after every write action.
+		file:setvbuf:	Has no effect. All write operations are immediate.
+		file:write:		Throws error "disk full" if the write will exceed disk size.
+							The file is flushed after every write action.
+		Writing and reading number values with meta data disk storage is not
+		compatible with native lua.
 
 io.output ([file])
 	Omitted.
@@ -560,7 +563,7 @@ term.cache (x, y, w, h)
 	y: zero based top coordinate to read from.
 	w: the width of the rectangular section to read from.
 	h: the height of the rectangular section to read from.
-	Any section of the rectangle which is not on the screen is set to zer
+	Any section of the rectangle which is not on the screen is set to zero
 	(not a table, will blit as transparent).
 	x and y can be negative.
 
@@ -989,7 +992,7 @@ Events
 	and/or alt keys are down.
 	char: single character string with the character.
 	ascii: the ascii code of the character (0 to 255).
-	Not all key presses generate a char event, if there is not character
+	Not all key presses generate a char event, if there is no character
 	for that key (eg. ctrl key).
 	If either the ctrl or alt key are down a char event is not generated.
 

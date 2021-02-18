@@ -48,7 +48,7 @@ Commands
 
 cd [-h] [dir]
 	Change current dir.
-		-h		show help\n"..
+		-h		show help
 		dir	dir path, abs or rel
 				can have .. for up one
 
@@ -68,7 +68,7 @@ cp [-h] src dest
 				if src has * dir path
 				if src is dir then dir path
 				if src is file then file path
-	If paths are rel current dir used
+	If paths are relative current dir used
 
 digilines -h
 	Show help
@@ -125,9 +125,9 @@ label [-h] drive action [value]
 		drive		drive number (0-3)
 					or mount eg. /<label>
 		value		the new label to set
-					if omitted name is cleared
+					if omitted label is cleared
 
-ls [-l -d -f] [path]
+ls [-h -l -d -f] [path]
 	Show file list.
 		-l		long info
 		-d		show dirs only
@@ -157,7 +157,7 @@ mkdir [-h] dir
 	Make dir including parents.
 		-h		show help
 		dir	dir path to make
-				if rel current dir used
+				if relative current dir used
 
 mounts [-h]
 	Show list of mounted drive.
@@ -198,12 +198,16 @@ shutdown [-h]
 	Turns the computer off.
 		-h	show help
 
-time [-h -l -s -d -t]
+time [-h -d -t]
 	Prints the time and/or date.
 		-h	show help
 		-d	print date
 		-t	print time
 	no args defaults to -t
+
+version [-h]
+	Show LOS version.
+		-h	show help
 
 wireless -h
 	Show help
