@@ -399,7 +399,7 @@ local function ls ( ... )
 		end
 
 		if long then
-			print_text ("   %d files\n", #list)
+			print_text ("   1 files\n")
 		else
 			print_text ("\n")
 		end
