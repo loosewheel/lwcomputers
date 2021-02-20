@@ -869,6 +869,160 @@ printer.query_status (channel)
 	from the printer are requeued.
 
 
+Robot
+-----
+	This interface is only available for robots.
+
+robot.detect_up ()
+robot.detect_down ()
+robot.detect_front ()
+robot.detect_back ()
+robot.detect_left ()
+robot.detect_right ()
+	Returns the name of the node in the given direction from the robot, or
+	nil if the node was not readable.
+
+robot.move_up ()
+robot.move_down ()
+robot.move_front ()
+robot.move_back ()
+robot.move_left ()
+robot.move_right ()
+	Moves the robot in the given direction. The orientation of the robot
+	is not changed. Returns true if the robot successfully moved, false if not.
+	* Note, this action is delayed by the robot's movement delay setting time.
+
+robot.turn_left ()
+robot.turn_right ()
+	Turns the robot in the given direction. Always returns true.
+	* Note, this action is delayed by the robot's action delay setting time.
+
+robot.dig_up ()
+robot.dig_down ()
+robot.dig_front ()
+robot.dig_back ()
+robot.dig_left ()
+robot.dig_right ()
+	Digs the node in the given direction. Returns a string of the name of
+	the node that was dug, or nil if not dug.
+	* Note, this action is delayed by the robot's action delay setting time.
+
+robot.place_up (nodename [, param2])
+robot.place_down (nodename [, param2])
+robot.place_front (nodename [, param2])
+robot.place_back (nodename [, param2])
+robot.place_left (nodename [, param2])
+robot.place_right (nodename [, param2])
+	Places the given node to the given side of the robot. Returns true if
+	the node was placed, or false if not. The given node must be in the
+	robot's storage and the node must be able to be placed to the position.
+	nodename: the string name of the node to place. "air" cannot be used.
+	param2: value for param2, 0 is used if not given.
+	* Note, this action is delayed by the robot's action delay setting time.
+	* The file 'place_substitute.lua' in the mod folder contains a list of
+		item/node substitutes, useful for farming etc. Modify this file for
+		additional substitutes. The field name is the item/node to be
+		substituted. The value is what it is substituted with.
+
+robot.put_up (item [, listname])
+robot.put_down (item [, listname])
+robot.put_front (item [, listname])
+robot.put_back (item [, listname])
+robot.put_left (item [, listname])
+robot.put_right (item [, listname])
+	Moves the item/s from the robot's storage into an inventory at the given
+	side of the robot. Returns true if the item/s were moved successfully,
+	false if not. If multiple items either all are moved or none. There must
+	be space in the target inventory of the item/s.
+	item: the item/s to move into the inventory, can be:
+		tabel: as { name = "nodename", count = amount }
+		string: as node's name, count is 1.
+		number: robot's inventory slot (1 to robot.slots ()), the whole stack is moved.
+	listname: optionally the name of the list in the target inventory, if not
+		given defaults to "main".
+	* Note, this action is delayed by the robot's action delay setting time.
+
+robot.pull_up (item [, listname])
+robot.pull_down (item [, listname])
+robot.pull_front (item [, listname])
+robot.pull_back (item [, listname])
+robot.pull_left (item [, listname])
+robot.pull_right (item [, listname])
+	Moves the item/s from an inventory at the given side of the robot into
+	the robot's storage. Returns true if the item/s were moved successfully,
+	false if not. If multiple items either all are moved or none. There must
+	be space in the robot's inventory for the item/s.
+	item: the item/s to move from the inventory, can be:
+		tabel: as { name = "nodename", count = amount }
+		string: as node's name, count is 1.
+		number: inventory's slot (1 to however many), the whole stack is moved.
+	listname: optionally the name of the list in the source inventory, if not
+		given defaults to "main".
+	* Note, this action is delayed by the robot's action delay setting time.
+
+robot.contains (nodename)
+	Returns true if the robot's storage contains the given item, false if
+	not.
+	nodename: the string node name of the queried item.
+
+robot.slots ()
+	Returns the number of slots in the robot's storage.
+
+robot.slot (slot)
+	Returns a table with the contents of the given slot in the robot's storage,
+	or nil if slot is out of range. The returned table is of the form:
+	{ name = string, count = number }
+	The name is the node/item name, or nil if the given slot is empty. The count
+	is the number of items in the stack.
+	slot: the queried slot number (1 to robot.slots ()).
+
+robot.craft (item)
+	Crafts the given item. Returns true if successful, false if not. The
+	needed items for the craft must be in the robot's storage. The output
+	item is placed in the robot's storage.
+	item: string name of the item to craft.
+	* Note, this action is delayed by the robot's action delay setting time.
+	* The file 'crafting_mods.lua' in the mod folder contains a list of
+		crafting modifications. Modify this file as necessary. The field name
+		is the item being crafted. Each item in the add list is added to the
+		robot's storage. Each item in the remove list is removed from the
+		robot's storage.
+
+robot.find_inventory ([listname])
+	Finds inventory nodes to the sides of the robot. Returns a tables of
+	inventories found, or nil if none found.
+	listname: the name of the sort inventory list, or nil for any inventory.
+	The returned table is both an indexed list of sides, as well as a key/value
+	list where the key is the side. The values of the indexed list are strings
+	of the sides an inventory was found on. If the listname is given the value
+	of the keys is the number of slots for that inventory. If not given it is
+	true. The possible sides are "up", "down", "front", "back", "left" and
+	"right".
+
+	e.g.
+	local inv = robot.find_inventory ("main")
+
+	if inv then
+		for k, v in pairs (inv) do
+
+		end
+
+		-- or
+
+		for i = 1, #inv do
+			if inv[i] == "front" then
+
+			end
+		end
+
+		-- or
+
+		if inv.front then
+			-- inv.front will be the number of slots
+			-- if listname not given it will be true
+		end
+	end
+
 
 keys
 ----
