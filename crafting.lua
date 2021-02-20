@@ -11,6 +11,16 @@ minetest.register_craft({
 
 
 minetest.register_craft({
+	output = "lwcomputers:computer_robot 1",
+	recipe = {
+		{ "", "default:tin_ingot", "" },
+		{ "default:steel_ingot", "lwcomputers:computer", "default:steel_ingot" },
+		{ "", "default:copper_ingot", "" }
+	}
+})
+
+
+minetest.register_craft({
 	output = "lwcomputers:floppy_black 1",
 	recipe = {
 		{ "farming:flour", "default:paper" },

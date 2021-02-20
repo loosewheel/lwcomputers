@@ -43,3 +43,7 @@ v0.1.5
 *	fixed no duplicates in creative mode.
 *	minor fixes.
 *	added option to store disk data in meta data instead of world folder.
+
+v0.1.6
+*	added robots
+*	bug fixes

@@ -45,3 +45,9 @@ lwcomputers_max_floppy_disk_items (Maximum floppy disk items) int 1000
 
 # Store disk data in meta data instead of disk folder under world folder
 lwcomputers_use_meta_disks (Store disks in meta data) bool false
+
+# Delay in seconds for a robot's action, min 0.1
+lwcomputers_robot_action_delay (Robot's action delay) float 0.2
+
+# Delay in seconds for a robot's movement, min 0.1
+lwcomputers_robot_move_delay (Robot's movement delay) float 0.5

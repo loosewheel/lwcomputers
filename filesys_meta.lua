@@ -206,6 +206,10 @@ function diskobj:get_item (path)
 		end
 
 		data = data[tokens[i]]
+
+		if not data then
+			return nil
+		end
 	end
 
 	return data[tokens[#tokens]]
@@ -284,7 +288,7 @@ function diskobj:mkdir (path)
 	local max_items = (self.form == "floppy" and floppy_max_items) or hdd_max_items
 
 	if path:len () < 1 then
-		return false, "invalid path"
+		return true -- root false, "invalid path"
 	end
 
 	local tokens = string.split (path, "/")

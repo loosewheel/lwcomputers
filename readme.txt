@@ -21,7 +21,7 @@ CC-BY-SA 3.0
 
 Version
 =======
-0.1.5
+0.1.6
 
 
 Minetest Version
@@ -53,8 +53,8 @@ https://forum.minetest.net/viewtopic.php?f=9&t=25916&sid=7af0bb8a2ac3b9ade7a3f87
 
 Description
 ===========
-LWComputers provides programmable computers, floppy disks, printers and
-a digilines controlled mesecon power switch.
+LWComputers provides programmable computers and robots, floppy disks, printers
+and a digilines controlled mesecon power switch.
 
 Each computer has an internal hard drive, and 3 slots for floppy disks
 (or a clipboard). The terminal display has a resolution of 50 characters
@@ -63,6 +63,12 @@ mod settings. 16 colors are supported for both fore-ground and back-ground.
 The computer GUI has a keyboard, a reboot button, a power button and a
 persistence button. The terminal also responds to mouse clicks, which can
 be disabled through the mod settings.
+
+Robots are the same as computers with an additional robot interface in the
+lua environment. They also have a storage inventory accessible by the
+additional "S" button on the terminal interface. Robots can move, detect,
+dig, place, craft and work with inventories. While a robot is running
+sneak + punch will open a form to stop it.
 
 The persistence button toggles on and off. If persistence is on the block
 the computer is in remains loaded when out of range. This persistence is
@@ -215,6 +221,14 @@ Store disks in meta data (bool)
 	* The disk data of any existing worlds will not be accessible if this
 	setting is changed.
 
+Robot's action delay (float)
+	Delay in seconds for a robot's action. Enforced minimum of 0.1 seconds.
+	Default: 0.2
+
+Robot's movement delay (float)
+	Delay in seconds for a robot's movement. Enforced minimum of 0.1 seconds.
+	Default: 0.5
+
 
 ** Notes
 
@@ -243,7 +257,7 @@ disk's contents remain in the world save folder. This option may be better
 for local games, where you want to tinker with your programs to get your
 contraptions to work.
 
-The path to a computers hard drive's contents:
+The path to a computer or robot hard drive's contents:
 <minetest path>/worlds/<world>/lwcomputers/computer_<id>
 
 The path to a floppy disk's contents:

@@ -16,7 +16,6 @@ local max_clipboard_length = tonumber(minetest.settings:get("lwcomputers_max_cli
 local time_scale = tonumber(minetest.settings:get("time_speed") or 0)
 local epoch_year = tonumber(minetest.settings:get("lwcomputers_epoch_year") or 2000)
 
-
 local epoch_offset = os.time ({
 	year = epoch_year,
 	month = 1,
@@ -26,6 +25,18 @@ local epoch_offset = os.time ({
 	sec = 0,
 	isdst = false
 })
+
+
+local robot_move_delay = tonumber(minetest.settings:get("lwcomputers_robot_move_delay") or 0.5)
+local robot_action_delay = tonumber(minetest.settings:get("lwcomputers_robot_action_delay") or 0.2)
+
+if robot_move_delay < 0.1 then
+	robot_move_delay = 0.1
+end
+
+if robot_action_delay < 0.1 then
+	robot_action_delay = 0.1
+end
 
 
 local http_white_list = minetest.settings:get("lwcomputers_http_white_list") or ""
@@ -84,6 +95,11 @@ local function http_fetch (request, computer)
 
 	return nil, "no http"
 end
+
+
+
+local place_substitute = dofile (lwcomputers.modpath.."/place_substitute.lua")
+local crafting_mods = dofile (lwcomputers.modpath.."/crafting_mods.lua")
 
 
 
@@ -305,6 +321,10 @@ local function term_formspec (data)
 		btns = btns..
 		"image_button["..tostring (fw - 2.2)..","..tostring (fh - 3.4)..
 		";0.7,0.7;persist_button_off.png;persists;;false;false;persist_button_off.png]"
+	end
+
+	if data.robot then
+		btns = btns.."button[12.5,"..tostring (fh - 3.4)..";0.7,0.7;storage;S]"
 	end
 
 	kby = kby + 2.1
@@ -1531,6 +1551,68 @@ local function new_computer_env (computer)
 	end
 
 
+	-- robot
+
+	if computer.robot then
+		ENV.robot = { }
+
+		local sides = { "up", "down", "front", "back", "left", "right" }
+		for s = 1, #sides do
+			ENV.robot["detect_"..sides[s]] = function ()
+				return computer.detect (sides[s])
+			end
+
+			ENV.robot["move_"..sides[s]] = function ()
+				return computer.move (sides[s])
+			end
+
+			ENV.robot["dig_"..sides[s]] = function ()
+				return computer.dig (sides[s])
+			end
+
+			ENV.robot["place_"..sides[s]] = function (nodename, param2)
+				return computer.place (sides[s], nodename, param2)
+			end
+
+			ENV.robot["put_"..sides[s]] = function (item, listname)
+				return computer.put (sides[s], item, listname)
+			end
+
+			ENV.robot["pull_"..sides[s]] = function (item, listname)
+				return computer.pull (sides[s], item, listname)
+			end
+		end
+
+		ENV.robot.turn_left = function ()
+			return computer.turn ("left")
+		end
+
+		ENV.robot.turn_right = function ()
+			return computer.turn ("right")
+		end
+
+		ENV.robot.contains = function (nodename)
+			return computer.contains (nodename)
+		end
+
+		ENV.robot.slots = function ()
+			return computer.slots ()
+		end
+
+		ENV.robot.slot = function (slot)
+			return computer.slot (slot)
+		end
+
+		ENV.robot.craft = function (item)
+			return computer.craft (item)
+		end
+
+		ENV.robot.find_inventory = function (listname)
+			return computer.find_inventory (listname)
+		end
+	end
+
+
 
 	return ENV
 end
@@ -1571,17 +1653,53 @@ end
 
 
 
-local function new_computer (pos, id, persists)
+local function get_robot_side (pos, param2, side)
+	local base = nil
+
+	if side == "up" then
+		return { x = pos.x, y = pos.y + 1, z = pos.z }
+	elseif side == "down" then
+		return { x = pos.x, y = pos.y - 1, z = pos.z }
+	elseif side == "left" then
+		base = { x = 1, y = 0, z = 0 }
+	elseif side == "right" then
+		base = { x = -1, y = 0, z = 0 }
+	elseif side == "front" then
+		base = { x = 0, y = 0, z = 1 }
+	elseif side == "back" then
+		base = { x = 0, y = 0, z = -1 }
+	else
+		return nil
+	end
+
+	if param2 == 3 then -- +x
+		return { x = base.z + pos.x, y = pos.y, z = (base.x * -1) + pos.z }
+	elseif param2 == 0 then -- -z
+		return { x = (base.x * -1) + pos.x, y = pos.y, z = (base.z * -1) + pos.z }
+	elseif param2 == 1 then -- -x
+		return { x = (base.z * -1) + pos.x, y = pos.y, z = base.x + pos.z }
+	elseif param2 == 2 then -- +z
+		return { x = base.x + pos.x, y = pos.y, z = base.z + pos.z }
+	end
+
+	return nil
+end
+
+
+
+local function new_computer (pos, id, persists, robot)
 	local computer =
 	{
 		id = id,
 		pos =  { x = pos.x, y = pos.y, z = pos.z },
+		robot = robot,
 		width = term_hres,
 		height = term_vres,
 		cursorx = 0,
 		cursory = 0,
 		blink = false,
 		redraw = false,
+		suspend_redraw = false,
 		clicked = { x = -1, y = -1 },
 		clicked_when = -20,
 		click_count = 0,
@@ -1623,7 +1741,7 @@ local function new_computer (pos, id, persists)
 
 
 	computer.redraw_formspec = function (force)
-		if computer.redraw or force then
+		if not computer.suspend_redraw and (computer.redraw or force) then
 			local meta = minetest.get_meta (computer.pos)
 			local id = meta:get_int ("lwcomputer_id")
 
@@ -1883,6 +2001,17 @@ local function new_computer (pos, id, persists)
 		end
 
 		computer.running = true
+
+		local node = minetest.get_node (computer.pos)
+		if node then
+			if computer.robot then
+				node.name = "lwcomputers:computer_robot_on"
+			else
+				node.name = "lwcomputers:computer_on"
+			end
+
+			minetest.swap_node (computer.pos, node)
+		end
 	end
 
 
@@ -1912,6 +2041,17 @@ local function new_computer (pos, id, persists)
 
 		if not silent then
 			computer.redraw_formspec (true)
+		end
+
+		local node = minetest.get_node (computer.pos)
+		if node then
+			if computer.robot then
+				node.name = "lwcomputers:computer_robot"
+			else
+				node.name = "lwcomputers:computer"
+			end
+
+			minetest.swap_node (computer.pos, node)
 		end
 	end
 
@@ -2191,17 +2331,753 @@ local function new_computer (pos, id, persists)
 	end
 
 
+	-- robot
+
+	computer.detect = function (side)
+		local node = minetest.get_node_or_nil (computer.pos)
+
+		if node then
+			local pos = get_robot_side (computer.pos, node.param2, side)
+
+			if pos then
+				node = minetest.get_node_or_nil (pos)
+
+				if node then
+					return node.name
+				end
+			end
+		end
+
+		return nil
+	end
+
+
+	local function get_far_node (pos)
+		local node = minetest.get_node (pos)
+
+		if node.name == "ignore" then
+			minetest.get_voxel_manip ():read_from_map (pos, pos)
+
+			node = minetest.get_node(pos)
+
+			if node.name == "ignore" then
+				return nil
+			end
+		end
+
+		return node
+	end
+
+
+	computer.move = function (side)
+		local cur_node = minetest.get_node_or_nil (computer.pos)
+		if not cur_node then
+			return false
+		end
+
+		local pos = get_robot_side (computer.pos, cur_node.param2, side)
+		if not pos then
+			return false
+		end
+
+		local node = get_far_node (pos)
+		if not node then
+			return false
+		end
+
+		if not minetest.registered_nodes[node.name] or
+			minetest.registered_nodes[node.name].walkable then
+			return false
+		end
+
+		local meta = minetest.get_meta (computer.pos)
+		if not meta then
+			return false
+		end
+
+		local inv = meta:get_inventory ()
+		if not inv then
+			return false
+		end
+
+		minetest.get_node_timer (computer.pos):stop ()
+
+		local inv_main = { }
+		local slots = inv:get_size ("main")
+
+		for i = 1, slots do
+			inv_main[i] = inv:get_stack ("main", i)
+		end
+
+		local inv_storage = { }
+		local stores = inv:get_size ("storage")
+
+		for i = 1, stores do
+			inv_storage[i] = inv:get_stack ("storage", i)
+		end
+
+		local id = meta:get_int ("lwcomputer_id")
+		local running = meta:get_int ("running")
+		local persists = meta:get_int ("persists")
+		local name = meta:get_string ("name")
+		local label = meta:get_string ("label")
+		local infotext = meta:get_string ("infotext")
+		local digilines_channel = meta:get_string ("digilines_channel")
+		local formspec = meta:get_string ("formspec")
+		local disk_data = meta:get_string ("disk_data")
+		local inventory = "{ "..
+		"main = { [1] = '', [2] = '', [3] = '' }, "..
+		"storage = { [1] = '', [2] = '', [3] = '', [4] = '', [5] = '', [6] = '', [7] = '', [8] = '', "..
+		"            [9] = '', [10] = '', [11] = '', [12] = '', [13] = '', [14] = '', [15] = '', [16] = '', "..
+		"            [17] = '', [18] = '', [19] = '', [20] = '', [21] = '', [22] = '', [23] = '', [24] = '', "..
+		"            [25] = '', [26] = '', [27] = '', [28] = '', [29] = '', [30] = '', [31] = '', [32] = '' } }"
+
+		if persists == 1 then
+			minetest.forceload_free_block (computer.pos, false)
+		end
+
+		computer.mesecon_set (false)
+
+		meta:set_int ("lwcomputer_id", 0)
+		minetest.remove_node (computer.pos)
+
+		computer.pos = pos
+		computer.filesys.pos = pos
+		minetest.add_node (pos, cur_node)
+
+		meta = minetest.get_meta (pos)
+		inv = meta:get_inventory ()
+
+		inv:set_size("main", 3)
+		inv:set_width("main", 3)
+		inv:set_size("storage", 32)
+		inv:set_width("storage", 8)
+
+		meta:set_int ("lwcomputer_id", id)
+		meta:set_int ("running", running)
+		meta:set_int ("robot", 1)
+		meta:set_int ("persists", persists)
+		meta:set_string ("name", name)
+		meta:set_string ("label", label)
+		meta:set_string ("infotext", infotext)
+		meta:set_string ("digilines_channel", digilines_channel)
+		meta:set_string ("formspec", formspec)
+		meta:set_string ("inventory", inventory)
+		if disk_data:len () > 0 then
+			meta:set_string ("disk_data", disk_data)
+		end
+
+		for i = 1, slots do
+			if inv_main[i] then
+				inv:set_stack ("main", i, inv_main[i])
+			end
+		end
+
+		for i = 1, stores do
+			if inv_storage[i] then
+				inv:set_stack ("storage", i, inv_storage[i])
+			end
+		end
+
+		if persists == 1 then
+			minetest.forceload_block (pos, false)
+		end
+
+		minetest.get_node_timer (pos):start (running_tick)
+
+		coroutine.yield ("sleep", robot_move_delay)
+
+		return true
+	end
+
+
+	computer.turn = function (side)
+		local cur_node = minetest.get_node_or_nil (computer.pos)
+		if not cur_node then
+			return false
+		end
+
+		if side == "left" then
+			cur_node.param2 = (cur_node.param2 + 3) % 4
+		elseif side == "right" then
+			cur_node.param2 = (cur_node.param2 + 1) % 4
+		else
+			return false
+		end
+
+		minetest.swap_node(computer.pos, cur_node)
+
+		coroutine.yield ("sleep", robot_action_delay)
+
+		return true
+	end
+
+
+	computer.dig = function (side)
+		local meta = minetest.get_meta (computer.pos)
+		local cur_node = minetest.get_node_or_nil (computer.pos)
+		if not meta or not cur_node then
+			return nil
+		end
+
+		local pos = get_robot_side (computer.pos, cur_node.param2, side)
+		if not pos then
+			return nil
+		end
+
+		local node = minetest.get_node_or_nil (pos)
+		if not node then
+			return nil
+		end
+
+		if not minetest.registered_nodes[node.name] or
+			not minetest.registered_nodes[node.name].diggable or
+			minetest.is_protected (pos, "") then
+
+			return nil
+		end
+
+		if minetest.registered_nodes[node.name].can_dig then
+			if minetest.registered_nodes[node.name].can_dig (pos) == false then
+				return nil
+			end
+		end
+
+		local inv = meta:get_inventory ()
+		if not inv then
+			return nil
+		end
+
+		local items = minetest.get_node_drops (node, nil)
+		if items then
+			for i = 1, #items do
+				local over = inv:add_item ("storage", ItemStack (items[i]))
+
+				if over and over:get_count () > 0 then
+					minetest.item_drop (over, nil, pos)
+				end
+			end
+		end
+
+		minetest.remove_node (pos)
+
+		coroutine.yield ("sleep", robot_action_delay)
+
+		return node.name
+	end
+
+
+	computer.place = function (side, nodename, param2)
+		nodename = tostring (nodename or "")
+		param2 = tonumber (param2 or 0) or 0
+
+		if nodename:len () < 1 or nodename == "air" then
+			return false
+		end
+
+		if param2 < 0 or param2 > 5 then
+			param2 = 0
+		end
+
+		local stack = ItemStack (nodename)
+		local meta = minetest.get_meta (computer.pos)
+		local cur_node = minetest.get_node_or_nil (computer.pos)
+		if not stack or not meta or not cur_node  then
+			return false
+		end
+
+		local inv = meta:get_inventory ()
+		if not inv or not inv:contains_item ("storage", stack, false) then
+			return false
+		end
+
+		local pos = get_robot_side (computer.pos, cur_node.param2, side)
+		if not pos then
+			return false
+		end
+
+		local node = minetest.get_node_or_nil (pos)
+		if not node then
+			return false
+		end
+
+		if node.name ~= "air" then
+			if not minetest.registered_nodes[node.name] or
+				not minetest.registered_nodes[node.name].buildable_to or
+				minetest.is_protected (pos, "") then
+
+				return false
+			end
+		end
+
+		if not inv:remove_item ("storage", stack) then
+			return false
+		end
+
+		local substitute = place_substitute[nodename]
+		if substitute then
+			nodename = substitute
+		end
+
+		minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+
+		coroutine.yield ("sleep", robot_action_delay)
+
+		return true
+	end
+
+
+	computer.contains = function (nodename)
+		local meta = minetest.get_meta (computer.pos)
+		local inv = meta:get_inventory ()
+		local stack = ItemStack (nodename)
+		if not meta or not inv or not stack then
+			return false
+		end
+
+		return inv:contains_item ("storage", stack, false)
+	end
+
+
+	computer.slots = function ()
+		local meta = minetest.get_meta (computer.pos)
+		local inv = meta:get_inventory ()
+		if not meta or not inv then
+			return nil
+		end
+
+		return inv:get_size ("storage")
+	end
+
+
+	computer.slot = function (slot)
+		local meta = minetest.get_meta (computer.pos)
+		local inv = meta:get_inventory ()
+		if not meta or not inv then
+			return nil
+		end
+
+		local slots = inv:get_size ("storage")
+		if slot < 1 or slot > slots then
+			return nil
+		end
+
+		local stack = inv:get_stack ("storage", slot)
+		if not stack or stack:is_empty () then
+			return nil
+		end
+
+		if stack:is_empty () then
+			return { name = nil, count = 0 }
+		end
+
+		return { name = stack:get_name(), count = stack:get_count() }
+	end
+
+
+	computer.put = function (side, item, listname)
+		listname = tostring (listname or "main")
+		local count = 1
+		local name = nil
+
+		local meta = minetest.get_meta (computer.pos)
+		local cur_node = minetest.get_node_or_nil (computer.pos)
+		if not meta or not cur_node then
+			return false
+		end
+
+		local inv = meta:get_inventory ()
+		if not inv then
+			return false
+		end
+
+		local pos = get_robot_side (computer.pos, cur_node.param2, side)
+		if not pos then
+			return false
+		end
+
+		local node = minetest.get_node_or_nil (pos)
+		if not node then
+			return false
+		end
+
+		if node.name == "air" then
+			return false
+		end
+
+		local imeta =  minetest.get_meta (pos)
+		if not imeta then
+			return false
+		end
+
+		local iinv = imeta:get_inventory ()
+		if not iinv then
+			return false
+		end
+
+		if type (item) == "table" then
+			if type (item.name) ~= "string" then
+				return false
+			end
+
+			count = tonumber (item.count or 1) or 1
+			name = item.name
+		else
+			name = item
+		end
+
+		if type (name) == "string" then
+			local stack = ItemStack ({ name = name, count = count })
+			if not stack or not inv:contains_item ("storage", stack, false) then
+				return false
+			end
+
+			if not iinv:room_for_item (listname, stack) then
+				return false
+			end
+
+			iinv:add_item(listname, stack)
+			inv:remove_item ("storage", stack)
+
+			coroutine.yield ("sleep", robot_action_delay)
+
+			return true
+
+		elseif type (name) == "number" then
+			local slots = inv:get_size ("storage")
+			if name < 1 or name > slots then
+				return false
+			end
+
+			local stack = inv:get_stack ("storage", name)
+			if not stack or stack:is_empty () then
+				return false
+			end
+
+			if not iinv:room_for_item (listname, stack) then
+				return false
+			end
+
+			iinv:add_item (listname, stack)
+			inv:set_stack ("storage", name, nil)
+
+			coroutine.yield ("sleep", robot_action_delay)
+
+			return true
+		end
+
+		return false
+	end
+
+
+	computer.pull = function (side, item, listname)
+		listname = tostring (listname or "main")
+		local count = 1
+		local name = nil
+
+		local meta = minetest.get_meta (computer.pos)
+		local cur_node = minetest.get_node_or_nil (computer.pos)
+		if not meta or not cur_node then
+			return false
+		end
+
+		local inv = meta:get_inventory ()
+		if not inv then
+			return false
+		end
+
+		local pos = get_robot_side (computer.pos, cur_node.param2, side)
+		if not pos then
+			return false
+		end
+
+		local node = minetest.get_node_or_nil (pos)
+		if not node then
+			return false
+		end
+
+		if node.name == "air" then
+			return false
+		end
+
+		local imeta =  minetest.get_meta (pos)
+		if not imeta then
+			return false
+		end
+
+		local iinv = imeta:get_inventory ()
+		if not iinv then
+			return false
+		end
+
+		if type (item) == "table" then
+			if type (item.name) ~= "string" then
+				return false
+			end
+
+			count = tonumber (item.count or 1) or 1
+			name = item.name
+		else
+			name = item
+		end
+
+		if type (name) == "string" then
+			local stack = ItemStack ({ name = name, count = count })
+			if not stack or not iinv:contains_item (listname, stack, false) then
+				return false
+			end
+
+			if not inv:room_for_item ("storage", stack) then
+				return false
+			end
+
+			inv:add_item("storage", stack)
+			iinv:remove_item (listname, stack)
+
+			coroutine.yield ("sleep", robot_action_delay)
+
+			return true
+
+		elseif type (name) == "number" then
+			local slots = iinv:get_size (listname)
+			if not slots or name < 1 or name > slots then
+				return false
+			end
+
+			local stack = iinv:get_stack (listname, name)
+			if not stack or stack:is_empty () then
+				return false
+			end
+
+			if not inv:room_for_item ("storage", stack) then
+				return false
+			end
+
+			inv:add_item ("storage", stack)
+			iinv:set_stack (listname, name, nil)
+
+			coroutine.yield ("sleep", robot_action_delay)
+
+			return true
+		end
+
+		return false
+	end
+
+
+	local function substitute_group (item, inv)
+		local source = ItemStack (item)
+
+		if item:sub (1, 6) ~= "group:" then
+			return source
+		end
+
+		local group = item:sub (7)
+
+		local slots = inv:get_size ("storage")
+		for s = 1, slots do
+			local stack = inv:get_stack ("storage", s)
+
+			if stack and stack:get_count () > 0 then
+				if minetest.get_item_group (stack:get_name (), group) > 0 then
+					local replace = ItemStack (stack:get_name ())
+
+					if replace then
+						replace:set_count (source:get_count ())
+
+						return replace
+					end
+				end
+			end
+		end
+
+		return source
+	end
+
+
+	computer.craft = function (item)
+		item = tostring (item or "")
+
+		if item:len () < 1 then
+			return false
+		end
+
+		local meta = minetest.get_meta (computer.pos)
+		local inv = meta:get_inventory ()
+		if not meta or not inv then
+			return false
+		end
+
+		local recipes = minetest.get_all_craft_recipes(item)
+
+		if not recipes then
+			return false
+		end
+
+		for r = 1, #recipes do
+			if (recipes[r].type and recipes[r].type == "normal") or
+				(recipes[r].method and recipes[r].method == "normal") then
+
+				local match = true
+
+				local items = { }
+				for i = 1, #recipes[r].items do
+					local stack = substitute_group (recipes[r].items[i], inv)
+
+					if stack then
+						if items[stack:get_name ()] then
+							items[stack:get_name ()] = items[stack:get_name ()] + stack:get_count ()
+						else
+							items[stack:get_name ()] = stack:get_count ()
+						end
+					end
+				end
+
+				for k, v in pairs (items) do
+					local stack = ItemStack (k)
+
+					if stack then
+						stack:set_count (v)
+
+						if not inv:contains_item ("storage", stack, false) then
+							match = false
+							break
+						end
+					end
+				end
+
+				if match then
+					for k, v in pairs (items) do
+						local stack = ItemStack (k)
+
+						if stack then
+							stack:set_count (v)
+
+							inv:remove_item ("storage", stack)
+						end
+					end
+
+					inv:add_item ("storage", ItemStack (recipes[r].output))
+
+					local output, leftover = minetest.get_craft_result (recipes[r])
+
+					if output and output.replacements and #output.replacements > 0 then
+						for i = 1, #output.replacements do
+							if output.replacements[i]:get_count () > 0 then
+								inv:add_item ("storage", output.replacements[i])
+							end
+						end
+					end
+
+					if leftover and leftover.items then
+						for i = 1, #leftover.items do
+							if leftover.items[i]:get_count () > 0 then
+								inv:add_item ("storage", leftover.items[i])
+							end
+						end
+					end
+
+					if crafting_mods[item] then
+						if crafting_mods[item].add then
+							for i = 1, #crafting_mods[item].add do
+								local stack = ItemStack (crafting_mods[item].add[i])
+
+								if stack and stack:get_count () > 0 then
+									inv:add_item ("storage", stack)
+								end
+							end
+						end
+
+
+						if crafting_mods[item].remove then
+							for i = 1, #crafting_mods[item].remove do
+								local stack = ItemStack (crafting_mods[item].remove[i])
+
+								if stack and stack:get_count () > 0 then
+									inv:remove_item ("storage", stack)
+								end
+							end
+						end
+					end
+
+					coroutine.yield ("sleep", robot_action_delay)
+
+					return true
+				end
+			end
+		end
+
+		return false
+	end
+
+
+	computer.find_inventory = function (listname)
+		local result = { }
+		local sides = { "up", "down", "front", "back", "left", "right" }
+		local cur_node = minetest.get_node_or_nil (computer.pos)
+		if not cur_node  then
+			return false
+		end
+
+		if listname then
+			listname = tostring (listname)
+		end
+
+		for s = 1, #sides do
+			local pos = get_robot_side (computer.pos, cur_node.param2, sides[s])
+
+			if pos then
+				local node = minetest.get_node_or_nil (pos)
+
+				if node and node.name ~= "air" then
+					local meta =  minetest.get_meta (pos)
+
+					if meta then
+						local inv = meta:get_inventory ()
+
+						if inv then
+							if listname then
+								local slots = inv:get_size (listname)
+
+								if slots and slots > 0 then
+									result[#result + 1] = sides[s]
+									result[sides[s]] = slots
+								end
+							else
+								result[#result + 1] = sides[s]
+								result[sides[s]] = true
+							end
+						end
+					end
+				end
+			end
+		end
+
+		if #result > 0 then
+			return result
+		end
+
+		return nil
+	end
+
+
+
 	return computer
 end
 
 
 
-function lwcomputers.get_computer_data (id, pos, persists)
+function lwcomputers.get_computer_data (id, pos)
 	local name = tostring (id)
 	local data = lwcomputers.computer_data[name]
 
-	if data == nil then
-		data = new_computer (pos, id, persists)
+	if data == nil and pos then
+		local meta = minetest.get_meta (pos)
+		data = new_computer (pos,
+									id,
+									meta:get_int ("persists") == 1,
+									meta:get_int ("robot") == 1)
+
 		lwcomputers.computer_data[name] = data
 
 		lwcomputers.computer_list[name] =
@@ -2217,9 +3093,13 @@ end
 
 
 
-function lwcomputers.reset_computer_data (id, pos, persists)
+function lwcomputers.reset_computer_data (id, pos)
 	local name = tostring (id)
-	local data = new_computer (pos, id, persists)
+	local meta = minetest.get_meta (pos)
+	local data = new_computer (pos,
+										id,
+										meta:get_int ("persists") == 1,
+										meta:get_int ("robot") == 1)
 
 	lwcomputers.computer_data[name] = data
 
@@ -2264,7 +3144,7 @@ function lwcomputers.send_message (sender_id, msg, target_id)
 					lwcomputers.remove_computer_data (target_id)
 
 				elseif target_id ~= sender_id then
-					local data = lwcomputers.get_computer_data (target_id, stats.pos, meta:get_int ("persists") == 1)
+					local data = lwcomputers.get_computer_data (target_id, stats.pos)
 
 					if data then
 						data.queue_event ("wireless", msg, sender_id, target_id)
@@ -2295,7 +3175,7 @@ function lwcomputers.send_message (sender_id, msg, target_id)
 				else
 
 					if target_id ~= sender_id then
-						local data = lwcomputers.get_computer_data (target_id, stats.pos, meta:get_int ("persists") == 1)
+						local data = lwcomputers.get_computer_data (target_id, stats.pos)
 
 						if data then
 							data.queue_event ("wireless", msg, sender_id, nil)
@@ -2407,6 +3287,17 @@ end
 
 
 local function on_construct (pos)
+	local meta = minetest.get_meta (pos)
+
+	meta:set_int ("robot", 0)
+end
+
+
+
+local function on_construct_robot (pos)
+	local meta = minetest.get_meta (pos)
+
+	meta:set_int ("robot", 1)
 end
 
 
@@ -2416,10 +3307,10 @@ local function on_destruct (pos)
 
 	if meta then
 		local id = meta:get_int ("lwcomputer_id")
-		local persists =  meta:get_int ("persists") == 1
 
 		if id > 0 then
-			local data = lwcomputers.get_computer_data (id, pos, persists)
+			local persists =  meta:get_int ("persists") == 1
+			local data = lwcomputers.get_computer_data (id, pos)
 
 			if data then
 				data.mesecon_set (false)
@@ -2442,7 +3333,7 @@ local function on_receive_fields (pos, formname, fields, sender)
 
 		if meta then
 			local id = meta:get_int ("lwcomputer_id")
-			local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+			local data = lwcomputers.get_computer_data (id, pos)
 
 			if data then
 				data.reboot ()
@@ -2454,7 +3345,7 @@ local function on_receive_fields (pos, formname, fields, sender)
 
 		if meta then
 			local id = meta:get_int ("lwcomputer_id")
-			local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+			local data = lwcomputers.get_computer_data (id, pos)
 
 			if data then
 				if data.running then
@@ -2470,10 +3361,47 @@ local function on_receive_fields (pos, formname, fields, sender)
 
 		if meta then
 			local id = meta:get_int ("lwcomputer_id")
-			local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+			local data = lwcomputers.get_computer_data (id, pos)
 
 			if data then
 				data.toggle_persists ()
+				data.update_formspec ()
+			end
+		end
+
+	elseif fields.storage then
+		local meta = minetest.get_meta (pos)
+
+
+		if meta then
+			local id = meta:get_int ("lwcomputer_id")
+			local data = lwcomputers.get_computer_data (id, pos)
+
+			if data then
+				data.suspend_redraw = true
+
+				local spec =
+				"formspec_version[3]"..
+				"size[11.75,12.25,false]"..
+				"no_prepend[]"..
+				"bgcolor[#E7DAA8]"..
+				"list[context;storage;1.0,1.0;8,4;]"..
+				"list[current_player;main;1.0,6.5;8,4;]"..
+				"listcolors[#545454;#6E6E6E;#DBCF9F]"
+
+				meta:set_string("formspec", spec)
+			end
+		end
+
+	elseif fields.quit then
+		local meta = minetest.get_meta (pos)
+
+		if meta then
+			local id = meta:get_int ("lwcomputer_id")
+			local data = lwcomputers.get_computer_data (id, pos)
+
+			if data then
+				data.suspend_redraw = false
 				data.update_formspec ()
 			end
 		end
@@ -2487,7 +3415,7 @@ local function on_receive_fields (pos, formname, fields, sender)
 
 				if meta then
 					local id = meta:get_int ("lwcomputer_id")
-					local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+					local data = lwcomputers.get_computer_data (id, pos)
 
 					if data then
 						data.id = id
@@ -2555,7 +3483,7 @@ local function on_receive_fields (pos, formname, fields, sender)
 
 					if meta then
 						local id = meta:get_int ("lwcomputer_id")
-						local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+						local data = lwcomputers.get_computer_data (id, pos)
 						local count = 1
 
 						if (os.clock () - data.clicked_when) <= double_click_time then
@@ -2600,6 +3528,11 @@ local function preserve_metadata (pos, oldnode, oldmeta, drops)
 				imeta:set_string ("inventory", meta:get_string ("inventory"))
 				imeta:set_string ("digilines_channel", meta:get_string ("digilines_channel"))
 				imeta:set_string ("description", description)
+
+				local disk_data = meta:get_string ("disk_data")
+				if disk_data:len () > 0 then
+					imeta:set_string ("disk_data", disk_data)
+				end
 			end
 		end
 	end
@@ -2609,13 +3542,26 @@ end
 
 local function after_place_node (pos, placer, itemstack, pointed_thing)
 	local meta = minetest.get_meta (pos)
+	local is_robot = meta:get_int ("robot") == 1
 	local imeta = itemstack:get_meta ()
 	local id = imeta:get_int ("lwcomputer_id")
 	local name = ""
 	local label = ""
 	local infotext = ""
 	local digilines_channel = ""
-	local inventory = "{ main = { [1] = \"\", [2] = \"\", [3] = \"\" } }"
+	local disk_data = ""
+	local inventory = ""
+
+	if is_robot then
+		inventory = "{ "..
+		"main = { [1] = '', [2] = '', [3] = '' }, "..
+		"storage = { [1] = '', [2] = '', [3] = '', [4] = '', [5] = '', [6] = '', [7] = '', [8] = '', "..
+		"            [9] = '', [10] = '', [11] = '', [12] = '', [13] = '', [14] = '', [15] = '', [16] = '', "..
+		"            [17] = '', [18] = '', [19] = '', [20] = '', [21] = '', [22] = '', [23] = '', [24] = '', "..
+		"            [25] = '', [26] = '', [27] = '', [28] = '', [29] = '', [30] = '', [31] = '', [32] = '' } }"
+	else
+		inventory = "{ main = { [1] = '', [2] = '', [3] = '' } }"
+	end
 
 	local unique = false
 
@@ -2625,6 +3571,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 		infotext = imeta:get_string ("infotext")
 		inventory = imeta:get_string ("inventory")
 		digilines_channel = imeta:get_string ("digilines_channel")
+		disk_data = imeta:get_string ("disk_data")
 
 		unique = true
 	else
@@ -2638,6 +3585,11 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	meta:set_string ("infotext", infotext)
 	meta:set_string ("inventory", inventory)
 	meta:set_string ("digilines_channel", digilines_channel)
+
+	if disk_data:len () > 0 then
+		meta:set_string ("disk_data", disk_data)
+	end
+
 	meta:set_string ("mesecon_front", lwcomputers.mesecon_state_off)
 	meta:set_string ("mesecon_back", lwcomputers.mesecon_state_off)
 	meta:set_string ("mesecon_left", lwcomputers.mesecon_state_off)
@@ -2650,7 +3602,12 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	inv:set_size("main", 3)
 	inv:set_width("main", 3)
 
-	local data = lwcomputers.reset_computer_data (id, pos, false)
+	if is_robot then
+		inv:set_size("storage", 32)
+		inv:set_width("storage", 8)
+	end
+
+	local data = lwcomputers.reset_computer_data (id, pos)
 
 	if data then
 		meta:set_string("formspec", term_formspec (data))
@@ -2705,7 +3662,7 @@ local function on_timer (pos, elapsed)
 
 	if meta then
 		local id = meta:get_int ("lwcomputer_id")
-		local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+		local data = lwcomputers.get_computer_data (id, pos)
 
 		if data then
 			data.tick ()
@@ -2725,8 +3682,17 @@ local function can_dig (pos, player)
 		local inv = meta:get_inventory ()
 
 		if inv then
-			return inv:is_empty ("main")
+			if not inv:is_empty ("main") then
+				return false
+			end
 		end
+
+		if meta:get_int ("robot") == 1 then
+			if not inv:is_empty ("storage") then
+				return false
+			end
+		end
+
 	end
 
 	return true
@@ -2747,6 +3713,8 @@ local function allow_metadata_inventory_put (pos, listname, index, stack, player
 				end
 			end
 		end
+	elseif listname == "storage" then
+		return 1000
 	end
 
 	return 0
@@ -2800,7 +3768,7 @@ local function on_metadata_inventory_put (pos, listname, index, stack, player)
 					local meta = minetest.get_meta (pos)
 					if meta then
 						local id = meta:get_int ("lwcomputer_id")
-						local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+						local data = lwcomputers.get_computer_data (id, pos)
 
 						if data then
 							data.queue_event ("disk", true)
@@ -2818,11 +3786,47 @@ local function on_metadata_inventory_take (pos, listname, index, stack, player)
 	local meta = minetest.get_meta (pos)
 	if meta then
 		local id = meta:get_int ("lwcomputer_id")
-		local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+		local data = lwcomputers.get_computer_data (id, pos)
 
 		if data then
 			data.queue_event ("disk", false)
 		end
+	end
+end
+
+
+
+local function on_punch_robot (pos, node, puncher, pointed_thing)
+	if puncher and puncher:is_player () then
+		if puncher:get_player_control ().sneak then
+
+			local meta = minetest.get_meta (pos)
+
+			if meta then
+				local id = meta:get_int ("lwcomputer_id")
+
+				if id > 0 then
+					local data = lwcomputers.get_computer_data (id, pos)
+
+					if data and data.running then
+					local spec =
+						"formspec_version[3]"..
+						"size[4.5,3.0,false]"..
+						"no_prepend[]"..
+						"bgcolor[#E7DAA8]"..
+						"style_type[button_exit;bgcolor=red;textcolor=white]"..
+						"button_exit[1.0,1.0;2.5,1.0;stop_"..tostring (id)..";Stop]"
+
+						minetest.show_formspec(puncher:get_player_name(),
+													  "lwcomputers:computer_robot_stop",
+													  spec)
+
+						return true
+					end
+				end
+			end
+		end
+
 	end
 end
 
@@ -2846,7 +3850,7 @@ local function digilines_support ()
 						local id = meta:get_int ("lwcomputer_id")
 
 						if id > 0 then
-							local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+							local data = lwcomputers.get_computer_data (id, pos)
 
 							if data then
 								local mychannel = meta:get_string ("digilines_channel")..""
@@ -2912,7 +3916,7 @@ local function mesecon_support ()
 						local id = meta:get_int ("lwcomputer_id")
 
 						if id > 0 then
-							local data = lwcomputers.get_computer_data (id, pos, meta:get_int ("persists") == 1)
+							local data = lwcomputers.get_computer_data (id, pos)
 
 							if data then
 								data.queue_event ("mesecon", new_state,
@@ -2946,6 +3950,7 @@ minetest.register_node("lwcomputers:computer", {
 	sounds = default.node_sound_wood_defaults (),
 	paramtype2 = "facedir",
 	param2 = 1,
+	drop = "lwcomputers:computer",
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
 
@@ -2962,6 +3967,128 @@ minetest.register_node("lwcomputers:computer", {
 })
 
 
+
+minetest.register_node("lwcomputers:computer_on", {
+   description = S("Computer"),
+   tiles = { "computer.png", "computer.png", "computer.png",
+				 "computer.png", "computer.png", "computer_face_on.png" },
+   sunlight_propagates = false,
+   drawtype = "normal",
+   node_box = {
+      type = "fixed",
+      fixed = {
+         {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+      }
+   },
+	groups = { cracky = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory = 1 },
+	sounds = default.node_sound_wood_defaults (),
+	paramtype2 = "facedir",
+	param2 = 1,
+	drop = "lwcomputers:computer",
+	mesecons = mesecon_support (),
+	digiline = digilines_support (),
+
+   on_construct = on_construct,
+   on_destruct = on_destruct,
+	on_receive_fields = on_receive_fields,
+	preserve_metadata = preserve_metadata,
+	after_place_node = after_place_node,
+	on_timer = on_timer,
+	can_dig = can_dig,
+	allow_metadata_inventory_put = allow_metadata_inventory_put,
+	on_metadata_inventory_put = on_metadata_inventory_put,
+	on_metadata_inventory_take = on_metadata_inventory_take
+})
+
+
+
+minetest.register_node("lwcomputers:computer_robot", {
+   description = S("Robot"),
+   tiles = { "robot.png", "robot_bottom.png", "robot_left.png",
+				 "robot_right.png", "robot_back.png", "robot_face.png" },
+   sunlight_propagates = false,
+   drawtype = "normal",
+   node_box = {
+      type = "fixed",
+      fixed = {
+         {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+      }
+   },
+	groups = { cracky = 2, oddly_breakable_by_hand = 2 },
+	sounds = default.node_sound_wood_defaults (),
+	paramtype2 = "facedir",
+	param2 = 1,
+	drop = "lwcomputers:computer_robot",
+	mesecons = mesecon_support (),
+	digiline = digilines_support (),
+
+   on_construct = on_construct_robot,
+   on_destruct = on_destruct,
+	on_receive_fields = on_receive_fields,
+	preserve_metadata = preserve_metadata,
+	after_place_node = after_place_node,
+	on_timer = on_timer,
+	can_dig = can_dig,
+	allow_metadata_inventory_put = allow_metadata_inventory_put,
+	on_metadata_inventory_put = on_metadata_inventory_put,
+	on_metadata_inventory_take = on_metadata_inventory_take,
+	on_punch = on_punch_robot
+})
+
+
+
+minetest.register_node("lwcomputers:computer_robot_on", {
+   description = S("Robot"),
+   tiles = { "robot.png", "robot_bottom.png", "robot_left.png",
+				 "robot_right.png", "robot_back.png", "robot_face_on.png" },
+   sunlight_propagates = false,
+   drawtype = "normal",
+   node_box = {
+      type = "fixed",
+      fixed = {
+         {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+      }
+   },
+	groups = { cracky = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory = 1 },
+	sounds = default.node_sound_wood_defaults (),
+	paramtype2 = "facedir",
+	param2 = 1,
+	drop = "lwcomputers:computer_robot",
+	mesecons = mesecon_support (),
+	digiline = digilines_support (),
+
+   on_construct = on_construct_robot,
+   on_destruct = on_destruct,
+	on_receive_fields = on_receive_fields,
+	preserve_metadata = preserve_metadata,
+	after_place_node = after_place_node,
+	on_timer = on_timer,
+	can_dig = can_dig,
+	allow_metadata_inventory_put = allow_metadata_inventory_put,
+	on_metadata_inventory_put = on_metadata_inventory_put,
+	on_metadata_inventory_take = on_metadata_inventory_take,
+	on_punch = on_punch_robot
+})
+
+
+
+minetest.register_on_player_receive_fields(function (player, formname, fields)
+   if formname == "lwcomputers:computer_robot_stop" and
+		player and player:is_player () then
+
+		for k, v in pairs (fields) do
+			if k:sub (1, 5) == "stop_" then
+				local data = lwcomputers.get_computer_data (tonumber (k:sub (6)))
+
+				if data then
+					data.shutdown ()
+				end
+			end
+		end
+
+		return nil
+	end
+end)
 
 
 --
