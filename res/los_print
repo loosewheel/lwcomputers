@@ -160,7 +160,7 @@ function print:run ()
 				if os.peek_event ("key") then
 					local event = { os.get_event ("key") }
 
-					if event[2] == keys.KEY_ESC then
+					if event[2] == keys.KEY_ESCAPE then
 						term.print ("\r                        \raborted\n")
 
 						return 0

@@ -85,7 +85,7 @@ while true do
 
 			end
 
-		elseif event[3] == keys.KEY_ESC then
+		elseif event[3] == keys.KEY_ESCAPE then
 			if cmdline:len () < 1 or curline:len () < 1 then
 				cmdline = ""
 				curline = ""

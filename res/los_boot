@@ -38,6 +38,7 @@ err codes
 9	file error
 10	download error
 11 wireless error
+12 security error
 -------------------------------]]
 
 
@@ -364,7 +365,7 @@ local function ls ( ... )
 				print_text ("\r     \r")
 				line = 0
 
-				if event[2] == keys.KEY_ESC then
+				if event[2] == keys.KEY_ESCAPE then
 					return 0
 				end
 			end
@@ -478,7 +479,7 @@ local function ls ( ... )
 				print_text ("\r     \r")
 				line = 0
 
-				if event[2] == keys.KEY_ESC then
+				if event[2] == keys.KEY_ESCAPE then
 					return 0
 				end
 			end
@@ -1492,7 +1493,7 @@ local function dump (path)
 			print_text ("\r     \r")
 			linen = 0
 
-			if event[2] == keys.KEY_ESC then
+			if event[2] == keys.KEY_ESCAPE then
 				return 0
 			end
 		end
@@ -1614,7 +1615,7 @@ local function digi ( ... )
 								  tostring (event[3] or ""),
 								  tostring (event[2] or ""))
 
-				elseif event[1] == "key" and event[2] == keys.KEY_ESC then
+				elseif event[1] == "key" and event[2] == keys.KEY_ESCAPE then
 					print_abort ("aborted")
 					print_text ("\n")
 					return 0
@@ -1707,7 +1708,7 @@ local function wire ( ... )
 								  tostring (event[3] or ""),
 								  tostring (event[2] or ""))
 
-				elseif event[1] == "key" and event[2] == keys.KEY_ESC then
+				elseif event[1] == "key" and event[2] == keys.KEY_ESCAPE then
 					print_abort ("aborted")
 					print_text ("\n")
 					return 0
@@ -1732,8 +1733,179 @@ end
 
 
 
+local function access ( ... )
+	local args = { ... }
+
+	if args[1] and args[1] == "-h" then
+		print_text ("   access -h\n"..
+						"Show help\n"..
+						"   access\n"..
+						"List players that can access machine.\n"..
+						"   access owner\n"..
+						"The machine's owner.\n"..
+						"   access add player\n"..
+						"Add player to access machine.\n"..
+						" player   the player's name\n"..
+						"   access remove player\n"..
+						"Remove player from accessing machine.\n"..
+						" player   the player's name\n"..
+						"   access name player\n"..
+						"If player can access machine.\n"..
+						" player   the player's name\n")
+		return 0
+	end
+
+
+	if not args[1] then
+		local list = security.access_list ()
+
+		if not list then
+			print_error ("public")
+			print_text ("\n")
+			return 12
+		end
+
+		local w, h = term.get_resolution ()
+		local i = 1
+		local dec = 3
+
+		print_dir ("%s", security.owner () or "")
+		print_text ("\n")
+
+		while i <= #list do
+			for j = 1, h - dec do
+				print_text ("%s\n", list[i])
+				i = i + 1
+
+				if i > #list then
+					break
+				end
+			end
+
+			dec = 2
+
+			if i <= #list then
+				local event = nil
+				print_bold ("more")
+
+				repeat
+					event = { os.get_event () }
+				until event[1] == "key"
+
+				print_text ("\r     \r")
+
+				if event[2] == keys.KEY_ESCAPE then
+					return 0
+				end
+			end
+		end
+
+		print_text ("   %d names\n", #list + 1)
+
+		return 0
+	end
+
+
+	if args[1] == "owner" then
+		local owner = security.owner ()
+
+		if not owner then
+			print_error ("public")
+			print_text ("\n")
+			return 12
+		end
+
+		print_text ("%s\n", owner)
+
+		return 0
+	end
+
+
+	if args[1] == "add" then
+		if not args[2] or args[2]:len () < 1 then
+			print_error ("no name")
+			print_text ("\n")
+			return 2
+		end
+
+		if not security.add_access (args[2]) then
+			print_error ("public")
+			print_text ("\n")
+			return 12
+		end
+
+		print_text ("%s added\n", args[2])
+
+		return 0
+	end
+
+
+	if args[1] == "remove" then
+		if not args[2] or args[2]:len () < 1 then
+			print_error ("no name")
+			print_text ("\n")
+			return 2
+		end
+
+		if not security.remove_access (args[2]) then
+			print_error ("public")
+			print_text ("\n")
+			return 12
+		end
+
+		print_text ("%s removed\n", args[2])
+
+		return 0
+	end
+
+
+	if args[1] == "name" then
+		if not args[2] or args[2]:len () < 1 then
+			print_error ("no name")
+			print_text ("\n")
+			return 2
+		end
+
+		local list = security.access_list ()
+
+		if not list then
+			print_error ("public")
+			print_text ("\n")
+			return 12
+		end
+
+		local owner = security.owner ()
+		if owner and owner == args[2] then
+			print_text ("%s can access\n", args[2])
+
+			return 0
+		end
+
+		for i = 1, #list do
+			if list[i] == args[2] then
+				print_text ("%s can access\n", args[2])
+
+				return 0
+			end
+		end
+
+		print_text ("%s no access\n", args[2])
+
+		return 0
+	end
+
+
+	print_error ("invalid action")
+	print_text ("\n")
+
+	return 1
+end
+
+
+
 local commands =
 {
+	access = access,
 	cd = cd,
 	clear = clear,
 	cp = cp,
@@ -1764,6 +1936,7 @@ local commands =
 local function help ()
 	local cmds =
 	{
+		"access",
 		"cd",
 		"clear",
 		"cp",
@@ -2117,7 +2290,7 @@ while true do
 				end
 			end
 
-		elseif event[3] == keys.KEY_ESC then
+		elseif event[3] == keys.KEY_ESCAPE then
 			if cmdline:len () > 0 or curline:len () > 0 then
 				if cmdline:len () < 1 or curline:len () < 1 then
 					cmdline = ""

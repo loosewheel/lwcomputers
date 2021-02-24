@@ -1,0 +1,195 @@
+-- los os installer
+
+
+
+local dirs =
+{
+	"/progs"
+}
+
+
+local files =
+{
+	{ src = "%s/boot", dest = "/boot" },
+	{ src = "%s/progs/edit", dest = "/progs/edit" },
+	{ src = "%s/progs/edit.man", dest = "/progs/edit.man" },
+	{ src = "%s/progs/lua", dest = "/progs/lua" },
+	{ src = "%s/progs/print", dest = "/progs/print" }
+}
+
+
+
+local install = { }
+
+
+
+-- constructor
+function install:new ( ... )
+	local args = { ... }
+	local obj = { }
+
+   setmetatable(obj, self)
+   self.__index = self
+
+   obj.failed = 0
+   obj.mount = nil
+
+   local mounts = fs.ls ()
+
+   for i = 2, #mounts do
+		if mounts[i] == "/los_disk" then
+			obj.mount = "/los_disk"
+			break
+		end
+	end
+
+	if not obj.mount then
+		obj.mount = mounts[1]
+	end
+
+   return obj
+end
+
+
+
+function install:copy_file (src, dest)
+	if fs.copy_file (string.format (src, self.mount), dest) then
+		term.set_colors (term.colors.silver, term.colors.black)
+		print ("%s\n", dest)
+
+		return true
+	else
+		term.set_colors (term.colors.orange, term.colors.black)
+		print ("failed:%s\n", dest)
+
+		self.failed = self.failed + 1
+
+		return false
+	end
+end
+
+
+
+function install:mkdir (dir)
+	if fs.mkdir ("/progs") then
+		term.set_colors (term.colors.silver, term.colors.black)
+		print ("%s\n", dir)
+
+		return true
+	else
+		term.set_colors (term.colors.orange, term.colors.black)
+		print ("failed:%s\n", dir)
+
+		self.failed = self.failed + 1
+
+		return false
+	end
+end
+
+
+
+function install:create_dirs ()
+	for i = 1, #dirs do
+		self:mkdir (dirs[i])
+	end
+end
+
+
+
+function install:copy_files ()
+	for i = 1, #files do
+		self:copy_file (files[i].src, files[i].dest)
+	end
+end
+
+
+
+function install:create_startup ()
+	local file = io.open ("/startup", "w")
+
+	if file then
+		file:write ("$PATH = /:/progs\n")
+		file:close ()
+
+		term.set_colors (term.colors.silver, term.colors.black)
+		print ("/startup\n", dir)
+
+		return true
+	else
+		term.set_colors (term.colors.orange, term.colors.black)
+		print ("failed:/startup\n")
+
+		self.failed = self.failed + 1
+
+		return false
+	end
+end
+
+
+
+function install:get_key_response ()
+	local event = nil
+
+	repeat
+		event = { os.peek_event ("key") }
+		os.sleep (0.3)
+	until #event > 0
+
+	os.get_event ("key")
+
+	if not event[3] and not event[4] then
+		if os.peek_event ("char") then
+			os.get_event ("char")
+		end
+
+		return event[2] == keys.KEY_Y
+	end
+
+	return false
+end
+
+
+
+function install:run ()
+	term.set_colors (term.colors.orange, term.colors.black)
+	print ("Existing files will be overritten\n")
+	term.set_colors (term.colors.silver, term.colors.black)
+	print ("Continue? (y to continue)")
+
+	if not self:get_key_response () then
+		print ("\r                          \rcancelled\n")
+
+		return 1
+	end
+
+	print ("\r                          \r")
+
+	self:create_dirs ()
+	self:copy_files ()
+	self:create_startup ()
+
+	if self.failed > 0 then
+		term.set_colors (term.colors.red, term.colors.black)
+		print ("%d errors\n", self.failed)
+
+		return 2
+	end
+
+	if not fs.mkdir ("/progs") then
+		term.set_colors (term.colors.red, term.colors.black)
+		print ("failed:/progs\n")
+
+		return 2
+	end
+
+	term.set_colors (term.colors.silver, term.colors.black)
+	print ("Ok\n")
+
+	return 0
+end
+
+
+return install:new ( ... ):run ()
+
+
+--

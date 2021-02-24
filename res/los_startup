@@ -1,2 +1,1 @@
-$PATH = /:/los_disk
-
+$PATH = /:/los_disk:/los_disk/progs
