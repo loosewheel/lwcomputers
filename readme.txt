@@ -18,10 +18,13 @@ see http://creativecommons.org/licenses/by-sa/3.0/
 Art licence:
 CC-BY-SA 3.0
 
+Sound licence:
+CC BY 4.0
+
 
 Version
 =======
-0.1.6
+0.1.7
 
 
 Minetest Version
@@ -32,6 +35,7 @@ This mod was developed on version 5.3.0
 Dependencies
 ============
 default
+lwdrops
 
 
 Optional Dependencies
@@ -53,8 +57,8 @@ https://forum.minetest.net/viewtopic.php?f=9&t=25916&sid=7af0bb8a2ac3b9ade7a3f87
 
 Description
 ===========
-LWComputers provides programmable computers and robots, floppy disks, printers
-and a digilines controlled mesecon power switch.
+LWComputers provides programmable computers and robots, floppy disks, printers,
+a digilines controlled mesecon power switch and a trash item.
 
 Each computer has an internal hard drive, and 3 slots for floppy disks
 (or a clipboard). The terminal display has a resolution of 50 characters
@@ -67,8 +71,16 @@ be disabled through the mod settings.
 Robots are the same as computers with an additional robot interface in the
 lua environment. They also have a storage inventory accessible by the
 additional "S" button on the terminal interface. Robots can move, detect,
-dig, place, craft and work with inventories. While a robot is running
-sneak + punch will open a form to stop it.
+dig, place, drop, trash, craft and work with inventories. While a robot
+is running sneak + punch will open a form to stop it.
+
+This first time a computer or robot is placed in the world a form opens
+asking the player that placed it if the machine is public or private. If
+private is selected, the player becomes the owner and other players (except
+those with protection_bypass privilege) cannot access it. The security
+interface in the machine's api can be used to manage players that can access
+the machine. If a player does not have access they can't dig, open or
+operate the terminal gui, or stop a robot.
 
 The persistence button toggles on and off. If persistence is on the block
 the computer is in remains loaded when out of range. This persistence is
@@ -83,9 +95,9 @@ If a floppy is "dug" (left click) a form displays the floppy's id and
 label. If the floppy has never been put in a computer's slot its id shows
 as "<not used>". If a floppy has no label its label shows as "<no label>".
 
-A computer's hard drive folder is created the first time it is powered up.
-A floppy disk's folder is created the first time it is placed in a computer's
-slot.
+A computer's hard drive folder/metadata is created the first time it is
+powered up. A floppy disk's folder/metadata is created the first time it
+is placed in a computer's slot.
 
 The computers don't have an inbuilt os. When the computer is powered up
 it looks for a file named 'boot' in the root folder of the drives in order
@@ -140,6 +152,38 @@ accessed as "/<mount>". The mount will be the label of the floppy or
 
 If a computer is moved it retains its id and hard drive data.
 
+Disk data can optionally be stored each as a folder under the world save
+folder, or in the item's metadata.
+
+Meta disk v world folder
+
+Meta disk:
+This option stores computer and floppy disk data in the item's meta data.
+This increases burden on the game engine, but ensures that no redundant
+data remains. Contents of the disks are not directly accessible outside
+of the game. This option may be better for multi-player games. Where players
+may be losing items all over the place, and don't have access to the world
+save folder anyway.
+
+World folder:
+This option stores computer and floppy disk data each in its own folder
+under the world save folder. The disk contents are directly accessible
+outside of the game, and generally less data needs to be moved around per
+operation. If a disk item is removed from the world (permanently) the
+disk's contents may remain in the world save folder. This option may be
+better for local games, where you want to tinker with your programs to get
+your contraptions to work.
+
+The path to a computer or robot hard drive's contents:
+<minetest path>/worlds/<world>/lwcomputers/computer_<id>
+
+The path to a floppy disk's contents:
+<minetest path>/worlds/<world>/lwcomputers/floppy_<id>
+
+The world save folder for an item with a disk will be removed if:
++	The trash item from this mod is used to dispose of it.
++	The item is dropped in the world and is removed by the game.
+
 
 The mod supports the following settings:
 
@@ -186,6 +230,8 @@ Maximum string.rep length (int)
 Maximum clipboard content length (int)
 	The maximum length of a string for clipboard item.
 	Default: 64000
+*	When dropped, the contents of a clipboard is trimmed to the first 12000
+	bytes. Any greater causes the server to crash.
 
 The year the in-game calendar begins (int)
 	Computer time values are relative to the beginning of the given year.
@@ -222,11 +268,13 @@ Store disks in meta data (bool)
 	setting is changed.
 
 Robot's action delay (float)
-	Delay in seconds for a robot's action. Enforced minimum of 0.1 seconds.
+	Delay (sleep) in seconds for a robot's action. Enforced minimum of 0.1
+	seconds.
 	Default: 0.2
 
 Robot's movement delay (float)
-	Delay in seconds for a robot's movement. Enforced minimum of 0.1 seconds.
+	Delay (sleep) in seconds for a robot's movement. Enforced minimum of 0.1
+	seconds.
 	Default: 0.5
 
 
@@ -238,30 +286,8 @@ events. If the terminal is too sluggish, try reducing the character resolution
 and/or disabling click events.
 
 
-Meta disk v world folder
-
-Meta disk:
-This option stores computer and floppy disk data in the item's meta data.
-This increases burden on the game engine, but ensures that no redundant
-data remains. Contents of the disks are not directly accessible outside
-of the game. This option may be better for multi-player games. Where players
-may be losing items all over the place, and don't have access to the world
-save folder anyway.
-
-World folder:
-This option stores computer and floppy disk data each in its own folder
-under the world save folder. The disk contents are directly accessible
-outside of the game, and generally less data needs to be moved around per
-operation. If a disk item is removed from the world (permanently) the
-disk's contents remain in the world save folder. This option may be better
-for local games, where you want to tinker with your programs to get your
-contraptions to work.
-
-The path to a computer or robot hard drive's contents:
-<minetest path>/worlds/<world>/lwcomputers/computer_<id>
-
-The path to a floppy disk's contents:
-<minetest path>/worlds/<world>/lwcomputers/floppy_<id>
+There is a small mod api to integrate other components, such as disks and
+clipboards. See docs/mod_api.txt.
 
 
 Lua disk
@@ -314,7 +340,8 @@ Printers can print out pages and assemble them into books. They require
 an ink cartridge and paper to print. An ink cartridge prints 200 pages.
 If the book button is pressed, any pages in the out tray are assembled into
 a book in order of the out tray slots. The title of the book is the title
-of the first page.
+of the first page. The computer's api has a printer interface which wraps
+these messages.
 
 Printers connect to digilines cables. After setting the channel, send
 messages to operate.

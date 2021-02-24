@@ -1,3 +1,4 @@
+local lwcomp = ...
 
 
 minetest.register_craft({
@@ -16,6 +17,16 @@ minetest.register_craft({
 		{ "", "default:tin_ingot", "" },
 		{ "default:steel_ingot", "lwcomputers:computer", "default:steel_ingot" },
 		{ "", "default:copper_ingot", "" }
+	}
+})
+
+
+minetest.register_craft({
+	output = "lwcomputers:trash 1",
+	recipe = {
+		{ "", "group:wood", "" },
+		{ "group:wood", "", "group:wood" },
+		{ "", "group:wood", "" }
 	}
 })
 
@@ -110,7 +121,7 @@ minetest.register_craft({
 })
 
 
-if lwcomputers.digilines_supported and lwcomputers.mesecon_supported then
+if lwcomp.digilines_supported and lwcomp.mesecon_supported then
 
 minetest.register_craft({
    output = "lwcomputers:digiswitch 2",
@@ -124,7 +135,7 @@ minetest.register_craft({
 end
 
 
-if lwcomputers.digilines_supported then
+if lwcomp.digilines_supported then
 
 minetest.register_craft({
    output = "lwcomputers:printer 1",

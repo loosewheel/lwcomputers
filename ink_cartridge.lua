@@ -1,5 +1,5 @@
-
-local S = lwcomputers.S
+local lwcomp = ...
+local S = lwcomp.S
 
 
 

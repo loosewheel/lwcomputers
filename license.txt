@@ -2,8 +2,7 @@ Source code license
 -------------------
 
 GNU Lesser General Public License, version 2.1
-Copyright (C) 2011-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2011-2018 Various Minetest developers and contributors
+Copyright (C) 2021 loosewheel
 
 This program is free software; you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software Foundation;
@@ -20,6 +19,16 @@ Fonts license
 
 Derived from Liberation Mono licensed under the Liberation Fonts license,
 see https://fedoraproject.org/wiki/Licensing/LiberationFontLicense
+
+
+trash2.ogg
+----------
+derived from https://www.freesoundslibrary.com/steps-through-the-forest/
+
+License: Attribution 4.0 International (CC BY 4.0). You are allowed to use
+sound effects free of charge and royalty free in your multimedia projects
+for commercial or non-commercial purposes.
+https://creativecommons.org/licenses/by/4.0/
 
 
 Media license

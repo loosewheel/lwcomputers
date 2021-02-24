@@ -44,6 +44,25 @@ v0.1.5
 *	minor fixes.
 *	added option to store disk data in meta data instead of world folder.
 
+
 v0.1.6
 *	added robots
 *	bug fixes
+
+
+v0.1.7
+*	added ownership
+		+ security.add_access (name)
+		+ security.remove_access (name)
+		+ security.access_list ()
+		+ security.owner ()
+*	added robot.trash ()
+*	added robot.drop ()
+*	code cleanup
+*	added mod api - see docs/mod_api.txt
+*	added os.paste_from_clipboard ()
+*	fixed server crash when book is dropped.
+*	fixed server crash when clipboard dropped.
+*	fixed server crash when computer or floppy disk dropped.
+*	added install program to los disk.
+*	added trash item

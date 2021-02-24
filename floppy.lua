@@ -1,11 +1,10 @@
-
-
-local S = lwcomputers.S
+local lwcomp = ...
+local S = lwcomp.S
 
 
 
 local function on_use (itemstack, user, pointed_thing)
-	if itemstack then
+	if itemstack and user and user:is_player () then
 		local meta = itemstack:get_meta()
 
 		if meta then
@@ -39,92 +38,95 @@ end
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_black", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_black", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
    inventory_image = "floppy_black.png",
-   stack_max = 1,
    on_use = on_use,
-	groups = { floppy = 1 }
+	groups = { floppy_disk = 1 }
 })
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_blue", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_blue", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
    inventory_image = "floppy_blue.png",
-   stack_max = 1,
    on_use = on_use,
-	groups = { floppy = 1 }
+	groups = { floppy_disk = 1 }
 })
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_red", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_red", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
    inventory_image = "floppy_red.png",
-   stack_max = 1,
    on_use = on_use,
-	groups = { floppy = 1 }
+	groups = { floppy_disk = 1 }
 })
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_green", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_green", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
    inventory_image = "floppy_green.png",
-   stack_max = 1,
    on_use = on_use,
-	groups = { floppy = 1 }
+	groups = { floppy_disk = 1 }
 })
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_yellow", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_yellow", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
    inventory_image = "floppy_yellow.png",
-   stack_max = 1,
    on_use = on_use,
-	groups = { floppy = 1 }
+	groups = { floppy_disk = 1 }
 })
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_white", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_white", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
    inventory_image = "floppy_white.png",
-   stack_max = 1,
    on_use = on_use,
-	groups = { floppy = 1 }
+	groups = { floppy_disk = 1 }
 })
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_lua", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_lua", "lua_disk", {
    description = S("Lua disk"),
    short_description = S("Lua disk"),
    inventory_image = "floppy_lua.png",
-   stack_max = 1,
-   on_use = on_use
+   on_use = on_use,
+	groups = { floppy_disk = 1 },
+	diskfiles = {
+		{ source = lwcomp.modpath.."/res/lua_boot", target = "/boot" }
+	}
 })
 
 
 
-minetest.register_craftitem ("lwcomputers:floppy_los", {
+lwcomputers.register_floppy_disk ("lwcomputers:floppy_los", "los_disk", {
    description = S("Los disk"),
    short_description = S("Los disk"),
    inventory_image = "floppy_los.png",
-   stack_max = 1,
-   on_use = on_use
+   on_use = on_use,
+	groups = { floppy_disk = 1 },
+	diskfiles = {
+		{ source = lwcomp.modpath.."/res/los_boot", target = "/boot" },
+		{ source = lwcomp.modpath.."/res/los_startup", target = "/startup" },
+		{ source = lwcomp.modpath.."/res/los_lua", target = "/progs/lua" },
+		{ source = lwcomp.modpath.."/res/los_edit", target = "/progs/edit" },
+		{ source = lwcomp.modpath.."/res/los_edit.man", target = "/progs/edit.man" },
+		{ source = lwcomp.modpath.."/res/los_print", target = "/progs/print" },
+		{ source = lwcomp.modpath.."/res/los_install", target = "/progs/install" }
+	}
 })
-
-
-
 
 
 

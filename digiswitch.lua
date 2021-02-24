@@ -1,10 +1,9 @@
+local lwcomp = ...
+local S = lwcomp.S
 
 
-local S = lwcomputers.S
 
-
-
-if lwcomputers.digilines_supported and lwcomputers.mesecon_supported then
+if lwcomp.digilines_supported and lwcomp.mesecon_supported then
 
 
 
@@ -77,10 +76,10 @@ local function digilines_support ()
 							end
 
 							if words[1] == "on" then
-								lwcomputers.mesecon_receptor_on (pos, get_mesecon_rule_for_side (words[2]))
+								lwcomp.mesecon_receptor_on (pos, get_mesecon_rule_for_side (words[2]))
 
 							elseif words[1] == "off" then
-								lwcomputers.mesecon_receptor_off (pos, get_mesecon_rule_for_side (words[2]))
+								lwcomp.mesecon_receptor_off (pos, get_mesecon_rule_for_side (words[2]))
 							end
 						end
 					end
@@ -132,7 +131,7 @@ end
 
 
 local function on_destruct (pos)
-	lwcomputers.mesecon_receptor_off (pos, get_mesecon_rule_for_side ())
+	lwcomp.mesecon_receptor_off (pos, get_mesecon_rule_for_side ())
 end
 
 

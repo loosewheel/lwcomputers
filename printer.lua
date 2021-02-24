@@ -1,17 +1,20 @@
+local lwcomp = ...
+local S = lwcomp.S
 
 
-local S = lwcomputers.S
+
+if lwcomp.digilines_supported then
 
 
 
-if lwcomputers.digilines_supported then
+local MAX_PAGES_PER_BOOK = 16
 
 
 
 local function get_formspec ()
 	local spec =
 	"formspec_version[3]\n"..
-	"size[11.75,9.75;true]\n"..
+	"size[11.75,12.75;true]\n"..
 	"no_prepend[]\n"..
 	"bgcolor[#E7DAA8]\n"..
 	"field[1.0,1.0;4.0,0.8;channel;Channel;${channel}]\n"..
@@ -24,7 +27,7 @@ local function get_formspec ()
 	"tooltip[book;Make Book;#094109;#FFFFFF]\n"..
 	"list[context;book;9.75,2.5;1,1;]\n"..
 	"list[context;main;1.0,3.75;8,2;]\n"..
-	"list[current_player;main;1.0,6.5;8,2;]\n"..
+	"list[current_player;main;1.0,7.0;8,4;]\n"..
 	"listcolors[#545454;#6E6E6E;#DBCF9F]\n"
 
 	return spec
@@ -33,15 +36,15 @@ end
 
 
 local function get_new_page ()
-	local width, height = lwcomputers.page_size ()
+	local width, height = lwcomp.page_size ()
 	local page = { }
 
 	for y = 0, height - 1 do
 		for x = 0, width - 1 do
 			page[(y * width) + x + 1] =
 			{
-				fg = lwcomputers.colors.black,
-				bg = lwcomputers.colors.white,
+				fg = lwcomp.colors.black,
+				bg = lwcomp.colors.white,
 				char = 0
 			}
 		end
@@ -70,8 +73,10 @@ local function on_receive_fields (pos, formname, fields, sender)
 
 			if inv and inv:is_empty ("book") then
 				local slots = inv:get_size ("main")
-				local pages = { }
+				local pages = 0
+				local contents = ""
 				local description = nil
+				local used = { }
 
 				for i = 1, slots do
 					local page = inv:get_stack ("main", i)
@@ -80,10 +85,12 @@ local function on_receive_fields (pos, formname, fields, sender)
 						local imeta = page:get_meta ()
 
 						if imeta then
-							local contents = minetest.deserialize (imeta:get_string ("contents"))
+							local content = imeta:get_string ("contents")
 
-							if contents then
-								pages[#pages + 1] = contents
+							if content:len () > 0 then
+								contents = contents..content
+								pages = pages + 1
+								used[#used + 1] = i
 
 								if not description then
 									description = imeta:get_string ("description")
@@ -92,12 +99,16 @@ local function on_receive_fields (pos, formname, fields, sender)
 										description = S("Book")
 									end
 								end
+
+								if pages == MAX_PAGES_PER_BOOK then
+									break
+								end
 							end
 						end
 					end
 				end
 
-				if #pages > 0 then
+				if pages > 0 then
 					local book = ItemStack ("lwcomputers:book")
 
 					if book then
@@ -105,13 +116,13 @@ local function on_receive_fields (pos, formname, fields, sender)
 
 						if imeta then
 							imeta:set_int ("page", 1)
-							imeta:set_int ("pages", #pages)
-							imeta:set_string ("contents", minetest.serialize (pages))
+							imeta:set_int ("pages", pages)
+							imeta:set_string ("contents", contents)
 							imeta:set_string ("description", description)
 							imeta:set_string ("title", description)
 
-							for i = 1, slots do
-								local page = inv:get_stack ("main", i)
+							for i = 1, #used do
+								local page = inv:get_stack ("main", used[i])
 
 								if page and page:get_name () == "lwcomputers:page" then
 									page:clear ()
@@ -176,8 +187,8 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	meta:set_string ("inventory", inventory)
 	meta:set_int ("x", 0)
 	meta:set_int ("y", 0)
-	meta:set_int ("fg", lwcomputers.colors.black)
-	meta:set_int ("bg", lwcomputers.colors.white)
+	meta:set_int ("fg", lwcomp.colors.black)
+	meta:set_int ("bg", lwcomp.colors.white)
 
 	local inv = meta:get_inventory ()
 
@@ -259,7 +270,7 @@ local function allow_metadata_inventory_put (pos, listname, index, stack, player
 				end
 			elseif listname == "paper" then
 				if itemname == "default:paper" then
-					return 99
+					return 200
 				end
 			elseif listname == "book" then
 				return 0
@@ -328,7 +339,7 @@ end
 
 
 local function query_ink (pos, meta, channel)
-	lwcomputers.digilines_receptor_send (
+	lwcomp.digilines_receptor_send (
 		pos,
 		digiline.rules.default,
 		channel,
@@ -338,7 +349,7 @@ end
 
 
 local function query_paper (pos, meta, channel)
-	lwcomputers.digilines_receptor_send (
+	lwcomp.digilines_receptor_send (
 		pos,
 		digiline.rules.default,
 		channel,
@@ -348,7 +359,7 @@ end
 
 
 local function query_pages (pos, meta, channel)
-	lwcomputers.digilines_receptor_send (
+	lwcomp.digilines_receptor_send (
 		pos,
 		digiline.rules.default,
 		channel,
@@ -358,9 +369,9 @@ end
 
 
 local function query_size (pos, meta, channel)
-	local width, height = lwcomputers.page_size ()
+	local width, height = lwcomp.page_size ()
 
-	lwcomputers.digilines_receptor_send (
+	lwcomp.digilines_receptor_send (
 		pos,
 		digiline.rules.default,
 		channel,
@@ -382,7 +393,7 @@ local function query_status (pos, meta, channel)
 		status = "tray full"
 	end
 
-	lwcomputers.digilines_receptor_send (
+	lwcomp.digilines_receptor_send (
 		pos,
 		digiline.rules.default,
 		channel,
@@ -406,7 +417,7 @@ local function start_page (pos, meta, title)
 						stack:take_item (1)
 						inv:set_stack ("paper", 1, stack)
 						meta:set_int ("has_page", 1)
-						meta:set_string ("contents", minetest.serialize (get_new_page ()))
+						meta:set_string ("contents", lwcomp.page_encode (get_new_page ()))
 						meta:set_string ("title", title)
 					end
 				end
@@ -465,15 +476,15 @@ end
 local function set_colors (pos, meta, colors)
 	if meta:get_int ("has_page") == 1 then
 		local cols = string.split (colors, ",")
-		local fg = lwcomputers.colors.black
-		local bg = lwcomputers.colors.white
+		local fg = lwcomp.colors.black
+		local bg = lwcomp.colors.white
 
 		if #cols < 1 then
 			cols[1] = fg
 		end
 
 		if #cols < 2 then
-			cols[2] = lwcomputers.colors.white
+			cols[2] = lwcomp.colors.white
 		end
 
 		cols[1] = tonumber (cols[1] or fg) or fg
@@ -489,8 +500,8 @@ end
 local function set_position (pos, meta, position)
 	if meta:get_int ("has_page") == 1 then
 		local cpos = string.split (position, ",")
-		local fg = lwcomputers.colors.black
-		local bg = lwcomputers.colors.white
+		local fg = lwcomp.colors.black
+		local bg = lwcomp.colors.white
 
 		if #cpos < 1 then
 			cpos[1] = 0
@@ -512,14 +523,14 @@ end
 
 local function write_out (pos, meta, str)
 	if meta:get_int ("has_page") == 1 then
-		local width, height = lwcomputers.page_size ()
+		local width, height = lwcomp.page_size ()
 		local x = meta:get_int ("x")
 		local y = meta:get_int ("y")
 
 		if y >= 0 and y < height then
 			local fg = meta:get_int ("fg")
 			local bg = meta:get_int ("bg")
-			local page = minetest.deserialize (meta:get_string ("contents"))
+			local page = lwcomp.page_decode (meta:get_string ("contents"))
 			local c = 1
 
 			while c <= str:len () and x < width do
@@ -535,7 +546,7 @@ local function write_out (pos, meta, str)
 			end
 
 			meta:set_int ("x", x)
-			meta:set_string ("contents", minetest.serialize (page))
+			meta:set_string ("contents", lwcomp.page_encode (page))
 		end
 	end
 end
@@ -589,7 +600,7 @@ end
 
 
 local function digilines_support ()
-	if lwcomputers.digilines_supported then
+	if lwcomp.digilines_supported then
 		return
 		{
 			wire =

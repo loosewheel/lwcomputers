@@ -1,13 +1,6 @@
+local lwcomp = ...
+local S = lwcomp.S
 
-
-local S = lwcomputers.S
-
-
--- settings
-local hdd_max_size = tonumber(minetest.settings:get("lwcomputers_max_hard_disk_size") or 1000000)
-local floppy_max_size = tonumber(minetest.settings:get("lwcomputers_max_floppy_disk_size") or 125000)
-local hdd_max_items = tonumber(minetest.settings:get("lwcomputers_max_hard_disk_items") or 8000)
-local floppy_max_items = tonumber(minetest.settings:get("lwcomputers_max_floppy_disk_items") or 1000)
 
 
 -- helpers
@@ -115,7 +108,7 @@ function diskobj:new (pos, slot)
 					local stack = inv:get_stack ("main", slot)
 
 					if stack and not stack:is_empty () and
-						stack:get_name ():sub (1, 18) == "lwcomputers:floppy" then
+						lwcomp.is_floppy_disk (stack:get_name ()) then
 
 						local imeta = stack:get_meta ()
 
@@ -166,7 +159,7 @@ function diskobj:save ()
 				local stack = inv:get_stack ("main", self.slot)
 
 				if stack and not stack:is_empty () and
-					stack:get_name ():sub (1, 18) == "lwcomputers:floppy" then
+					lwcomp.is_floppy_disk (stack:get_name ()) then
 
 					local imeta = stack:get_meta ()
 
@@ -285,7 +278,8 @@ function diskobj:mkdir (path)
 	path = tostring (path or "")
 	local data = self.data
 	local used, items = self:get_used ()
-	local max_items = (self.form == "floppy" and floppy_max_items) or hdd_max_items
+	local max_items = (self.form == "floppy" and lwcomp.settings.floppy_max_items) or
+							lwcomp.settings.hdd_max_items
 
 	if path:len () < 1 then
 		return true -- root false, "invalid path"
@@ -759,6 +753,18 @@ end
 
 
 -- static
+function filesys:delete_hdd (id)
+end
+
+
+
+-- static
+function filesys:delete_floppy (id)
+end
+
+
+
+-- static
 function filesys:path_folder (path)
 	path = tostring (path or "")
 
@@ -926,7 +932,7 @@ function filesys:get_drive_list ()
 
 				if stack then
 					if not stack:is_empty () then
-						if stack:get_name ():sub (1, 18) == "lwcomputers:floppy" then
+						if lwcomp.is_floppy_disk (stack:get_name ()) then
 							local imeta = stack:get_meta ()
 
 							if imeta then
@@ -985,7 +991,8 @@ function filesys:get_disk_path (path)
 		for d = 2, #drives do
 			if drives[d].mount == tokens[1] then
 				if #tokens > 1 then
-					return resolve_path (table.concat (tokens, "/", 2), drives[d].slot, drives[d].form, drives[d].id)
+					return resolve_path (table.concat (tokens, "/", 2), drives[d].slot,
+												drives[d].form, drives[d].id)
 				end
 
 				return "", drives[d].slot, drives[d].form, drives[d].id
@@ -1026,71 +1033,64 @@ end
 
 
 
-function filesys:prep_lua_disk (id, meta)
-	local data = { }
-
-	local contents = load_file (lwcomputers.modpath.."/res/lua_boot")
+local function prep_copy_file (disk_data, source, target)
+	local contents = load_file (source)
 	if not contents then
 		return false
 	end
 
-	data["boot"] = contents
+	local tokens = string.split (target, "/")
+	local data = disk_data
 
-	meta:set_string ("disk_data", minetest.serialize (data))
+	for i = 1, #tokens - 1 do
+		if type (data[tokens[i]]) == "string" then
+			return false
+		end
+
+		if not data[tokens[i]] then
+			data[tokens[i]] = { }
+		end
+
+		data = data[tokens[i]]
+	end
+
+	if type (data[tokens[#tokens]]) == "table" then
+		return false
+	end
+
+	data[tokens[#tokens]] = contents
 
 	return true
 end
 
 
 
-function filesys:prep_los_disk (id, meta)
+-- static
+function filesys:prep_floppy_disk (id, meta, files)
+		local result = true
 	local data = { }
 
-	local contents = load_file (lwcomputers.modpath.."/res/los_boot")
-	if not contents then
-		return false
+	if files then
+		for i = 1, #files do
+			local size, items = get_used (data)
+
+			if size >= lwcomp.settings.floppy_max_size or
+				items >= lwcomp.settings.floppy_max_items then
+
+				meta:set_string ("disk_data", minetest.serialize (data))
+
+				return false
+			end
+
+			if not prep_copy_file (data, files[i].source, files[i].target) then
+				result = false
+			end
+		end
 	end
-
-	data["boot"] = contents
-
-	contents = load_file (lwcomputers.modpath.."/res/los_startup")
-	if not contents then
-		return false
-	end
-
-	data["startup"] = contents
-
-	contents = load_file (lwcomputers.modpath.."/res/los_lua")
-	if not contents then
-		return false
-	end
-
-	data["lua"] = contents
-
-	contents = load_file (lwcomputers.modpath.."/res/los_edit")
-	if not contents then
-		return false
-	end
-
-	data["edit"] = contents
-
-	contents = load_file (lwcomputers.modpath.."/res/los_edit.man")
-	if not contents then
-		return false
-	end
-
-	data["edit.man"] = contents
-
-	contents = load_file (lwcomputers.modpath.."/res/los_print")
-	if not contents then
-		return false
-	end
-
-	data["print"] = contents
 
 	meta:set_string ("disk_data", minetest.serialize (data))
 
-	return true
+	return result
 end
 
 
@@ -1292,8 +1292,10 @@ function filesys:open (path, mode)
 
 	assert (disk, "disk not found")
 
-	local max_size = (form == "floppy" and floppy_max_size) or hdd_max_size
-	local max_items = (form == "floppy" and floppy_max_items) or hdd_max_items
+	local max_size = (form == "floppy" and lwcomp.settings.floppy_max_size) or
+							lwcomp.settings.hdd_max_size
+	local max_items = (form == "floppy" and lwcomp.settings.floppy_max_items) or
+							lwcomp.settings.hdd_max_items
 
 	if mode:sub (-2) == "b" then
 		mode = mode:sub (1, -2)
@@ -1497,7 +1499,7 @@ function filesys:set_label (drivepath, label)
 
 			if stack then
 				if not stack:is_empty () then
-					if stack:get_name ():sub (1, 18) == "lwcomputers:floppy" then
+					if lwcomp.is_floppy_disk (stack:get_name ()) then
 						local imeta = stack:get_meta ()
 
 						if imeta then
@@ -1550,7 +1552,7 @@ function filesys:set_label (drivepath, label)
 
 			if stack then
 				if not stack:is_empty () then
-					if stack:get_name ():sub (1, 18) == "lwcomputers:floppy" then
+					if lwcomp.is_floppy_disk (stack:get_name ()) then
 						local imeta = stack:get_meta ()
 
 						if imeta then
@@ -1674,8 +1676,10 @@ function filesys:copy_file (srcpath, destpath)
 
 	local srcsize = item:len ()
 
-	local max_size = (form == "floppy" and floppy_max_size) or hdd_max_size
-	local max_items = (form == "floppy" and floppy_max_items) or hdd_max_items
+	local max_size = (form == "floppy" and lwcomp.settings.floppy_max_size) or
+							lwcomp.settings.hdd_max_size
+	local max_items = (form == "floppy" and lwcomp.settings.floppy_max_items) or
+							lwcomp.settings.hdd_max_items
 
 	if ((used + srcsize - destsize) > max_size) or
 		((items + 1) > max_items) then
@@ -1746,7 +1750,8 @@ function filesys:get_disk_free (drivepath)
 	assert (disk, "disk not found")
 
 	local used = disk:get_used ()
-	local max_size = (form == "floppy" and floppy_max_size) or hdd_max_size
+	local max_size = (form == "floppy" and lwcomp.settings.floppy_max_size) or
+							lwcomp.settings.hdd_max_size
 
 	return ((max_size - used) >= 0 and (max_size - used)) or 0
 end
@@ -1762,7 +1767,7 @@ function filesys:get_disk_size (drivepath)
 
 	if type (drivepath) == "string" then
 		if drivepath == "/" then
-			return hdd_max_size
+			return lwcomp.settings.hdd_max_size
 		else
 			local tokens = tokenize_path (drivepath)
 			table.remove (tokens, 1)
@@ -1773,7 +1778,7 @@ function filesys:get_disk_size (drivepath)
 
 			for d = 2, #drives do
 				if tokens[1] == drives[d].mount then
-					return floppy_max_size
+					return lwcomp.settings.floppy_max_size
 				end
 			end
 		end
@@ -1784,9 +1789,9 @@ function filesys:get_disk_size (drivepath)
 		end
 
 		if drives[drivepath + 1].form == "floppy" then
-			return floppy_max_size
+			return lwcomp.settings.floppy_max_size
 		else
-			return hdd_max_size
+			return lwcomp.settings.hdd_max_size
 		end
 	end
 
@@ -1795,7 +1800,7 @@ end
 
 
 
-lwcomputers.filesys = filesys
+lwcomp.filesys = filesys
 
 
 

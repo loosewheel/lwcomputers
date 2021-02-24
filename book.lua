@@ -1,14 +1,43 @@
+local lwcomp = ...
+local S = lwcomp.S
 
 
-local S = lwcomputers.S
+
+function lwcomp.book_decode (rawstring)
+	local width, height = lwcomp.page_size ()
+	local chars = width * height
+	local pages = rawstring:len () / (chars * 2)
+	local contents = { }
+
+	for i = 1, pages do
+		local firstbyte = ((i - 1) * (chars * 2)) + 1
+		local lastbyte = i * (chars * 2)
+		local raw = rawstring:sub (firstbyte, lastbyte)
+		contents[i] = lwcomp.page_decode (raw)
+	end
+
+	return contents
+end
+
+
+
+function lwcomp.book_encode (contents)
+	local raw = ""
+
+	for i = 1, #contents do
+		raw = raw..lwcomp.page_encode (contents[i])
+	end
+
+	return raw
+end
 
 
 
 local function get_book_formspec (meta)
-	local contents = minetest.deserialize (meta:get_string ("contents"))
+	local contents = lwcomp.book_decode (meta:get_string ("contents"))
 	local curpage = meta:get_int ("page")
-	local width, height = lwcomputers.page_size ()
-	local hscale, vscale = lwcomputers.page_scale ()
+	local width, height = lwcomp.page_size ()
+	local hscale, vscale = lwcomp.page_scale ()
 	local fw = (width * hscale) + 0.2
 	local fh = (height * vscale) + 1.3
 
@@ -65,7 +94,7 @@ minetest.register_craftitem("lwcomputers:book", {
    groups = { not_in_creative_inventory = 1 },
 
    on_use = function (itemstack, user, pointed_thing)
-		if itemstack then
+		if itemstack and user and user:is_player () then
 			local meta = itemstack:get_meta()
 
 			if meta then
@@ -77,6 +106,30 @@ minetest.register_craftitem("lwcomputers:book", {
 
       return nil
    end,
+
+	on_drop = function (itemstack, dropper, pos)
+		-- one or more string fields
+		local drops = lwdrops.store (itemstack, "contents")
+
+		if drops then
+			return minetest.item_drop (drops, dropper, pos)
+		end
+
+		return itemstack
+	end,
+
+	on_pickup = function (itemstack, fields)
+		local meta = itemstack:get_meta ()
+
+		if meta then
+			for k, v in pairs (fields) do
+				meta:set_string (k, v)
+			end
+		end
+
+		-- this itemstack is the one picked up
+		return itemstack
+	end
 })
 
 
