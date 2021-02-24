@@ -1,0 +1,242 @@
+
+lwcomputers.version ()
+	Returns the lwcomputers version as a string. eg. "0.1.7".
+
+
+
+lwcomputers.key_code (key)
+	Returns the number key code for the given key. If key is invalid the
+	return value is nil. Valid key values are:
+		"KEY_BACKSPACE"
+		"KEY_TAB"
+		"KEY_LINE"
+		"KEY_ENTER"
+		"KEY_ESCAPE"
+		"KEY_SPACE"
+		"KEY_EXCLAIM"
+		"KEY_QUOTE"
+		"KEY_HASH"
+		"KEY_CURRENCY"
+		"KEY_PERCENT"
+		"KEY_AMP"
+		"KEY_APOSTROPHE"
+		"KEY_OPENPAREN"
+		"KEY_CLOSEPAREN"
+		"KEY_MULTIPLY"
+		"KEY_ADD"
+		"KEY_COMMA"
+		"KEY_SUBTRACT"
+		"KEY_DOT"
+		"KEY_DIVIDE"
+		"KEY_0"
+		"KEY_1"
+		"KEY_2"
+		"KEY_3"
+		"KEY_4"
+		"KEY_5"
+		"KEY_6"
+		"KEY_7"
+		"KEY_8"
+		"KEY_9"
+		"KEY_COLON"
+		"KEY_SEMICOLON"
+		"KEY_LESS"
+		"KEY_EQUAL"
+		"KEY_GREATER"
+		"KEY_QUESTION"
+		"KEY_AT"
+		"KEY_A"
+		"KEY_B"
+		"KEY_C"
+		"KEY_D"
+		"KEY_E"
+		"KEY_F"
+		"KEY_G"
+		"KEY_H"
+		"KEY_I"
+		"KEY_J"
+		"KEY_K"
+		"KEY_L"
+		"KEY_M"
+		"KEY_N"
+		"KEY_O"
+		"KEY_P"
+		"KEY_Q"
+		"KEY_R"
+		"KEY_S"
+		"KEY_T"
+		"KEY_U"
+		"KEY_V"
+		"KEY_W"
+		"KEY_X"
+		"KEY_Y"
+		"KEY_Z"
+		"KEY_OPENSQUARE"
+		"KEY_SLASH"
+		"KEY_CLOSESQUARE"
+		"KEY_CARET"
+		"KEY_UNDERSCORE"
+		"KEY_TICK"
+		"KEY_OPENBRACE"
+		"KEY_BAR"
+		"KEY_CLOSEBRACE"
+		"KEY_TILDE"
+		"KEY_DELETE"
+		"KEY_INSERT"
+		"KEY_HOME"
+		"KEY_END"
+		"KEY_PAGEUP"
+		"KEY_PAGEDOWN"
+		"KEY_SHIFT"
+		"KEY_CAPS"
+		"KEY_CTRL"
+		"KEY_ALT"
+		"KEY_UP"
+		"KEY_DOWN"
+		"KEY_LEFT"
+		"KEY_RIGHT"
+		"KEY_F1"
+		"KEY_F2"
+		"KEY_F3"
+		"KEY_F4"
+		"KEY_F5"
+		"KEY_F6"
+		"KEY_F7"
+		"KEY_F8"
+		"KEY_F9"
+		"KEY_F10"
+		"KEY_F11"
+		"KEY_F12"
+
+
+
+lwcomputers.color (color)
+	Returns the number color code for the given color. If color is invalid
+	the return value is nil. Valid color values are:
+		"black"
+		"orange"
+		"magenta"
+		"sky"
+		"yellow"
+		"pink"
+		"cyan"
+		"gray"
+		"silver"
+		"red"
+		"green"
+		"blue"
+		"brown"
+		"lime"
+		"purple"
+		"white"
+
+
+
+lwcomputers.register_place_substitute (item, substitute)
+	Adds a robot place substitution for robot.place_<side> functions. The
+	item is removed from the robot's storage but the substitute is placed.
+	Returns true if successfully added to the list, false if not.
+	item: string name of the item to substitute.
+	substitute: string name of the substitute.
+	*	If the item already exits in the list the call is ignored and false
+		is returned.
+
+	eg:
+	if lwcomputers.register_place_substitute ("farming:seed_wheat", "farming:wheat_1") then
+	end
+
+
+
+lwcomputers.register_crafting_mods (item, adds, removes)
+	Adds a crafting modification for the robot.craft function. The adds
+	items are added to the robot's storage on crafting and the removes are
+	removed. These actions are in additional to the crafting recipe.
+	Returns true if successfully added to the list, false if not.
+	item: string name of the item to substitute, eg. "farming:seed_wheat".
+	adds: the string name of the item to add, or an indexed table of multiple
+		item names.
+	removes: the string name of the item to remove, or an indexed table of
+		multiple item names.
+	*	If the item already exits in the list the call is ignored and false
+		is returned.
+	*	The removed items are not checked for before crafting, and result in
+		no error if they can't be removed.
+
+	eg:
+	if lwcomputers.register_crafting_mods ("farming:pineapple_ring", "farming:pineapple_top", nil) then
+	end
+
+
+
+lwcomputers.register_floppy_disk (name, label, itemdef)
+	Registers a craftitem as a floppy disk type item, that can be inserted
+	into a computer's slot and given a files system. Returns true if
+	successfully registered, false if not.
+	name: string name of the item.
+	label: string initial label for the disk. This can be nil.
+	itemdef: craftitem definition, as passed to minetest.register_craftitem.
+		The definition can contain an extra field named diskfiles. This must
+		be an indexed list of files to create on the disk when initialised.
+		The indexed list has a series of, or one, nested key tables. Each
+		one defines one file on the disk. Each has two keys: source whose
+		value is the full path to the file containing the contents of the
+		file; and target whose value is the full path on disk for the file.
+		This field can be nil, for no files.
+	*	If the item already exits in the list the call is ignored and false
+		is returned.
+	*	After being placed in a computer's slot the item's metadata will have
+		two field which can be queried: "lwcomputer_id" with the unique integer
+		id of the item; and "label" which contains the currently set label
+		string. If not using disk metadata, a folder will be created under
+		the lwcomputers folder in the world save folder for the disk, named
+		floppy_<id>. The byte size and disk items restrictions from the mod's
+		floppy disk settings will be applied.
+	*	The on_drop handler is set, overriding if present.
+
+	eg:
+	local result = lwcomputers.register_floppy_disk ("mymod:usb", "usb_label", {
+		description = S("USB"),
+		short_description = S("USB"),
+		inventory_image = "usb.png",
+		diskfiles =
+		{
+			{
+				source = minetest.get_modpath ("mymod").."/files/usb_file_1",
+				target = "/boot"
+			},
+			{
+				source = minetest.get_modpath ("mymod").."/files/usb_file_2",
+				target = "/progs/myprog"
+			}
+		}
+	})
+
+
+
+lwcomputers.register_clipboard (name, size, itemdef)
+	Registers a craftitem as a clipboard type item, that can be inserted
+	into a computer's slot and pass data between itself and the computer.
+	Returns true if successfully registered, false if not.
+	name: string name of the item.
+	size: the maximum byte size of the contents. This value will be trimmed
+		to the 'Maximum clipboard content length' lwcomputer's mod setting.
+		This field can be nil, in which case the mod setting will be used.
+	itemdef: craftitem definition, as passed to minetest.register_craftitem.
+	*	If the item already exits in the list the call is ignored and false
+		is returned.
+	*	The contents of the clipboard is held in a metadata string named
+		"contents".
+	*	The on_drop handler is set, overriding if present. The stack_max is
+		set to 1.
+
+	eg:
+	local result = lwcomputers.register_clipboard ("mymod:clipboard", nil, {
+		description = S("My Clipboard"),
+		short_description = S("My Clipboard"),
+		inventory_image = "my_clipboard_item.png",
+		on_use = my_on_use_handler_to_view_contents
+	})
+
+
+
+--

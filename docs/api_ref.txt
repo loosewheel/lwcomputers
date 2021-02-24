@@ -264,6 +264,13 @@ os.kill_timer (id)
 	Cancels the identified timer. This id is returned by `os.start_timer`.
 	Ignored if the timer doesn't exist.
 
+os.paste_from_clipboard ()
+	Returns the contents string of the first clipboard in the computer's slot,
+	or nil if none.
+	* The length of the contents is limited to the "Maximum clipboard content length"
+	setting (default 64000).
+	See "clipboard" event.
+
 os.peek_event ([event])
 	Checks the event queue and returns the next available event without removing
 	it from the queue. Returns nil if no event is available.
@@ -333,6 +340,30 @@ os.to_worldtime (secs)
 os.to_realtime (secs)
 	Returns real world seconds converted from in games seconds.
 	* If the setting 'time_speed' is zero, `secs` is returned.
+
+
+Security
+--------
+Security interface. Always defined but inactive in if computer/robot is
+public.
+
+security.add_access (name)
+	Adds player that can access this machine if it is private. Returns
+	true if successful, false if not (machine is public).
+	name: the players name to allow access.
+
+security.remove_access (name)
+	Removes access to an allowed player to this machine if it is private.
+	Returns true if successful, false if not (machine is public).
+	name: the players name to remove access.
+
+security.access_list ()
+	Returns an indexed list of player names that can access this machine,
+	or nil if machine is public. The returned list can be zero size as the
+	owner always has access, and is not placed in the access list.
+
+security.owner ()
+	Returns the owner's name, or nil if machine is public.
 
 
 fs
@@ -746,6 +777,8 @@ mesecon.set (state, side)
 			"front"
 			"back"
 			nil - actions all above sides
+	The state of a side's mesecon state is only changed if not currently
+	the requested state.
 	This call is ignored if not supported.
 
 
@@ -935,7 +968,7 @@ robot.put_right (item [, listname])
 	false if not. If multiple items either all are moved or none. There must
 	be space in the target inventory of the item/s.
 	item: the item/s to move into the inventory, can be:
-		tabel: as { name = "nodename", count = amount }
+		table: as { name = "nodename", count = amount }
 		string: as node's name, count is 1.
 		number: robot's inventory slot (1 to robot.slots ()), the whole stack is moved.
 	listname: optionally the name of the list in the target inventory, if not
@@ -953,7 +986,7 @@ robot.pull_right (item [, listname])
 	false if not. If multiple items either all are moved or none. There must
 	be space in the robot's inventory for the item/s.
 	item: the item/s to move from the inventory, can be:
-		tabel: as { name = "nodename", count = amount }
+		table: as { name = "nodename", count = amount }
 		string: as node's name, count is 1.
 		number: inventory's slot (1 to however many), the whole stack is moved.
 	listname: optionally the name of the list in the source inventory, if not
@@ -1023,6 +1056,26 @@ robot.find_inventory ([listname])
 		end
 	end
 
+robot.drop (item)
+	Removes the item/s from the robot's storage and drops it. Returns true
+	if the item/s were dropped successfully, false if not. If multiple items
+	either all are dropped or none.
+	item: the item/s to move from the inventory, can be:
+		table: as { name = "nodename", count = amount }
+		string: as node's name, count is 1.
+		number: inventory's slot (1 to however many), the whole stack is dropped.
+	* Note, this action is delayed by the robot's action delay setting time.
+
+robot.trash (item)
+	Removes the item/s from the robot's storage. Returns true if the item/s
+	were removed successfully, false if not. If multiple items either all are
+	removed or none.
+	item: the item/s to move from the inventory, can be:
+		table: as { name = "nodename", count = amount }
+		string: as node's name, count is 1.
+		number: inventory's slot (1 to however many), the whole stack is removed.
+	* Note, this action is delayed by the robot's action delay setting time.
+
 
 keys
 ----
@@ -1032,7 +1085,7 @@ KEY_BACKSPACE		= 8,
 KEY_TAB				= 9,
 KEY_LINE				= 10,
 KEY_ENTER			= 13,
-KEY_ESC				= 27,
+KEY_ESCAPE			= 27,
 KEY_SPACE			= 32,
 KEY_EXCLAIM			= 33,
 KEY_QUOTE			= 34,
@@ -1058,7 +1111,7 @@ KEY_5					= 53,
 KEY_6					= 54,
 KEY_7					= 55,
 KEY_8					= 56,
-KEY_9					= 58,
+KEY_9					= 57,
 KEY_COLON			= 58,
 KEY_SEMICOLON		= 59,
 KEY_LESS				= 60,

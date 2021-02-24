@@ -46,6 +46,29 @@ If value is omitted the variable is cleared (deleted).
 Commands
 --------
 
+access -h
+	Show help
+
+access
+	List players that can access machine.
+
+access owner
+	The machine's owner.
+
+access add player
+	Add player to access machine.
+		player	the player's name
+
+access remove player
+	Remove player from accessing machine.
+		player	the player's name
+
+access name player
+	If player can access machine.
+		player	the player's name
+
+* access commands result is an error (12) if machine is public.
+
 cd [-h] [dir]
 	Change current dir.
 		-h		show help
@@ -263,6 +286,7 @@ Result codes used by los
 9	file error
 10	download error
 11	wireless error
+12 security error
 
 
 Programs
@@ -338,3 +362,9 @@ print [-h] printer path [title]
 
 The first page is printed with the given title. Following pages are printed
 with the title followed by their page number.
+
+
+INSTALL
+	Installs LOS onto the computer's hard drive.
+
+install
