@@ -749,15 +749,15 @@ http.get (url, timeout, extra_headers, user_agent)
 	user agent is used.
 
 
-mesecon
+mesecons
 -------
-	Interface is always defined but is inactive if mesecon mod is not present.
+	Interface is always defined but is inactive if mesecons mod is not present.
 
-mesecon.supported ()
-	Returns true if mesecon interface is active, otherwise false.
+mesecons.supported ()
+	Returns true if mesecons interface is active, otherwise false.
 
-mesecon.get (side)
-	Returns true if mesecon state is currently on, false if off or not supported.
+mesecons.get (side)
+	Returns true if mesecons state is currently on, false if off or not supported.
 	side: the side of the computer to check (looking at front). Can be -
 			"up"
 			"left"
@@ -765,11 +765,11 @@ mesecon.get (side)
 			"front"
 			"back"
 			nil - true if any side is on.
-	* Note: this returns the computer's set state (with mesecon.set). It does
+	* Note: this returns the computer's set state (with mesecons.set). It does
 	not return the state set by an external source.
 
-mesecon.set (state, side)
-	If state is true, turns the mesecon state to on. Otherwise turns it off.
+mesecons.set (state, side)
+	If state is true, turns the mesecons state to on. Otherwise turns it off.
 	side: the side of the computer to action (looking at front). Can be -
 			"up"
 			"left"
@@ -777,7 +777,7 @@ mesecon.set (state, side)
 			"front"
 			"back"
 			nil - actions all above sides
-	The state of a side's mesecon state is only changed if not currently
+	The state of a side's mesecons state is only changed if not currently
 	the requested state.
 	This call is ignored if not supported.
 
@@ -1242,11 +1242,11 @@ Events
 	* This event is not fired if the digilines mod is not loaded.
 	See `digilines.send`.
 
-"mesecon", state, side
-	Queued when the mesecon power state is change on a side of the computer.
+"mesecons", state, side
+	Queued when the mesecons power state is change on a side of the computer.
 	state: the new state ("on" or "off").
 	side: the side of the computer ("front", "back", "left" or "right").
-	* This event is not fired if the mesecon mod is not loaded.
+	* This event is not fired if the mesecons mod is not loaded.
 
 
 Booting

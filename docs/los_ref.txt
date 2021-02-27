@@ -160,21 +160,27 @@ ls [-h -l -d -f] [path]
 				can have any * in last name
 				if omitted shows current dir
 
-mesecon -h
+mesecons -h
 	Show help
 
-mesecon able
-	If mesecon is loaded.
+mesecons able
+	If mesecons is loaded.
 
-mesecon get [side]
-	If mesecon is on or off.
+mesecons get [side]
+	If mesecons is on or off.
 		side	up, front, back, left, right
 				if omitted if any are on
 
-mesecon on|off [side]
-	Set mesecon on or off.
+mesecons on|off [side]
+	Set mesecons on or off.
 		side	up, front, back, left, right
 				if omitted acts on all
+
+mesecons listen [secs]
+	Listen for a mesecons message.
+		secs     seconds to listen for
+					if zero or omitted endless
+	* esc key cancels
 
 mkdir [-h] dir
 	Make dir including parents.
