@@ -201,7 +201,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	inv:set_size("book", 1)
 	inv:set_width("book", 1)
 
-	meta:set_string("formspec", get_formspec ())
+	meta:set_string ("formspec", get_formspec ())
 
 	-- orientate
 	if placer then

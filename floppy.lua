@@ -25,11 +25,11 @@ local function on_use (itemstack, user, pointed_thing)
 			local formspec =
 			"formspec_version[3]\n"..
 			"size[6.0,4.0]\n"..
-			"label[2.25,0.8;"..minetest.formspec_escape(sid).."]\n"..
-			"label[2.0,1.8;"..minetest.formspec_escape(label).."]\n"..
+			"label[2.25,0.8;"..minetest.formspec_escape (sid).."]\n"..
+			"label[2.0,1.8;"..minetest.formspec_escape (label).."]\n"..
 			"button_exit[2.0,2.5;2.0,1.0;close;Close]"
 
-			minetest.show_formspec(user:get_player_name(), "lwcomputers:floppy", formspec)
+			minetest.show_formspec (user:get_player_name (), "lwcomputers:floppy", formspec)
 		end
 	end
 

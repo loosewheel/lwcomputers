@@ -66,3 +66,10 @@ v0.1.7
 *	fixed server crash when computer or floppy disk dropped.
 *	added install program to los disk.
 *	added trash item
+
+
+v0.1.8
+*	changed robot's appearance.
+*	added lwcomputers:touchscreen (copy of digistuff:touchscreen as full sized node)
+*	added lwcomputers:panel (copy of digistuff:panel as full sized node)
+*	renamed mesecon interface and event to mesecons.

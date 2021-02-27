@@ -98,9 +98,9 @@ minetest.register_craftitem("lwcomputers:book", {
 			local meta = itemstack:get_meta()
 
 			if meta then
-				minetest.show_formspec(user:get_player_name(),
-											  "lwcomputers:book",
-											  get_book_formspec (meta))
+				minetest.show_formspec (user:get_player_name (),
+												"lwcomputers:book",
+												get_book_formspec (meta))
 			end
 		end
 
@@ -154,9 +154,9 @@ minetest.register_on_player_receive_fields(function (player, formname, fields)
 									meta:set_int ("page", page)
 									player:set_wielded_item (stack)
 
-									minetest.show_formspec(player:get_player_name(),
-																  "lwcomputers:book",
-																  get_book_formspec (meta))
+									minetest.show_formspec (player:get_player_name (),
+																	"lwcomputers:book",
+																	get_book_formspec (meta))
 								end
 							end
 
@@ -169,9 +169,9 @@ minetest.register_on_player_receive_fields(function (player, formname, fields)
 									meta:set_int ("page", page)
 									player:set_wielded_item (stack)
 
-									minetest.show_formspec(player:get_player_name(),
-																  "lwcomputers:book",
-																  get_book_formspec (meta))
+									minetest.show_formspec (player:get_player_name (),
+																	"lwcomputers:book",
+																	get_book_formspec (meta))
 								end
 							end
 

@@ -86,7 +86,7 @@ local function new_computer_env (computer)
 	ENV.utils = { }
 	ENV.wireless = { }
 	ENV.digilines = { }
-	ENV.mesecon = { }
+	ENV.mesecons = { }
 	ENV.http = { }
 	ENV.printer = { }
 
@@ -1010,20 +1010,20 @@ local function new_computer_env (computer)
 
 
 
-	-- mesecon
+	-- mesecons
 
-	ENV.mesecon.supported = function ()
-		return computer.digilines_supported ()
+	ENV.mesecons.supported = function ()
+		return computer.mesecons_supported ()
 	end
 
 
-	ENV.mesecon.get = function (side)
-		return computer.mesecon_get (side)
+	ENV.mesecons.get = function (side)
+		return computer.mesecons_get (side)
 	end
 
 
-	ENV.mesecon.set = function (state, side)
-		computer.mesecon_set (state, side)
+	ENV.mesecons.set = function (state, side)
+		computer.mesecons_set (state, side)
 	end
 
 
@@ -1714,7 +1714,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	computer.shutdown = function (silent)
 		minetest.get_node_timer (computer.pos):stop ()
 
-		computer.mesecon_set (false)
+		computer.mesecons_set (false)
 
 		computer.ENV.term.clear ()
 		computer.ENV.term.set_cursor (0, 0)
@@ -1941,12 +1941,12 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	end
 
 
-	computer.mesecon_supported = function ()
+	computer.mesecons_supported = function ()
 		return lwcomp.mesecon_supported
 	end
 
 
-	computer.mesecon_get = function (side)
+	computer.mesecons_get = function (side)
 		if lwcomp.mesecon_supported then
 			local meta = minetest.get_meta (pos)
 
@@ -1968,7 +1968,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	end
 
 
-	computer.mesecon_set = function (state, side)
+	computer.mesecons_set = function (state, side)
 		if lwcomp.mesecon_supported then
 			local meta = minetest.get_meta (pos)
 
@@ -2244,7 +2244,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			minetest.forceload_free_block (computer.pos, false)
 		end
 
-		computer.mesecon_set (false)
+		computer.mesecons_set (false)
 
 		meta:set_int ("lwcomputer_id", 0)
 		minetest.remove_node (computer.pos)

@@ -12,7 +12,7 @@ local function on_construct (pos)
 
 		if inv then
 			meta:set_string ("inventory", "{ trash = { [1] = '' } }")
-			meta:set_string("formspec",
+			meta:set_string ("formspec",
 				"formspec_version[3]"..
 				"size[11.75,10.25,false]"..
 				"no_prepend[]"..
@@ -22,8 +22,8 @@ local function on_construct (pos)
 				"list[current_player;main;1.0,4.5;8,4;]"..
 				"listcolors[#545454;#6E6E6E;#B3A575]")
 
-			inv:set_size("trash", 1)
-			inv:set_width("trash", 1)
+			inv:set_size ("trash", 1)
+			inv:set_width ("trash", 1)
 		end
 	end
 end

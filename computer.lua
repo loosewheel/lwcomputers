@@ -30,7 +30,7 @@ local function on_destruct (pos)
 			local data = lwcomp.get_computer_data (id, pos)
 
 			if data then
-				data.mesecon_set (false)
+				data.mesecons_set (false)
 			end
 
 			lwcomp.remove_computer_data (id)
@@ -110,7 +110,7 @@ local function on_receive_fields (pos, formname, fields, sender)
 				"listring[]"..
 				"listcolors[#545454;#6E6E6E;#DBCF9F]"
 
-				meta:set_string("formspec", spec)
+				meta:set_string ("formspec", spec)
 			end
 		end
 
@@ -339,7 +339,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	local data = lwcomp.reset_computer_data (id, pos)
 
 	if data then
-		meta:set_string("formspec", lwcomp.term_formspec (data))
+		meta:set_string ("formspec", lwcomp.term_formspec (data))
 	end
 
 	-- orientate
@@ -390,9 +390,9 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 		"button_exit[1.0,1.0;2.5,1.0;public;Public]"..
 		"button_exit[4.5,1.0;2.5,1.0;private_"..tostring (id)..";Private]"
 
-		minetest.show_formspec(placer:get_player_name(),
-									  "lwcomputers:computer_set_owner",
-									  spec)
+		minetest.show_formspec (placer:get_player_name (),
+										"lwcomputers:computer_set_owner",
+										spec)
 	end
 
 	-- If return true no item is taken from itemstack
@@ -453,7 +453,7 @@ local function allow_metadata_inventory_move (pos, from_list, from_index, to_lis
 		return 0
 	end
 
-	return 1000
+	return lwcomp.settings.default_stack_max
 end
 
 
@@ -474,7 +474,7 @@ local function allow_metadata_inventory_put (pos, listname, index, stack, player
 			end
 		end
 	elseif listname == "storage" then
-		return 1000
+		return lwcomp.settings.default_stack_max
 	end
 
 	return 0
@@ -487,7 +487,7 @@ local function allow_metadata_inventory_take (pos, listname, index, stack, playe
 		return 0
 	end
 
-	return 1000
+	return lwcomp.settings.default_stack_max
 end
 
 
@@ -591,9 +591,9 @@ local function on_punch_robot (pos, node, puncher, pointed_thing)
 					"style_type[button_exit;bgcolor=red;textcolor=white]"..
 					"button_exit[1.0,1.0;2.5,1.0;stop_"..tostring (id)..";Stop]"
 
-					minetest.show_formspec(puncher:get_player_name(),
-												  "lwcomputers:computer_robot_stop",
-												  spec)
+					minetest.show_formspec (puncher:get_player_name (),
+													"lwcomputers:computer_robot_stop",
+													spec)
 				end
 			end
 		end
@@ -656,12 +656,12 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 			local spec =
 			"formspec_version[3]"..
 			"size[8.0,4.0,false]"..
-			"label[1.0,1.0;Owned by "..owner.."]"..
+			"label[1.0,1.0;Owned by "..minetest.formspec_escape (owner).."]"..
 			"button_exit[3.0,2.0;2.0,1.0;close;Close]"
 
-			minetest.show_formspec(clicker:get_player_name(),
-										  "lwcomputers:computer_privately_owned",
-										  spec)
+			minetest.show_formspec (clicker:get_player_name (),
+											"lwcomputers:computer_privately_owned",
+											spec)
 		end
 	end
 
@@ -757,7 +757,7 @@ local function mesecon_support ()
 							local data = lwcomp.get_computer_data (id, pos)
 
 							if data then
-								data.queue_event ("mesecon", new_state,
+								data.queue_event ("mesecons", new_state,
 														get_mesecon_side_for_rule (pos, meta:get_int ("param2"), rule))
 							end
 						end
@@ -854,15 +854,40 @@ minetest.register_node("lwcomputers:computer_on", {
 
 minetest.register_node("lwcomputers:computer_robot", {
    description = S("Robot"),
-   tiles = { "robot.png", "robot_bottom.png", "robot_left.png",
+   tiles = { "robot_top.png", "robot_bottom.png", "robot_left.png",
 				 "robot_right.png", "robot_back.png", "robot_face.png" },
    sunlight_propagates = false,
-   drawtype = "normal",
+   drawtype = "nodebox",
    node_box = {
       type = "fixed",
       fixed = {
-         {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+			 -- left_foot
+			{ -0.3125, -0.5, -0.3125, -0.0625, -0.375, 0.3125 },
+			-- right_foot
+			{ 0.0625, -0.5, -0.3125, 0.3125, -0.375, 0.3125 },
+			-- left_leg
+			{ -0.25, -0.375, 0, -0.125, -0.3125, 0.125 },
+			-- right_left
+			{ 0.125, -0.375, 0, 0.25, -0.3125, 0.125 },
+			-- body
+			{ -0.3125, -0.3125, -0.375, 0.3125, 0.1875, 0.375 },
+			-- upper_arm
+			{ -0.5, -0.1875, -0.0625, 0.5, 0.1875, 0.125 },
+			-- lower_arm
+			{ -0.5, -0.1875, -0.25, 0.5, 0, 0.125},
+			-- neck
+			{ -0.125, 0.1875, -0.0625, 0.125, 0.25, 0.1875 },
+			-- head
+			{ -0.25, 0.25, -0.25, 0.25, 0.5, 0.25 },
       }
+   },
+   selection_box = {
+      type = "fixed",
+      fixed = { -0.5, -0.5, -0.375, 0.5, 0.5, 0.375 }
+   },
+   collision_box = {
+      type = "fixed",
+      fixed = { -0.5, -0.5, -0.375, 0.5, 0.5, 0.375 }
    },
 	groups = { cracky = 2, oddly_breakable_by_hand = 2 },
 	sounds = default.node_sound_wood_defaults (),
@@ -895,15 +920,40 @@ minetest.register_node("lwcomputers:computer_robot", {
 
 minetest.register_node("lwcomputers:computer_robot_on", {
    description = S("Robot"),
-   tiles = { "robot.png", "robot_bottom.png", "robot_left.png",
+   tiles = { "robot_top.png", "robot_bottom.png", "robot_left.png",
 				 "robot_right.png", "robot_back.png", "robot_face_on.png" },
    sunlight_propagates = false,
-   drawtype = "normal",
+   drawtype = "nodebox",
    node_box = {
       type = "fixed",
       fixed = {
-         {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
+			 -- left_foot
+			{ -0.3125, -0.5, -0.3125, -0.0625, -0.375, 0.3125 },
+			-- right_foot
+			{ 0.0625, -0.5, -0.3125, 0.3125, -0.375, 0.3125 },
+			-- left_leg
+			{ -0.25, -0.375, 0, -0.125, -0.3125, 0.125 },
+			-- right_left
+			{ 0.125, -0.375, 0, 0.25, -0.3125, 0.125 },
+			-- body
+			{ -0.3125, -0.3125, -0.375, 0.3125, 0.1875, 0.375 },
+			-- upper_arm
+			{ -0.5, -0.1875, -0.0625, 0.5, 0.1875, 0.125 },
+			-- lower_arm
+			{ -0.5, -0.1875, -0.25, 0.5, 0, 0.125},
+			-- neck
+			{ -0.125, 0.1875, -0.0625, 0.125, 0.25, 0.1875 },
+			-- head
+			{ -0.25, 0.25, -0.25, 0.25, 0.5, 0.25 },
       }
+   },
+   selection_box = {
+      type = "fixed",
+      fixed = { -0.5, -0.5, -0.375, 0.5, 0.5, 0.375 }
+   },
+   collision_box = {
+      type = "fixed",
+      fixed = { -0.5, -0.5, -0.375, 0.5, 0.5, 0.375 }
    },
 	groups = { cracky = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory = 1 },
 	sounds = default.node_sound_wood_defaults (),

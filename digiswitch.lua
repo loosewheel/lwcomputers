@@ -124,7 +124,7 @@ local function on_construct (pos)
 		"field[1.0,0.8;4.0,1.0;channel;Channel;]\n"..
 		"button_exit[2.0,2.5;2.0,1.0;set;Set]\n"
 
-		meta:set_string("formspec", formspec)
+		meta:set_string ("formspec", formspec)
 	end
 end
 
@@ -146,10 +146,10 @@ local function on_receive_fields (pos, formname, fields, sender)
 			local formspec =
 			"formspec_version[3]\n"..
 			"size[6.0,4.0]\n"..
-			"field[1.0,0.8;4.0,1.0;channel;Channel;"..meta:get_string ("channel").."]\n"..
+			"field[1.0,0.8;4.0,1.0;channel;Channel;"..minetest.formspec_escape (meta:get_string ("channel")).."]\n"..
 			"button_exit[2.0,2.5;2.0,1.0;set;Set]\n"
 
-			meta:set_string("formspec", formspec)
+			meta:set_string ("formspec", formspec)
 		end
 	end
 end

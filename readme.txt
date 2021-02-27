@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.7
+0.1.8
 
 
 Minetest Version
@@ -41,8 +41,9 @@ lwdrops
 Optional Dependencies
 =====================
 intllib
-mesecon
+mesecons
 digilines
+digistuff
 
 
 Installation
@@ -58,7 +59,12 @@ https://forum.minetest.net/viewtopic.php?f=9&t=25916&sid=7af0bb8a2ac3b9ade7a3f87
 Description
 ===========
 LWComputers provides programmable computers and robots, floppy disks, printers,
-a digilines controlled mesecon power switch and a trash item.
+a digilines controlled mesecons power switch and a trash item.
+
+The following are also defined as variants of the original mod item, if
+the relevant mod is loaded.
++	lwcomputers:touchscreen - digistuff:touchscreen as full sized node.
++	lwcomputers:panel - digistuff:panel as full sized node.
 
 Each computer has an internal hard drive, and 3 slots for floppy disks
 (or a clipboard). The terminal display has a resolution of 50 characters
@@ -113,7 +119,7 @@ The mod also has a clipboard item, and copy and paste actions are possible
 through it. It must be placed in one of the computer's slots to use it.
 "Digging" the clipboard (left click) displays its contents.
 
-The computer can provide a mesecon power source, if mesecon is loaded.
+The computer can provide a mesecons power source, if mesecons is loaded.
 It can also send digilines messages, and be given a channel and receive
 them if its loaded. These are all done through the computer's api.
 
@@ -143,7 +149,7 @@ timer			a set timer elapsed
 clipboard	the ctrl, alt and v key where pressed with a clipboard in a slot.
 disk			floppy disk inserted or ejected.
 digilines	a digilines message was received.
-mesecon		mesecon power to side was turned on or off
+mesecons		mesecons power to side was turned on or off
 
 
 A computers file system starts at a single root "/". Any floppies are
@@ -183,6 +189,7 @@ The path to a floppy disk's contents:
 The world save folder for an item with a disk will be removed if:
 +	The trash item from this mod is used to dispose of it.
 +	The item is dropped in the world and is removed by the game.
++	The pulverize command is used.
 
 
 The mod supports the following settings:
@@ -313,10 +320,10 @@ The los disk boots to a command prompt. See docs/los_ref.txt
 
 DigiSwitch
 ==========
-* This block is only available if both digilines and mesecon are loaded.
+* This block is only available if both digilines and mesecons are loaded.
 
 Digiswitches act as both a digilines message target and a digilines cable,
-as well as a mesecon power source. They can be placed beside each other
+as well as a mesecons power source. They can be placed beside each other
 to form a bank, horizontally or vertically.
 
 Right click the digiswitch to give it a channel.

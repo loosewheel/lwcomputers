@@ -116,9 +116,9 @@ minetest.register_craftitem ("lwcomputers:page", {
 			local contents = meta:get_string ("contents")
 
 
-			minetest.show_formspec(user:get_player_name(),
-										  "lwcomputers:page",
-										  get_page_formspec (meta:get_string ("contents")))
+			minetest.show_formspec (user:get_player_name (),
+											"lwcomputers:page",
+											get_page_formspec (meta:get_string ("contents")))
 		end
 
       return nil

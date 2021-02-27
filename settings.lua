@@ -83,6 +83,8 @@ lwcomp.settings.hdd_max_items =
 lwcomp.settings.floppy_max_items =
 	tonumber(minetest.settings:get("lwcomputers_max_floppy_disk_items") or 1000)
 
+lwcomp.settings.default_stack_max =
+	tonumber(minetest.settings:get("default_stack_max")) or 99
 
 
 --

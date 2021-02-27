@@ -11,10 +11,10 @@ local function on_use (itemstack, user, pointed_thing)
 		"formspec_version[3]\n"..
 		"size[13,12.5]\n"..
 		"textarea[0.5,0.5;12,10;clipboard;;"..
-		 minetest.formspec_escape(meta:get_string ("contents"))..
+		 minetest.formspec_escape (meta:get_string ("contents"))..
 		"]\nbutton_exit[5.5,11;2,1;save;Save]"
 
-		minetest.show_formspec(user:get_player_name(), "lwcomputers:clipboard", formspec)
+		minetest.show_formspec (user:get_player_name (), "lwcomputers:clipboard", formspec)
 	end
 
 	return nil
