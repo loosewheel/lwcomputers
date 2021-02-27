@@ -73,3 +73,4 @@ v0.1.8
 *	added lwcomputers:touchscreen (copy of digistuff:touchscreen as full sized node)
 *	added lwcomputers:panel (copy of digistuff:panel as full sized node)
 *	renamed mesecon interface and event to mesecons.
+*	added mesecons listen to LOS disk.
