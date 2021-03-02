@@ -1,6 +1,8 @@
 lwcomputer computer API reference.
 ==================================
 
+*	The side orientation is as the computer/robot is facing.
+
 
 assert (v [, message])
 	Std lua.
@@ -758,7 +760,7 @@ mesecons.supported ()
 
 mesecons.get (side)
 	Returns true if mesecons state is currently on, false if off or not supported.
-	side: the side of the computer to check (looking at front). Can be -
+	side: the side of the computer to check. Can be -
 			"up"
 			"left"
 			"right"
@@ -770,7 +772,7 @@ mesecons.get (side)
 
 mesecons.set (state, side)
 	If state is true, turns the mesecons state to on. Otherwise turns it off.
-	side: the side of the computer to action (looking at front). Can be -
+	side: the side of the computer to action. Can be -
 			"up"
 			"left"
 			"right"
@@ -940,17 +942,18 @@ robot.dig_right ()
 	the node that was dug, or nil if not dug.
 	* Note, this action is delayed by the robot's action delay setting time.
 
-robot.place_up (nodename [, param2])
-robot.place_down (nodename [, param2])
-robot.place_front (nodename [, param2])
-robot.place_back (nodename [, param2])
-robot.place_left (nodename [, param2])
-robot.place_right (nodename [, param2])
+robot.place_up (nodename [, direction])
+robot.place_down (nodename [, direction])
+robot.place_front (nodename [, direction])
+robot.place_back (nodename [, direction])
+robot.place_left (nodename [, direction])
+robot.place_right (nodename [, direction])
 	Places the given node to the given side of the robot. Returns true if
 	the node was placed, or false if not. The given node must be in the
 	robot's storage and the node must be able to be placed to the position.
 	nodename: the string name of the node to place. "air" cannot be used.
-	param2: value for param2, 0 is used if not given.
+	direction: if given, the facing direction for the placed node, can be
+		{ "up", "down", "left", "right", "front", "back" }.
 	* Note, this action is delayed by the robot's action delay setting time.
 	* The file 'place_substitute.lua' in the mod folder contains a list of
 		item/node substitutes, useful for farming etc. Modify this file for
@@ -992,6 +995,13 @@ robot.pull_right (item [, listname])
 	listname: optionally the name of the list in the source inventory, if not
 		given defaults to "main".
 	* Note, this action is delayed by the robot's action delay setting time.
+
+robot.cur_pos ()
+	Returns the robot's current world position, as
+	{ x = n, y = n, z = n }
+
+robot.room_for (nodename)
+	Returns true if the item can fit into the robot's storage, false if not.
 
 robot.contains (nodename)
 	Returns true if the robot's storage contains the given item, false if
