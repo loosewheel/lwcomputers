@@ -2,16 +2,16 @@ local lwcomp, mod_storage, http_api = ...
 
 
 
-if minetest.get_translator and minetest.get_translator("lwcomputers") then
-	lwcomp.S = minetest.get_translator("lwcomputers")
-elseif minetest.global_exists("intllib") then
+if minetest.get_translator and minetest.get_translator ("lwcomputers") then
+	lwcomp.S = minetest.get_translator ("lwcomputers")
+elseif minetest.global_exists ("intllib") then
    if intllib.make_gettext_pair then
-      lwcomp.S = intllib.make_gettext_pair()
+      lwcomp.S = intllib.make_gettext_pair ()
    else
-      lwcomp.S = intllib.Getter()
+      lwcomp.S = intllib.Getter ()
    end
 else
-   lwcomp.S = function(s) return s end
+   lwcomp.S = function (s) return s end
 end
 
 
@@ -325,7 +325,16 @@ function lwcomp.get_computer_data (id, pos)
 			lwcomp.store_computer_list ()
 		end
 	elseif pos then
-		data.pos = pos
+		data.pos = { x = pos.x, y = pos.y, z = pos.z }
+
+		lwcomp.computer_list[name] =
+		{
+			pos = { x = pos.x, y = pos.y, z = pos.z },
+		}
+
+		if data.filesys then
+			data.filesys.pos = { x = pos.x, y = pos.y, z = pos.z }
+		end
 	end
 
 	return data

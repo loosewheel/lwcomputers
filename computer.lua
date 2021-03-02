@@ -251,6 +251,7 @@ local function preserve_metadata (pos, oldnode, oldmeta, drops)
 				imeta:set_string ("description", description)
 				imeta:set_string ("owner", meta:get_string ("owner"))
 				imeta:set_string ("access_by", meta:get_string ("access_by"))
+				imeta:set_int ("persists", meta:get_int ("persists"))
 
 				local disk_data = meta:get_string ("disk_data")
 				if disk_data:len () > 0 then
@@ -276,6 +277,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	local inventory = ""
 	local owner = ""
 	local access_by = ""
+	local persists = 0
 
 	if is_robot then
 		inventory = "{ "..
@@ -299,6 +301,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 		disk_data = imeta:get_string ("disk_data")
 		owner = imeta:get_string ("owner")
 		access_by = imeta:get_string ("access_by")
+		persists =  imeta:get_int ("persists")
 
 		unique = true
 	else
@@ -315,6 +318,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	meta:set_string ("owner", owner)
 	meta:set_string ("access_by", access_by)
 
+
 	if disk_data:len () > 0 then
 		meta:set_string ("disk_data", disk_data)
 	end
@@ -324,7 +328,12 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	meta:set_string ("mesecon_left", lwcomp.mesecon_state_off)
 	meta:set_string ("mesecon_right", lwcomp.mesecon_state_off)
 	meta:set_string ("mesecon_up", lwcomp.mesecon_state_off)
-	meta:set_int ("persists", 0)
+
+	if not is_robot then
+		persists = 0
+	end
+
+	meta:set_int ("persists", persists)
 
 	local inv = meta:get_inventory ()
 
@@ -369,6 +378,10 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 				node.param2 = param2
 			end
 		end
+	end
+
+	if persists == 1 then
+		minetest.forceload_block (pos, false)
 	end
 
 	if unique and placer:is_player () and
@@ -710,13 +723,13 @@ end
 local function get_mesecon_side_for_rule (pos, param2, rule)
 	if type (rule) == "table" and param2 >= 1 and param2 <= 4 then
 		if rule.x == -1 then
-			return ({ "right", "left", "back", "front" })[param2]
+			return ({ "left", "right", "back", "front" })[param2]
 		elseif rule.x == 1 then
-			return ({ "left", "right", "front", "back" })[param2]
+			return ({ "right", "left", "front", "back" })[param2]
 		elseif rule.z == -1 then
-			return ({ "back", "front", "left", "right" })[param2]
+			return ({ "back", "front", "right", "left" })[param2]
 		elseif rule.z == 1 then
-			return ({ "front", "back", "right", "left" })[param2]
+			return ({ "front", "back", "left", "right" })[param2]
 		end
 	end
 
@@ -856,11 +869,10 @@ minetest.register_node("lwcomputers:computer_robot", {
    description = S("Robot"),
    tiles = { "robot_top.png", "robot_bottom.png", "robot_left.png",
 				 "robot_right.png", "robot_back.png", "robot_face.png" },
-   sunlight_propagates = false,
    drawtype = "nodebox",
-   node_box = {
-      type = "fixed",
-      fixed = {
+	node_box = {
+		type = "fixed",
+		fixed = {
 			 -- left_foot
 			{ -0.3125, -0.5, -0.3125, -0.0625, -0.375, 0.3125 },
 			-- right_foot
@@ -870,17 +882,17 @@ minetest.register_node("lwcomputers:computer_robot", {
 			-- right_left
 			{ 0.125, -0.375, 0, 0.25, -0.3125, 0.125 },
 			-- body
-			{ -0.3125, -0.3125, -0.375, 0.3125, 0.1875, 0.375 },
+			{ -0.375, -0.3125, -0.375, 0.375, 0.1875, 0.375 },
 			-- upper_arm
 			{ -0.5, -0.1875, -0.0625, 0.5, 0.1875, 0.125 },
 			-- lower_arm
-			{ -0.5, -0.1875, -0.25, 0.5, 0, 0.125},
+			{ -0.5, -0.1875, -0.25, 0.5, 0, 0.125 },
 			-- neck
 			{ -0.125, 0.1875, -0.0625, 0.125, 0.25, 0.1875 },
 			-- head
-			{ -0.25, 0.25, -0.25, 0.25, 0.5, 0.25 },
-      }
-   },
+			{ -0.3125, 0.25, -0.3125, 0.3125, 0.5, 0.3125 },
+		}
+	},
    selection_box = {
       type = "fixed",
       fixed = { -0.5, -0.5, -0.375, 0.5, 0.5, 0.375 }
@@ -893,6 +905,7 @@ minetest.register_node("lwcomputers:computer_robot", {
 	sounds = default.node_sound_wood_defaults (),
 	paramtype2 = "facedir",
 	param2 = 1,
+   sunlight_propagates = true,
 	drop = "lwcomputers:computer_robot",
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
@@ -922,11 +935,10 @@ minetest.register_node("lwcomputers:computer_robot_on", {
    description = S("Robot"),
    tiles = { "robot_top.png", "robot_bottom.png", "robot_left.png",
 				 "robot_right.png", "robot_back.png", "robot_face_on.png" },
-   sunlight_propagates = false,
    drawtype = "nodebox",
-   node_box = {
-      type = "fixed",
-      fixed = {
+	node_box = {
+		type = "fixed",
+		fixed = {
 			 -- left_foot
 			{ -0.3125, -0.5, -0.3125, -0.0625, -0.375, 0.3125 },
 			-- right_foot
@@ -936,17 +948,17 @@ minetest.register_node("lwcomputers:computer_robot_on", {
 			-- right_left
 			{ 0.125, -0.375, 0, 0.25, -0.3125, 0.125 },
 			-- body
-			{ -0.3125, -0.3125, -0.375, 0.3125, 0.1875, 0.375 },
+			{ -0.375, -0.3125, -0.375, 0.375, 0.1875, 0.375 },
 			-- upper_arm
 			{ -0.5, -0.1875, -0.0625, 0.5, 0.1875, 0.125 },
 			-- lower_arm
-			{ -0.5, -0.1875, -0.25, 0.5, 0, 0.125},
+			{ -0.5, -0.1875, -0.25, 0.5, 0, 0.125 },
 			-- neck
 			{ -0.125, 0.1875, -0.0625, 0.125, 0.25, 0.1875 },
 			-- head
-			{ -0.25, 0.25, -0.25, 0.25, 0.5, 0.25 },
-      }
-   },
+			{ -0.3125, 0.25, -0.3125, 0.3125, 0.5, 0.3125 },
+		}
+	},
    selection_box = {
       type = "fixed",
       fixed = { -0.5, -0.5, -0.375, 0.5, 0.5, 0.375 }
@@ -959,6 +971,7 @@ minetest.register_node("lwcomputers:computer_robot_on", {
 	sounds = default.node_sound_wood_defaults (),
 	paramtype2 = "facedir",
 	param2 = 1,
+   sunlight_propagates = true,
 	drop = "lwcomputers:computer_robot",
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),

@@ -517,6 +517,9 @@ function safefile:new (max_size, filesys, id, path, mode)
 		return nil, "invalid mode"
 	end
 
+	obj.last_write_time = minetest.get_us_time ()
+	obj.last_size, obj.last_items = disk:get_used ()
+
 	return obj
 end
 
@@ -673,6 +676,21 @@ end
 
 
 
+function safefile:get_disk_used (disk)
+	local us_time = minetest.get_us_time ()
+
+	if (us_time < self.last_write_time) or
+		((self.last_write_time + 1000) > us_time) then
+
+		self.last_write_time = minetest.get_us_time()
+		self.last_size, self.last_items = disk:get_used ()
+	end
+
+	return self.last_size, self.last_items
+end
+
+
+
 function safefile:write ( ... )
 	if self.status == "file" then
 		if self.mode == "w" or self.mode == "r+" or self.mode == "w+" or
@@ -686,7 +704,7 @@ function safefile:write ( ... )
 				return false, msg
 			end
 
-			local used = disk:get_used ()
+			local used = self:get_disk_used (disk)
 
 			for i = 1, #args do
 				if type (args[i]) == "string" then

@@ -30,5 +30,6 @@ return
 	["farming:pineapple_top"] = "farming:pineapple_1",
 	["farming:chili_pepper"] = "farming:chili_1",
 	["farming:cabbage"] = "farming:cabbage_1",
-	["farming:seed_mint"] = "farming:mint_1"
+	["farming:seed_mint"] = "farming:mint_1",
+	["default:torch"] = "default:torch_wall"
 }

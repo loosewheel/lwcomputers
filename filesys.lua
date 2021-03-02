@@ -163,6 +163,9 @@ function safefile:new (file, max_size, root)
 	obj.max_size = max_size
 	obj.root = root
 
+	obj.last_write_time = minetest.get_us_time ()
+	obj.last_size, obj.last_items = get_disk_used (root)
+
 	return obj
 end
 
@@ -204,9 +207,24 @@ end
 
 
 
+function safefile:get_disk_used ()
+	local us_time = minetest.get_us_time ()
+
+	if (us_time < self.last_write_time) or
+		((self.last_write_time + 1000) > us_time) then
+
+		self.last_write_time = minetest.get_us_time()
+		self.last_size, self.last_items = get_disk_used (self.root)
+	end
+
+	return self.last_size, self.last_items
+end
+
+
+
 function safefile:write ( ... )
 	local args = { ... }
-	local used = get_disk_used (self.root)
+	local used = self:get_disk_used ()
 	local size = 0
 
 	for i = 1, #args do

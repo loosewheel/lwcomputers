@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.8
+0.1.9
 
 
 Minetest Version
@@ -80,17 +80,18 @@ additional "S" button on the terminal interface. Robots can move, detect,
 dig, place, drop, trash, craft and work with inventories. While a robot
 is running sneak + punch will open a form to stop it.
 
-This first time a computer or robot is placed in the world a form opens
-asking the player that placed it if the machine is public or private. If
+The first time a computer or robot is placed in the world a form opens
+asking the player that placed it, if the machine is public or private. If
 private is selected, the player becomes the owner and other players (except
 those with protection_bypass privilege) cannot access it. The security
 interface in the machine's api can be used to manage players that can access
 the machine. If a player does not have access they can't dig, open or
 operate the terminal gui, or stop a robot.
 
-The persistence button toggles on and off. If persistence is on the block
+The persistence button toggles on and off. If persistence is on, the block
 the computer is in remains loaded when out of range. This persistence is
-retained across world startups.
+retained across world startups. Robots retain their persistence state when
+moved, computers do not.
 
 The Ctrl, Cap, Shift and Alt keys on the keyboard toggle down and up. When
 in the down state the key's label is suffixed with a "*".
@@ -189,7 +190,11 @@ The path to a floppy disk's contents:
 The world save folder for an item with a disk will be removed if:
 +	The trash item from this mod is used to dispose of it.
 +	The item is dropped in the world and is removed by the game.
++	Calling robot.trash ()
 +	The pulverize command is used.
++	The item is destroyed with creative inventory trash.
++	The item is destroyed with unified_inventory trash.
++	The unified_inventory Clear inventory is used with the item in the inventory.
 
 
 The mod supports the following settings:
@@ -237,8 +242,6 @@ Maximum string.rep length (int)
 Maximum clipboard content length (int)
 	The maximum length of a string for clipboard item.
 	Default: 64000
-*	When dropped, the contents of a clipboard is trimmed to the first 12000
-	bytes. Any greater causes the server to crash.
 
 The year the in-game calendar begins (int)
 	Computer time values are relative to the beginning of the given year.

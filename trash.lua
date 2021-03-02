@@ -3,7 +3,6 @@ local S = lwcomp.S
 
 
 
-
 local function on_construct (pos)
 	local meta = minetest.get_meta (pos)
 

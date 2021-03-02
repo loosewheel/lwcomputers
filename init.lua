@@ -1,4 +1,4 @@
-local version = "0.1.8"
+local version = "0.1.9"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
 
@@ -105,6 +105,15 @@ end
 
 minetest.register_on_mods_loaded (on_mods_loaded)
 
+
+
+local function on_shutdown ()
+	lwcomp.store_computer_list ()
+end
+
+
+
+minetest.register_on_shutdown (on_shutdown)
 
 
 --

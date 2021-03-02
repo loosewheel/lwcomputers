@@ -16,47 +16,54 @@ local function new_computer_env (computer)
 	ENV.rawequal = _G.rawequal
 	ENV._VERSION = _G._VERSION
 	ENV.next = _G.next
-	ENV.string = { }
-	ENV.string.split = _G.string.split
---	ENV.string.find = _G.string.find -- modify
-	ENV.string.trim = _G.string.trim
-	ENV.string.format = _G.string.format
---	ENV.string.rep = _G.string.rep -- modify
-	ENV.string.gsub = _G.string.gsub
-	ENV.string.len = _G.string.len
-	ENV.string.gmatch = _G.string.gmatch
-	ENV.string.dump = _G.string.dump
-	ENV.string.match = _G.string.match
-	ENV.string.reverse = _G.string.reverse
-	ENV.string.byte = _G.string.byte
-	ENV.string.char = _G.string.char
-	ENV.string.upper = _G.string.upper
-	ENV.string.lower = _G.string.lower
-	ENV.string.sub = _G.string.sub
 	ENV.type = _G.type
-	ENV.coroutine = _G.coroutine
 	ENV.xpcall = _G.xpcall
 	ENV.setfenv = _G.setfenv
---	ENV.debug = _G.debug -- omitted
 	ENV.getmetatable = _G.getmetatable
 	ENV.error = _G.error
-	ENV._G = ENV
---	ENV.jit = _G.jit -- omitted
 	ENV.pairs = _G.pairs
---	ENV.loadstring = _G.loadstring -- modify
-	ENV.table = _G.table
-	ENV.math = _G.math
 	ENV.setmetatable = _G.setmetatable
 	ENV.select = _G.select
 	ENV.unpack = _G.unpack
 	ENV.getfenv = _G.getfenv
 --	ENV.load = _G.load -- modify
 --	ENV.loadfile = _G.loadfile -- modify
+--	ENV.loadstring = _G.loadstring -- modify
 --	ENV.dofile = _G.dofile -- modify
 --	ENV.print = _G.print -- modify
---	ENV.package = _G.package -- omitted
---	ENV.collectgarbage = _G.collectgarbage -- omitted
 --	ENV.require = _G.require -- omitted
+--	ENV.debug = _G.debug -- omitted
+--	ENV.package = _G.package -- omitted
+--	ENV.jit = _G.jit -- omitted
+--	ENV.collectgarbage = _G.collectgarbage -- omitted
+	ENV._G = ENV
+
+	ENV.string = { }
+	for key, value in pairs (_G.string) do
+		ENV.string[key] = value
+	end
+	setmetatable (ENV.string, getmetatable (_G.string))
+--	ENV.string.find modified below
+--	ENV.string.rep modified below
+
+	ENV.coroutine = { }
+	for key, value in pairs (_G.coroutine) do
+		ENV.coroutine[key] = value
+	end
+	setmetatable (ENV.coroutine, getmetatable (_G.coroutine))
+
+	ENV.table = { }
+	for key, value in pairs (_G.table) do
+		ENV.table[key] = value
+	end
+	setmetatable (ENV.table, getmetatable (_G.table))
+
+	ENV.math = { }
+	for key, value in pairs (_G.math) do
+		ENV.math[key] = value
+	end
+	setmetatable (ENV.math, getmetatable (_G.math))
+
 	ENV.io = { }
 --	ENV.io.input = _G.io.input -- omitted
 --	ENV.io.write = _G.io.write -- omitted
@@ -67,6 +74,7 @@ local function new_computer_env (computer)
 --	ENV.io.flush = _G.io.flush -- omitted
 --	ENV.io.type = _G.io.type -- modify
 --	ENV.io.lines = _G.io.lines -- modify
+
 	ENV.os = { }
 --	ENV.os.clock = _G.os.clock -- modify
 --	ENV.os.date = _G.os.date -- modify
@@ -78,6 +86,7 @@ local function new_computer_env (computer)
 --	ENV.os.time = _G.os.time -- modify
 --	ENV.os.setlocale = _G.os.setlocale -- omitted
 --	ENV.os.tmpname = _G.os.tmpname -- omitted
+
 	ENV.os.environs = { }
 	ENV.fs = { }
 	ENV.keys = { }
@@ -1306,6 +1315,14 @@ local function new_computer_env (computer)
 		ENV.robot.trash = function (item)
 			return computer.remove_item (item, false)
 		end
+
+		ENV.robot.room_for = function (item)
+			return computer.room_for (item)
+		end
+
+		ENV.robot.cur_pos = function ()
+			return computer.cur_pos ()
+		end
 	end
 
 
@@ -1321,9 +1338,9 @@ local function get_mesecon_rule_for_side (pos, param2, side)
 	if side == "up" then
 		return { { x = 0, y = 1, z = 0 } }
 	elseif side == "left" then
-		base = { x = -1, y = 0, z = 0 }
-	elseif side == "right" then
 		base = { x = 1, y = 0, z = 0 }
+	elseif side == "right" then
+		base = { x = -1, y = 0, z = 0 }
 	elseif side == "front" then
 		base = { x = 0, y = 0, z = -1 }
 	elseif side == "back" then
@@ -1357,9 +1374,9 @@ local function get_robot_side (pos, param2, side)
 	elseif side == "down" then
 		return { x = pos.x, y = pos.y - 1, z = pos.z }
 	elseif side == "left" then
-		base = { x = 1, y = 0, z = 0 }
-	elseif side == "right" then
 		base = { x = -1, y = 0, z = 0 }
+	elseif side == "right" then
+		base = { x = 1, y = 0, z = 0 }
 	elseif side == "front" then
 		base = { x = 0, y = 0, z = 1 }
 	elseif side == "back" then
@@ -1379,6 +1396,39 @@ local function get_robot_side (pos, param2, side)
 	end
 
 	return nil
+end
+
+
+
+local function get_place_dir (itemname, robot_pos, robot_param2, dir)
+	if dir then
+		local side_pos = get_robot_side (robot_pos, robot_param2, dir)
+
+		if side_pos then
+			local vdir = vector.subtract (side_pos, robot_pos)
+			local def = minetest.registered_items[itemname]
+
+			if not def then
+				def = minetest.registered_craftitems[itemname]
+			end
+
+			if not def then
+				def = minetest.registered_nodes[itemname]
+			end
+
+			if not def then
+				def = minetest.registered_tools[itemname]
+			end
+
+			if def and def.paramtype2 and def.paramtype2 == "wallmounted" then
+				return minetest.dir_to_wallmounted (vdir)
+			else
+				return minetest.dir_to_facedir (vdir, true)
+			end
+		end
+	end
+
+	return 0
 end
 
 
@@ -2249,8 +2299,8 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		meta:set_int ("lwcomputer_id", 0)
 		minetest.remove_node (computer.pos)
 
-		computer.pos = pos
-		computer.filesys.pos = pos
+		-- update position
+		lwcomp.get_computer_data (id, pos)
 		minetest.add_node (pos, cur_node)
 
 		meta = minetest.get_meta (pos)
@@ -2383,16 +2433,11 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	end
 
 
-	computer.place = function (side, nodename, param2)
+	computer.place = function (side, nodename, dir)
 		nodename = tostring (nodename or "")
-		param2 = tonumber (param2 or 0) or 0
 
 		if nodename:len () < 1 or nodename == "air" then
 			return false
-		end
-
-		if param2 < 0 or param2 > 5 then
-			param2 = 0
 		end
 
 		local stack = ItemStack (nodename)
@@ -2401,6 +2446,8 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		if not stack or not meta or not cur_node  then
 			return false
 		end
+
+		local param2 = get_place_dir (stack:get_name (), computer.pos, cur_node.param2, dir)
 
 		local inv = meta:get_inventory ()
 		if not inv or not inv:contains_item ("storage", stack, false) then
@@ -2441,9 +2488,13 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.contains = function (nodename)
 		local meta = minetest.get_meta (computer.pos)
+		if not meta then
+			return false
+		end
+
 		local inv = meta:get_inventory ()
 		local stack = ItemStack (nodename)
-		if not meta or not inv or not stack then
+		if not inv or not stack then
 			return false
 		end
 
@@ -2451,10 +2502,35 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	end
 
 
+	computer.room_for = function (nodename)
+		local meta = minetest.get_meta (computer.pos)
+		if not meta then
+			return false
+		end
+
+		local inv = meta:get_inventory ()
+		local stack = ItemStack (nodename)
+		if not inv or not stack then
+			return false
+		end
+
+		return inv:room_for_item ("storage", stack)
+	end
+
+
+	computer.cur_pos = function (nodename)
+		return { x = computer.pos.x, y = computer.pos.y, z = computer.pos.z }
+	end
+
+
 	computer.slots = function ()
 		local meta = minetest.get_meta (computer.pos)
+		if not meta then
+			return nil
+		end
+
 		local inv = meta:get_inventory ()
-		if not meta or not inv then
+		if not inv then
 			return nil
 		end
 
@@ -2464,8 +2540,12 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.slot = function (slot)
 		local meta = minetest.get_meta (computer.pos)
+		if not meta then
+			return nil
+		end
+
 		local inv = meta:get_inventory ()
-		if not meta or not inv then
+		if not inv then
 			return nil
 		end
 

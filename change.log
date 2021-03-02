@@ -74,3 +74,17 @@ v0.1.8
 *	added lwcomputers:panel (copy of digistuff:panel as full sized node)
 *	renamed mesecon interface and event to mesecons.
 *	added mesecons listen to LOS disk.
+
+
+v0.1.9
+*	improved sand-boxing of computers.
+*	sped up file:write ().
+*	added robot.room_for ()
+*	added robot.cur_pos ()
+*	robots remember persistence when moved
+*	param2 passed to robot.place_<side> changed to direction, adjusts to direction of robot.
+*	changed left/right orientation - as computer/robot faces.
+*	fixed robots not restarting on world startup.
+*	changed robot's appearance.
+*	added entry to place_substitute.lua - ["default:torch"] = "default:torch_wall"
+	this is usually the one.
