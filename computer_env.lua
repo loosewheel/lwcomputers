@@ -2215,7 +2215,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		if node.name == "ignore" then
 			minetest.get_voxel_manip ():read_from_map (pos, pos)
 
-			node = minetest.get_node(pos)
+			node = minetest.get_node (pos)
 
 			if node.name == "ignore" then
 				return nil

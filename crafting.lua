@@ -88,7 +88,7 @@ minetest.register_craft({
 minetest.register_craft({
 	output = "lwcomputers:floppy_lua 1",
 	recipe = {
-		{ "group:floppy" },
+		{ "group:floppy_disk" },
 		{ "default:book" }
 	}
 })
@@ -97,7 +97,7 @@ minetest.register_craft({
 minetest.register_craft({
 	output = "lwcomputers:floppy_los 1",
 	recipe = {
-		{ "group:floppy", "default:book" },
+		{ "group:floppy_disk", "default:book" },
 		{ "default:book", "" }
 	}
 })
