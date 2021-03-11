@@ -89,5 +89,10 @@ v0.1.9
 *	added entry to place_substitute.lua - ["default:torch"] = "default:torch_wall"
 	this is usually the one.
 
+
 v0.1.10
 *	fixed lua disk and los disk crafting.
+
+
+v0.1.11
+*	fixed persistence failing after time.

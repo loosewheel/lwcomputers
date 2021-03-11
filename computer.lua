@@ -24,9 +24,10 @@ local function on_destruct (pos)
 
 	if meta then
 		local id = meta:get_int ("lwcomputer_id")
+		local persists = false
 
 		if id > 0 then
-			local persists =  meta:get_int ("persists") == 1
+			persists = meta:get_int ("persists") == 1
 			local data = lwcomp.get_computer_data (id, pos)
 
 			if data then
