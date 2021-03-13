@@ -2190,24 +2190,6 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	-- robot
 
-	computer.detect = function (side)
-		local node = minetest.get_node_or_nil (computer.pos)
-
-		if node then
-			local pos = get_robot_side (computer.pos, node.param2, side)
-
-			if pos then
-				node = minetest.get_node_or_nil (pos)
-
-				if node then
-					return node.name
-				end
-			end
-		end
-
-		return nil
-	end
-
 
 	local function get_far_node (pos)
 		local node = minetest.get_node (pos)
@@ -2223,6 +2205,25 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		end
 
 		return node
+	end
+
+
+	computer.detect = function (side)
+		local node = minetest.get_node_or_nil (computer.pos)
+
+		if node then
+			local pos = get_robot_side (computer.pos, node.param2, side)
+
+			if pos then
+				node = get_far_node (pos)
+
+				if node then
+					return node.name
+				end
+			end
+		end
+
+		return nil
 	end
 
 
@@ -2383,7 +2384,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return nil
 		end
 
-		local node = minetest.get_node_or_nil (pos)
+		local node = get_far_node (pos)
 		if not node then
 			return nil
 		end
@@ -2459,7 +2460,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
-		local node = minetest.get_node_or_nil (pos)
+		local node = get_far_node (pos)
 		if not node then
 			return false
 		end
@@ -2588,7 +2589,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
-		local node = minetest.get_node_or_nil (pos)
+		local node = get_far_node (pos)
 		if not node then
 			return false
 		end
@@ -2683,7 +2684,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
-		local node = minetest.get_node_or_nil (pos)
+		local node = get_far_node (pos)
 		if not node then
 			return false
 		end
@@ -2920,7 +2921,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			local pos = get_robot_side (computer.pos, cur_node.param2, sides[s])
 
 			if pos then
-				local node = minetest.get_node_or_nil (pos)
+				local node = get_far_node (pos)
 
 				if node and node.name ~= "air" then
 					local meta =  minetest.get_meta (pos)

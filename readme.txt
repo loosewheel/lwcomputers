@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.11
+0.1.12
 
 
 Minetest Version
@@ -91,7 +91,8 @@ operate the terminal gui, or stop a robot.
 The persistence button toggles on and off. If persistence is on, the block
 the computer is in remains loaded when out of range. This persistence is
 retained across world startups. Robots retain their persistence state when
-moved, computers do not.
+moved, computers do not. The maximum force loaded blocks is limited to the
+max_forceloaded_blocks setting (default is 16).
 
 The Ctrl, Cap, Shift and Alt keys on the keyboard toggle down and up. When
 in the down state the key's label is suffixed with a "*".

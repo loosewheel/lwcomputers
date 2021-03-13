@@ -96,3 +96,8 @@ v0.1.10
 
 v0.1.11
 *	fixed persistence failing after time.
+
+
+v0.1.12
+*	fixed robot.detect, robot.dig, robot.place, robot.put, robot.pull and
+	robot.find_inventory failing when out of active range with persistence.
