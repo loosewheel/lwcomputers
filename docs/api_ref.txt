@@ -911,18 +911,34 @@ Robot
 robot.detect_up ()
 robot.detect_down ()
 robot.detect_front ()
+robot.detect_front_up ()
+robot.detect_front_down ()
 robot.detect_back ()
+robot.detect_back_up ()
+robot.detect_back_down ()
 robot.detect_left ()
+robot.detect_left_up ()
+robot.detect_left_down ()
 robot.detect_right ()
+robot.detect_right_up ()
+robot.detect_right_down ()
 	Returns the name of the node in the given direction from the robot, or
 	nil if the node was not readable.
 
 robot.move_up ()
 robot.move_down ()
 robot.move_front ()
+robot.move_front_up ()
+robot.move_front_down ()
 robot.move_back ()
+robot.move_back_up ()
+robot.move_back_down ()
 robot.move_left ()
+robot.move_left_up ()
+robot.move_left_down ()
 robot.move_right ()
+robot.move_right_up ()
+robot.move_right_down ()
 	Moves the robot in the given direction. The orientation of the robot
 	is not changed. Returns true if the robot successfully moved, false if not.
 	* Note, this action is delayed by the robot's movement delay setting time.
@@ -935,9 +951,17 @@ robot.turn_right ()
 robot.dig_up ()
 robot.dig_down ()
 robot.dig_front ()
+robot.dig_front_up ()
+robot.dig_front_down ()
 robot.dig_back ()
+robot.dig_back_up ()
+robot.dig_back_down ()
 robot.dig_left ()
+robot.dig_left_up ()
+robot.dig_left_down ()
 robot.dig_right ()
+robot.dig_right_up ()
+robot.dig_right_down ()
 	Digs the node in the given direction. Returns a string of the name of
 	the node that was dug, or nil if not dug.
 	* Note, this action is delayed by the robot's action delay setting time.
@@ -945,9 +969,17 @@ robot.dig_right ()
 robot.place_up (nodename [, direction])
 robot.place_down (nodename [, direction])
 robot.place_front (nodename [, direction])
+robot.place_front_up (nodename [, direction])
+robot.place_front_down (nodename [, direction])
 robot.place_back (nodename [, direction])
+robot.place_back_up (nodename [, direction])
+robot.place_back_down (nodename [, direction])
 robot.place_left (nodename [, direction])
+robot.place_left_up (nodename [, direction])
+robot.place_left_down (nodename [, direction])
 robot.place_right (nodename [, direction])
+robot.place_right_up (nodename [, direction])
+robot.place_right_down (nodename [, direction])
 	Places the given node to the given side of the robot. Returns true if
 	the node was placed, or false if not. The given node must be in the
 	robot's storage and the node must be able to be placed to the position.
@@ -963,9 +995,17 @@ robot.place_right (nodename [, direction])
 robot.put_up (item [, listname])
 robot.put_down (item [, listname])
 robot.put_front (item [, listname])
+robot.put_front_up (item [, listname])
+robot.put_front_down (item [, listname])
 robot.put_back (item [, listname])
+robot.put_back_up (item [, listname])
+robot.put_back_down (item [, listname])
 robot.put_left (item [, listname])
+robot.put_left_up (item [, listname])
+robot.put_left_down (item [, listname])
 robot.put_right (item [, listname])
+robot.put_right_up (item [, listname])
+robot.put_right_down (item [, listname])
 	Moves the item/s from the robot's storage into an inventory at the given
 	side of the robot. Returns true if the item/s were moved successfully,
 	false if not. If multiple items either all are moved or none. There must
@@ -981,9 +1021,17 @@ robot.put_right (item [, listname])
 robot.pull_up (item [, listname])
 robot.pull_down (item [, listname])
 robot.pull_front (item [, listname])
+robot.pull_front_up (item [, listname])
+robot.pull_front_down (item [, listname])
 robot.pull_back (item [, listname])
+robot.pull_back_up (item [, listname])
+robot.pull_back_down (item [, listname])
 robot.pull_left (item [, listname])
+robot.pull_left_up (item [, listname])
+robot.pull_left_down (item [, listname])
 robot.pull_right (item [, listname])
+robot.pull_right_up (item [, listname])
+robot.pull_right_down (item [, listname])
 	Moves the item/s from an inventory at the given side of the robot into
 	the robot's storage. Returns true if the item/s were moved successfully,
 	false if not. If multiple items either all are moved or none. There must
@@ -1039,8 +1087,9 @@ robot.find_inventory ([listname])
 	list where the key is the side. The values of the indexed list are strings
 	of the sides an inventory was found on. If the listname is given the value
 	of the keys is the number of slots for that inventory. If not given it is
-	true. The possible sides are "up", "down", "front", "back", "left" and
-	"right".
+	true. The possible sides are "up", "down", "front", "front_up", "front_down",
+	"back", "back_up", "back_down", "left", "left_up", "left_down", "right",
+	"right_up" and "right_down".
 
 	e.g.
 	local inv = robot.find_inventory ("main")
