@@ -1253,7 +1253,12 @@ local function new_computer_env (computer)
 	if computer.robot then
 		ENV.robot = { }
 
-		local sides = { "up", "down", "front", "back", "left", "right" }
+		--local sides = { "up", "down", "front", "back", "left", "right" }
+		local sides = { "up", "down",
+							 "front", "front_up", "front_down",
+							 "back", "back_up", "back_down",
+							 "left", "left_up", "left_down",
+							 "right", "right_up", "right_down" }
 		for s = 1, #sides do
 			ENV.robot["detect_"..sides[s]] = function ()
 				return computer.detect (sides[s])
@@ -1374,6 +1379,56 @@ local function get_robot_side (pos, param2, side)
 	elseif side == "down" then
 		return { x = pos.x, y = pos.y - 1, z = pos.z }
 	elseif side == "left" then
+		base = { x = -1, y = pos.y, z = 0 }
+	elseif side == "left_up" then
+		base = { x = -1, y = pos.y + 1, z = 0 }
+	elseif side == "left_down" then
+		base = { x = -1, y = pos.y - 1, z = 0 }
+	elseif side == "right" then
+		base = { x = 1, y = pos.y, z = 0 }
+	elseif side == "right_up" then
+		base = { x = 1, y = pos.y + 1, z = 0 }
+	elseif side == "right_down" then
+		base = { x = 1, y = pos.y - 1, z = 0 }
+	elseif side == "front" then
+		base = { x = 0, y = pos.y, z = 1 }
+	elseif side == "front_up" then
+		base = { x = 0, y = pos.y + 1, z = 1 }
+	elseif side == "front_down" then
+		base = { x = 0, y = pos.y - 1, z = 1 }
+	elseif side == "back" then
+		base = { x = 0, y = pos.y, z = -1 }
+	elseif side == "back_up" then
+		base = { x = 0, y = pos.y + 1, z = -1 }
+	elseif side == "back_down" then
+		base = { x = 0, y = pos.y - 1, z = -1 }
+	else
+		return nil
+	end
+
+	if param2 == 3 then -- +x
+		return { x = base.z + pos.x, y = base.y, z = (base.x * -1) + pos.z }
+	elseif param2 == 0 then -- -z
+		return { x = (base.x * -1) + pos.x, y = base.y, z = (base.z * -1) + pos.z }
+	elseif param2 == 1 then -- -x
+		return { x = (base.z * -1) + pos.x, y = base.y, z = base.x + pos.z }
+	elseif param2 == 2 then -- +z
+		return { x = base.x + pos.x, y = base.y, z = base.z + pos.z }
+	end
+
+	return nil
+end
+
+
+
+--[[local function get_robot_side (pos, param2, side)
+	local base = nil
+
+	if side == "up" then
+		return { x = pos.x, y = pos.y + 1, z = pos.z }
+	elseif side == "down" then
+		return { x = pos.x, y = pos.y - 1, z = pos.z }
+	elseif side == "left" then
 		base = { x = -1, y = 0, z = 0 }
 	elseif side == "right" then
 		base = { x = 1, y = 0, z = 0 }
@@ -1396,7 +1451,7 @@ local function get_robot_side (pos, param2, side)
 	end
 
 	return nil
-end
+end]]
 
 
 
@@ -2307,10 +2362,10 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		meta = minetest.get_meta (pos)
 		inv = meta:get_inventory ()
 
-		inv:set_size("main", 3)
-		inv:set_width("main", 3)
-		inv:set_size("storage", 32)
-		inv:set_width("storage", 8)
+		inv:set_size ("main", 3)
+		inv:set_width ("main", 3)
+		inv:set_size ("storage", 32)
+		inv:set_width ("storage", 8)
 
 		meta:set_int ("lwcomputer_id", id)
 		meta:set_int ("running", running)
@@ -2907,7 +2962,12 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.find_inventory = function (listname)
 		local result = { }
-		local sides = { "up", "down", "front", "back", "left", "right" }
+--		local sides = { "up", "down", "front", "back", "left", "right" }
+		local sides = { "up", "down",
+							 "front", "front_up", "front_down",
+							 "back", "back_up", "back_down",
+							 "left", "left_up", "left_down",
+							 "right", "right_up", "right_down" }
 		local cur_node = minetest.get_node_or_nil (computer.pos)
 		if not cur_node  then
 			return false

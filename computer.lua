@@ -338,12 +338,12 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 
 	local inv = meta:get_inventory ()
 
-	inv:set_size("main", 3)
-	inv:set_width("main", 3)
+	inv:set_size ("main", 3)
+	inv:set_width ("main", 3)
 
 	if is_robot then
-		inv:set_size("storage", 32)
-		inv:set_width("storage", 8)
+		inv:set_size ("storage", 32)
+		inv:set_width ("storage", 8)
 	end
 
 	local data = lwcomp.reset_computer_data (id, pos)
@@ -353,31 +353,29 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	end
 
 	-- orientate
-	if placer then
-		if placer:is_player () then
-			local angle = placer:get_look_horizontal ()
-			local node = minetest.get_node (pos)
-			local param2 = 2
+	if placer and placer:is_player () then
+		local angle = placer:get_look_horizontal ()
+		local node = minetest.get_node (pos)
+		local param2 = 2
 
-			if angle >= (math.pi * 0.25) and angle < (math.pi * 0.75) then
-				-- x-
-				param2 = 3
-			elseif angle >= (math.pi * 0.75) and angle < (math.pi * 1.25) then
-				-- z-
-				param2 = 1
-			elseif angle >= (math.pi * 1.25) and angle < (math.pi * 1.75) then
-				-- x+
-				param2 = 4
-			else
-				-- z+
-				param2 = 2
-			end
+		if angle >= (math.pi * 0.25) and angle < (math.pi * 0.75) then
+			-- x-
+			param2 = 3
+		elseif angle >= (math.pi * 0.75) and angle < (math.pi * 1.25) then
+			-- z-
+			param2 = 1
+		elseif angle >= (math.pi * 1.25) and angle < (math.pi * 1.75) then
+			-- x+
+			param2 = 4
+		else
+			-- z+
+			param2 = 2
+		end
 
-			meta:set_int ("param2", param2)
+		meta:set_int ("param2", param2)
 
-			if node.name ~= "ignore" then
-				node.param2 = param2
-			end
+		if node.name ~= "ignore" then
+			node.param2 = param2
 		end
 	end
 
@@ -385,7 +383,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 		minetest.forceload_block (pos, false)
 	end
 
-	if unique and placer:is_player () and
+	if unique and placer and placer:is_player () and
 		minetest.is_creative_enabled (placer:get_player_name ()) then
 
 		-- no duplicates in creative mode
@@ -393,7 +391,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 
 		return true
 
-	elseif not unique and placer:is_player () then
+	elseif not unique and placer and placer:is_player () then
 		local spec =
 		"formspec_version[3]"..
 		"size[8.0,3.0,false]"..

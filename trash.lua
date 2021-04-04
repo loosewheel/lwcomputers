@@ -42,7 +42,7 @@ local function on_metadata_inventory_put (pos, listname, index, stack, player)
 				inv:set_stack (listname, index, nil)
 
 				if player and player:is_player () then
-					minetest.sound_play ("trash2", { to_player = player:get_player_name (), gain = 1.0 })
+					minetest.sound_play ("lwtrash", { to_player = player:get_player_name (), gain = 1.0 })
 				end
 			end
 		end
