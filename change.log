@@ -106,3 +106,8 @@ v0.1.12
 v0.1.13
 *	bug fixes.
 *	added diagonal direction operations to robot operations.
+
+
+v0.1.14
+*	added movefloor.
+*	added side "switch" to digiswitch.

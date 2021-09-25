@@ -76,10 +76,18 @@ local function digilines_support ()
 							end
 
 							if words[1] == "on" then
-								lwcomp.mesecon_receptor_on (pos, get_mesecon_rule_for_side (words[2]))
+								if words[2] and words[2] == "switch" then
+									lwcomp.mesecon_receptor_on (pos)
+								else
+									lwcomp.mesecon_receptor_on (pos, get_mesecon_rule_for_side (words[2]))
+								end
 
 							elseif words[1] == "off" then
-								lwcomp.mesecon_receptor_off (pos, get_mesecon_rule_for_side (words[2]))
+								if words[2] and words[2] == "switch" then
+									lwcomp.mesecon_receptor_off (pos)
+								else
+									lwcomp.mesecon_receptor_off (pos, get_mesecon_rule_for_side (words[2]))
+								end
 							end
 						end
 					end

@@ -149,5 +149,19 @@ minetest.register_craft({
 end
 
 
+if lwcomp.mesecon_supported then
+
+minetest.register_craft({
+   output = "lwcomputers:movefloor",
+   recipe = {
+      { "default:stick", "default:stick", "default:stick" },
+      { "default:stick", "default:steel_ingot", "default:stick" },
+      { "default:stick", "default:stick", "default:stick" },
+   }
+})
+
+end
+
+
 
 --

@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.13
+0.1.14
 
 
 Minetest Version
@@ -333,14 +333,32 @@ to form a bank, horizontally or vertically.
 Right click the digiswitch to give it a channel.
 
 Mesecon power can be delivered at 5 sides of the digiswitch, the adjacent
-4 in the (x, z) and above. Around the connector on these sides is a colored
-border indicating the side. The sides are named "red", "green", "blue",
-"yellow" and "white".
+4 in the (x, z) and above. Around the connector on these sides are a
+colored border indicating the side. The sides are named "red", "green",
+"blue", "yellow" and "white".
 
 The digilines message sent to the digiswitch dictates the action, "on" or
 "off". The action can be followed with the side to act upon, separated by
 a space. eg. "on white". If a side is stated only that side is acted upon.
-If the side is omitted (or is invalid) all 5 sides are acted upon.
+If the side is omitted (or is invalid) all 5 sides are acted upon. If the
+side name "switch" is give the power is supplied the same as a mesecons
+switch (all horizontal sides, one below, this height and one above).
+
+
+MoveFloor
+=========
+* This block is only available if mesecons is loaded.
+
+The MoveFloor block responds to a mesecons power source in the 4 horizontal
+directions. If the power source is one higher the MoveFloor moves up to
+that height. If the power source is one lower the MoveFloor moves down to
+that height. Powering an adjacent block has no effect. The power source
+should be turned off before another move or the MoveFloor will oscillate.
+
+The MoveFloor will move up to 3 blocks stacked on it.
+
+If using a DigiSwitch as the power source use the side name "switch" or
+the MoveFloor will not move.
 
 
 Printer

@@ -1,4 +1,4 @@
-local version = "0.1.13"
+local version = "0.1.14"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
 
@@ -49,6 +49,7 @@ loadfile (modpath.."/printer.lua") (lwcomp)
 loadfile (modpath.."/crafting.lua") (lwcomp)
 loadfile (modpath.."/trash.lua") (lwcomp)
 loadfile (modpath.."/extras.lua") (lwcomp)
+loadfile (modpath.."/movefloor.lua") (lwcomp)
 
 
 
