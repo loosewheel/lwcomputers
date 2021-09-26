@@ -55,42 +55,6 @@ end
 
 
 
---local function find_adjoining_movefloor (pos, list)
-	--local tpos = { x = pos.x + 1, y = pos.y, z = pos.z }
-	--local node = minetest.get_node (tpos)
-	--if node and node.name == "lwcomputers:movefloor" then
-		--if add_movefloor_list (tpos, list) then
-			--find_adjoining_movefloor (tpos, list)
-		--end
-	--end
-
-	--tpos = { x = pos.x - 1, y = pos.y, z = pos.z }
-	--node = minetest.get_node (tpos)
-	--if node and node.name == "lwcomputers:movefloor" then
-		--if add_movefloor_list (tpos, list) then
-			--find_adjoining_movefloor (tpos, list)
-		--end
-	--end
-
-	--tpos = { x = pos.x, y = pos.y, z = pos.z + 1 }
-	--node = minetest.get_node (tpos)
-	--if node and node.name == "lwcomputers:movefloor" then
-		--if add_movefloor_list (tpos, list) then
-			--find_adjoining_movefloor (tpos, list)
-		--end
-	--end
-
-	--tpos = { x = pos.x, y = pos.y, z = pos.z - 1 }
-	--node = minetest.get_node (tpos)
-	--if node and node.name == "lwcomputers:movefloor" then
-		--if add_movefloor_list (tpos, list) then
-			--find_adjoining_movefloor (tpos, list)
-		--end
-	--end
---end
-
-
-
 local function find_adjoining_movefloor (pos, list)
 	local tpos =
 	{
