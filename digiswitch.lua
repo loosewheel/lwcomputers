@@ -20,6 +20,8 @@ local function get_mesecon_rule_for_side (side)
 		return { { x = 0, y = 0, z = -1 } }
 	elseif side == "yellow" then
 		return { { x = 0, y = 0, z = 1 } }
+	elseif side == "switch" then
+		return nil
 	else
 		return
 		{
@@ -76,18 +78,9 @@ local function digilines_support ()
 							end
 
 							if words[1] == "on" then
-								if words[2] and words[2] == "switch" then
-									lwcomp.mesecon_receptor_on (pos)
-								else
-									lwcomp.mesecon_receptor_on (pos, get_mesecon_rule_for_side (words[2]))
-								end
-
+								lwcomp.mesecon_receptor_on (pos, get_mesecon_rule_for_side (words[2]))
 							elseif words[1] == "off" then
-								if words[2] and words[2] == "switch" then
-									lwcomp.mesecon_receptor_off (pos)
-								else
-									lwcomp.mesecon_receptor_off (pos, get_mesecon_rule_for_side (words[2]))
-								end
+								lwcomp.mesecon_receptor_off (pos, get_mesecon_rule_for_side (words[2]))
 							end
 						end
 					end

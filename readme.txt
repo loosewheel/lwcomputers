@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.14
+0.1.15
 
 
 Minetest Version
@@ -44,6 +44,7 @@ intllib
 mesecons
 digilines
 digistuff
+unifieddyes
 
 
 Installation
@@ -355,10 +356,26 @@ that height. If the power source is one lower the MoveFloor moves down to
 that height. Powering an adjacent block has no effect. The power source
 should be turned off before another move or the MoveFloor will oscillate.
 
+Any horizontally adjoining MoveFloor acts as a single block (only one
+needs to be powered).
+
 The MoveFloor will move up to 3 blocks stacked on it.
 
 If using a DigiSwitch as the power source use the side name "switch" or
 the MoveFloor will not move.
+
+
+Solid Color Conductors
+======================
+
+* These blocks are only defined if mesecons, digilines, and unifieddyes are
+loaded.
+
+Provides 2 blocks that can be colored the same as Solid Color Block (with
+the air brush) and is both a mesecons and digilines conductor.
+
+The Solid Color Conductor block conducts in the 'default' directions and
+the Solid Color Horizontal Conductor only conducts horizontally.
 
 
 Printer

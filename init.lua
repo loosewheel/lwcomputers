@@ -23,8 +23,8 @@ end
 
 
 local lwcomp = { }
-local modpath = minetest.get_modpath("lwcomputers")
-local worldpath = minetest.get_worldpath()
+local modpath = minetest.get_modpath ("lwcomputers")
+local worldpath = minetest.get_worldpath ()
 
 
 loadfile (modpath.."/settings.lua") (lwcomp)
@@ -50,6 +50,7 @@ loadfile (modpath.."/crafting.lua") (lwcomp)
 loadfile (modpath.."/trash.lua") (lwcomp)
 loadfile (modpath.."/extras.lua") (lwcomp)
 loadfile (modpath.."/movefloor.lua") (lwcomp)
+loadfile (modpath.."/solid_conductor.lua") (lwcomp)
 
 
 
