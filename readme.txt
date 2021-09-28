@@ -467,7 +467,7 @@ Pages print up to their edges, there is no border. To view a page or book
 Digilines Graphical Screens
 ===========================
 
-* This block is only available if digilines is loaded.
+* These items are only available if digilines is loaded.
 
 * These items are based on cheapie's digiscreen mod
 
