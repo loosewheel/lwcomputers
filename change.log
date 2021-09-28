@@ -116,3 +116,7 @@ v0.1.14
 v0.1.15
 *	Adjoining movefloor blocks act as a single group.
 *	Added solid color conductor blocks.
+
+
+v0.1.16
+* Added digilines graphical screens.

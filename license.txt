@@ -14,6 +14,10 @@ See the GNU Lesser General Public License for more details:
 https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
 
 
+Digilines graphical screens is based on cheapie's digiscreen mod, which is
+public domain.
+
+
 Fonts license
 -------------
 

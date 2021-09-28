@@ -174,6 +174,7 @@ minetest.register_node("lwcomputers:digiswitch", {
 	sounds = default.node_sound_stone_defaults (),
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
+	_digistuff_channelcopier_fieldname = "channel",
 
    on_construct = on_construct,
    on_destruct = on_destruct,

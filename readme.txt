@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.15
+0.1.16
 
 
 Minetest Version
@@ -462,3 +462,65 @@ printing operations
 
 Pages print up to their edges, there is no border. To view a page or book
 'dig' it (left click).
+
+
+Digilines Graphical Screens
+===========================
+
+* This block is only available if digilines is loaded.
+
+* These items are based on cheapie's digiscreen mod
+
+Full block and panel graphical screens in 16x16 and 32x32 pixel
+resolution.
+
+Right click to set digilines channel. The screens are also digilines
+conductors, so if using multiple screens for a large display only one
+need be connected to a digilines cable.
+
+Send a digilines message to the screen with a table with the pixel data.
+The table format is the same as for digiscreens mod, except for the 32x32
+screens the table is larger to accommodate every pixel.
+
+The message table has an indexed table for each row, top to bottom. Each
+row has an indexed string for each pixel of that row, left to right.
+Each string contains the color for that pixel as a 6-digit hex color,
+with optional "#" prefix.
+
+
+For example, this will set every pixel of a 16x16 screen to black with a
+one pixel white border.
+{
+	{ "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF",
+	  "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "000000", "000000", "000000", "000000", "000000", "000000", "000000",
+	  "000000", "000000", "000000", "000000", "000000", "000000", "000000", "FFFFFF" },
+	{ "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF",
+	  "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF" }
+}

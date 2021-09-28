@@ -146,6 +146,47 @@ minetest.register_craft ({
    }
 })
 
+
+minetest.register_craft ({
+   output = "lwcomputers:digipanel32",
+   recipe = {
+      { "group:wood", "default:glass", "" },
+      { "default:copper_ingot", "default:mese_crystal_fragment", "default:mese_crystal_fragment" },
+      { "group:wood", "default:glass", "" },
+   }
+})
+
+
+minetest.register_craft ({
+   output = "lwcomputers:digiscreen32",
+   recipe = {
+      { "group:wood", "default:glass", "group:wood" },
+      { "default:copper_ingot", "default:mese_crystal_fragment", "default:mese_crystal_fragment" },
+      { "group:wood", "default:glass", "group:wood" },
+   }
+})
+
+
+minetest.register_craft ({
+   output = "lwcomputers:digipanel16",
+   recipe = {
+      { "group:wood", "default:glass", "" },
+      { "default:copper_ingot", "default:mese_crystal_fragment", "" },
+      { "group:wood", "default:glass", "" },
+   }
+})
+
+
+minetest.register_craft ({
+   output = "lwcomputers:digiscreen16",
+   recipe = {
+      { "group:wood", "default:glass", "group:wood" },
+      { "default:copper_ingot", "default:mese_crystal_fragment", "" },
+      { "group:wood", "default:glass", "group:wood" },
+   }
+})
+
+
 end
 
 
