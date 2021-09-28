@@ -274,14 +274,4 @@ minetest.register_lbm ({
 
 
 
---minetest.register_craft({
-	--output = "digiscreen:digiscreen",
-	--recipe = {
-		--{"mesecons_luacontroller:luacontroller0000","rgblightstone:rgblightstone_truecolor_0","rgblightstone:rgblightstone_truecolor_0",},
-		--{"rgblightstone:rgblightstone_truecolor_0","rgblightstone:rgblightstone_truecolor_0","rgblightstone:rgblightstone_truecolor_0",},
-		--{"rgblightstone:rgblightstone_truecolor_0","rgblightstone:rgblightstone_truecolor_0","rgblightstone:rgblightstone_truecolor_0",},
-	--},
---})
-
-
 end
