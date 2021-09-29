@@ -11,7 +11,7 @@ if minetest.global_exists ("unifieddyes") and
 
 mesecon.register_node (":lwcomputers:solid_conductor",
 	{
-		description = "Solid Color Conductor",
+		description = S("Solid Color Conductor"),
 		tiles = { "solid_conductor.png" },
 		is_ground_content = false,
 		sounds = ( default and default.node_sound_wood_defaults() ),
@@ -77,7 +77,7 @@ unifieddyes.register_color_craft ({
 
 mesecon.register_node (":lwcomputers:solid_horizontal_conductor",
 	{
-		description = "Solid Color Horizontal Conductor",
+		description = S("Solid Color Horizontal Conductor"),
 		tiles = { "solid_conductor.png" },
 		is_ground_content = false,
 		sounds = ( default and default.node_sound_wood_defaults() ),

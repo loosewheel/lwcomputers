@@ -224,7 +224,7 @@ end
 
 registerNode (
 	"lwcomputers:digipanel32",
-	"Digilines Graphical Panel 32",
+	S("Digilines Graphical Panel 32"),
 	{ -0.5, -0.5, 0.4, 0.5, 0.5, 0.5 },
 	32,
 	0.39
@@ -233,7 +233,7 @@ registerNode (
 
 registerNode (
 	"lwcomputers:digiscreen32",
-	"Digilines Graphical Display 32",
+	S("Digilines Graphical Display 32"),
 	{ -0.5, -0.5, -0.49, 0.5, 0.5, 0.5 },
 	32,
 	-0.5
@@ -242,7 +242,7 @@ registerNode (
 
 registerNode (
 	"lwcomputers:digipanel16",
-	"Digilines Graphical Panel 16",
+	S("Digilines Graphical Panel 16"),
 	{ -0.5, -0.5, 0.4, 0.5, 0.5, 0.5 },
 	16,
 	0.39
@@ -251,7 +251,7 @@ registerNode (
 
 registerNode (
 	"lwcomputers:digiscreen16",
-	"Digilines Graphical Display 16",
+	S("Digilines Graphical Display 16"),
 	{ -0.5, -0.5, -0.49, 0.5, 0.5, 0.5 },
 	16,
 	-0.5
@@ -263,10 +263,10 @@ minetest.register_lbm ({
 	name = "lwcomputers:digiscreenrespawn",
 	label = "Respawn lwdigiscreen entities",
 	nodenames = {
-		"lwdigiscreen:digipanel32",
-		"lwdigiscreen:digiscreen32",
-		"lwdigiscreen:digipanel16",
-		"lwdigiscreen:digiscreen16"
+		"lwcomputers:digipanel32",
+		"lwcomputers:digiscreen32",
+		"lwcomputers:digipanel16",
+		"lwcomputers:digiscreen16"
 	},
 	run_at_every_load = true,
 	action = updateDisplay,

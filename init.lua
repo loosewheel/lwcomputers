@@ -1,4 +1,4 @@
-local version = "0.1.16"
+local version = "0.1.17"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
 
