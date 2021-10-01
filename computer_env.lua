@@ -698,10 +698,10 @@ local function new_computer_env (computer)
 		char = ((char or 0) % 256)
 		fg = fg or lwcomp.colors.white
 		bg = bg or lwcomp.colors.black
-		x = tonumber (x or 0)
-		y = tonumber (y or 0)
-		w = tonumber (w or computer.width)
-		h = tonumber (h or computer.height)
+		x = tonumber (x or 0) or 0
+		y = tonumber (y or 0) or 0
+		w = tonumber (w or computer.width) or computer.width
+		h = tonumber (h or computer.height) or computer.height
 
 		for cy = 0, h - 1 do
 			for cx = 0, w - 1 do
@@ -725,11 +725,11 @@ local function new_computer_env (computer)
 	ENV.term.scroll = function (lines, x, y, w, h)
 		local d = computer.display
 
-		lines = tonumber (lines or 0)
-		x = tonumber (x or 0)
-		y = tonumber (y or 0)
-		w = tonumber (w or computer.width)
-		h = tonumber (h or computer.height)
+		lines = tonumber (lines or 0) or 0
+		x = tonumber (x or 0) or 0
+		y = tonumber (y or 0) or 0
+		w = tonumber (w or computer.width) or computer.width
+		h = tonumber (h or computer.height) or computer.height
 
 		if x < 0 then
 			w = w + x
@@ -1331,6 +1331,35 @@ local function new_computer_env (computer)
 	end
 
 
+	-- monitor support
+
+	ENV.monitor = { }
+
+	ENV.monitor.interface = function (channel)
+		if lwcomp.digilines_supported then
+			return lwcomputers.get_monitor_interface (computer.pos, channel)
+		end
+
+		return nil
+	end
+
+	ENV.monitor.format_character = function (ascii, fg, bg)
+		if lwcomp.digilines_supported then
+			return lwcomputers.format_character (ascii, fg, bg)
+		end
+
+		return nil
+	end
+
+	ENV.monitor.unformat_character = function (character)
+		if lwcomp.digilines_supported then
+			return lwcomputers.unformat_character (character)
+		end
+
+		return nil
+	end
+
+
 
 	return ENV
 end
@@ -1418,40 +1447,6 @@ local function get_robot_side (pos, param2, side)
 
 	return nil
 end
-
-
-
---[[local function get_robot_side (pos, param2, side)
-	local base = nil
-
-	if side == "up" then
-		return { x = pos.x, y = pos.y + 1, z = pos.z }
-	elseif side == "down" then
-		return { x = pos.x, y = pos.y - 1, z = pos.z }
-	elseif side == "left" then
-		base = { x = -1, y = 0, z = 0 }
-	elseif side == "right" then
-		base = { x = 1, y = 0, z = 0 }
-	elseif side == "front" then
-		base = { x = 0, y = 0, z = 1 }
-	elseif side == "back" then
-		base = { x = 0, y = 0, z = -1 }
-	else
-		return nil
-	end
-
-	if param2 == 3 then -- +x
-		return { x = base.z + pos.x, y = pos.y, z = (base.x * -1) + pos.z }
-	elseif param2 == 0 then -- -z
-		return { x = (base.x * -1) + pos.x, y = pos.y, z = (base.z * -1) + pos.z }
-	elseif param2 == 1 then -- -x
-		return { x = (base.z * -1) + pos.x, y = pos.y, z = base.x + pos.z }
-	elseif param2 == 2 then -- +z
-		return { x = base.x + pos.x, y = pos.y, z = base.z + pos.z }
-	end
-
-	return nil
-end]]
 
 
 

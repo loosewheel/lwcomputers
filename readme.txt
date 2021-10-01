@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.17
+0.1.18
 
 
 Minetest Version
@@ -59,8 +59,10 @@ https://forum.minetest.net/viewtopic.php?f=9&t=25916&sid=7af0bb8a2ac3b9ade7a3f87
 
 Description
 ===========
-LWComputers provides programmable computers and robots, floppy disks, printers,
-a digilines controlled mesecons power switch and a trash item.
+LWComputers provides programmable computers and robots, floppy disks,
+printers, graphical screens, touch response monitors, a digilines
+controlled mesecons power switch, solid conductor blocks, vertical moving
+floor and a trash item.
 
 The following are also defined as variants of the original mod item, if
 the relevant mod is loaded.
@@ -524,3 +526,60 @@ one pixel white border.
 	{ "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF",
 	  "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF", "FFFFFF" }
 }
+
+
+Monitors
+========
+
+* This items is only available if digilines is loaded.
+
+* This items is based on cheapie's digiscreen mod
+
+The monitors have 5 screen resolutions:
+scale		resolution
+1			9x6
+2			18x12
+3			27x18
+4			36x24
+5			45x30
+The scale is set with a string digilines message "scale:n" where n is a
+number between 1 to 5.
+
+Monitors support 16 colors for both fore-ground and back-ground.
+
+The first time a monitor is right clicked a form displays to set the
+digilines channel. After the first time if the display face is right
+clicked a touch digilines message is sent with the monitor's channel as
+"touch:x,y" where x is the zero based character column and y is the zero
+based row, from left, top. Right clicking any other side restores the
+channel form, so a following right click will display it.
+
+The world position of the monitor can be gained by sending a string
+digilines message as "position". A message will be returned on the
+monitors channel as "position:x,y,x".
+
+To set the displayed contents for a monitor send a digilines message to
+the monitor as table, with an indexed table for each row top to bottom,
+with an indexed number for each character of that row left to right. The
+dimensions of the table necessary depends on the set resolution (scale).
+The character numbers can be produced with the lwcomputers.format_character
+function (see mod_api.txt).
+
+The following will set every character of a 9x6 (scale 1) monitor to
+ASCII 0 and black foreground and background colors.
+
+{
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+}
+
+
+The following api is exposed:
+lwcomputers.format_character (ascii, fg, bg)
+lwcomputers.unformat_character (character)
+lwcomputers.get_monitor_interface (pos, channel)
+See mod_api.txt for details.

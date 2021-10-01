@@ -187,6 +187,16 @@ minetest.register_craft ({
 })
 
 
+minetest.register_craft({
+	output = "lwcomputers:monitor",
+	recipe = {
+		{"default:stone", "default:steel_ingot", "default:glass"},
+		{"default:copper_ingot","digilines:wire_std_00000000","default:tin_ingot"},
+		{"default:stick","default:steel_ingot","default:coal_lump"}
+	}
+})
+
+
 end
 
 
@@ -216,6 +226,7 @@ minetest.register_craft ({
 		{ "group:wood", "group:wood", "dye:white" },
 	},
 })
+
 
 minetest.register_craft ({
 	output = "lwcomputers:solid_horizontal_conductor_off 3",

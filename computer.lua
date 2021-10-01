@@ -703,7 +703,7 @@ local function digilines_support ()
 							local data = lwcomp.get_computer_data (id, pos)
 
 							if data then
-								local mychannel = meta:get_string ("digilines_channel")..""
+								local mychannel = meta:get_string ("digilines_channel")
 
 								data.queue_event ("digilines", msg, channel, mychannel)
 							end

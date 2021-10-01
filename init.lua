@@ -1,4 +1,4 @@
-local version = "0.1.17"
+local version = "0.1.18"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
 
@@ -52,6 +52,8 @@ loadfile (modpath.."/extras.lua") (lwcomp)
 loadfile (modpath.."/movefloor.lua") (lwcomp)
 loadfile (modpath.."/solid_conductor.lua") (lwcomp)
 loadfile (modpath.."/digiscreens.lua") (lwcomp)
+loadfile (modpath.."/monitors.lua") (lwcomp)
+loadfile (modpath.."/monitor_interface.lua") (lwcomp)
 
 
 
