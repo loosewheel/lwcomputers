@@ -193,7 +193,7 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
 												 meta:get_string ("channel"),
-												 string.format ("touch %d,%d", x, y))
+												 string.format ("touch:%d,%d", x, y))
 
 			else
 				meta:set_string ("formspec", "field[channel;Channel;${channel}]")
@@ -206,7 +206,7 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
 												 meta:get_string ("channel"),
-												 string.format ("touch %d,%d", x, y))
+												 string.format ("touch:%d,%d", x, y))
 
 			else
 				meta:set_string ("formspec", "field[channel;Channel;${channel}]")
@@ -219,7 +219,7 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
 												 meta:get_string ("channel"),
-												 string.format ("touch %d,%d", x, y))
+												 string.format ("touch:%d,%d", x, y))
 
 			else
 				meta:set_string ("formspec", "field[channel;Channel;${channel}]")
@@ -232,7 +232,7 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
 												 meta:get_string ("channel"),
-												 string.format ("touch %d,%d", x, y))
+												 string.format ("touch:%d,%d", x, y))
 
 			else
 				meta:set_string ("formspec", "field[channel;Channel;${channel}]")
