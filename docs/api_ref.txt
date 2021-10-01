@@ -607,8 +607,8 @@ term.clear (char, fg, bg, x, y, w, h)
 	bg: backcolor to set, nil defaults to `term.colors.black`.
 	x: zero based left coordinate to clear, nil defaults to zero.
 	y: zero based top coordinate to clear, nil defaults to zero.
-	w: width of recangular section to clear, nil defaults to terminal right.
-	h: height of recangular section to clear, nil defaults to terminal bottom.
+	w: width of rectangular section to clear, nil defaults to terminal right.
+	h: height of rectangular section to clear, nil defaults to terminal bottom.
 	`term.clear ()` will clear to whole terminal to black.
 	* The cursor position is not moved.
 
@@ -617,8 +617,8 @@ term.scroll (lines, x, y, w, h)
 	lines: the lines to scroll, negative moves up, positive moves down.
 	x: zero based left coordinate to scroll, nil defaults to zero.
 	y: zero based top coordinate to scroll, nil defaults to zero.
-	w: width of recangular section to scroll, nil defaults to terminal right.
-	h: height of recangular section to scroll, nil defaults to terminal bottom.
+	w: width of rectangular section to scroll, nil defaults to terminal right.
+	h: height of rectangular section to scroll, nil defaults to terminal bottom.
 	`term.scroll (-1)` scrolls the whole terminal up one line.
 	* Lines not overwritten by the scrolling are not cleared.
 
@@ -902,6 +902,145 @@ printer.query_status (channel)
 	the printer.
 	* Any digilines messages that are ahead in the event queue but are not
 	from the printer are requeued.
+
+
+monitor
+-------
+	Interface is always defined but is inactive if digilines mod is not present.
+
+monitor.format_character (ascii, fg, bg)
+	Returns a single number value for a character in the monitor's display.
+	ascii: Number of the character ascii code to set (0 to 255).
+	fg: Number of the foreground color for the character (0 to 15) (see
+		 api_ref term.colors).
+	bg: Number of the background color for the character (0 to 15) (see
+		 api_ref term.colors).
+
+monitor.unformat_character (character)
+	Returns ascii, fg, bg for the character value (reverse of
+	lwcomputers.format_character).
+	character: Number character value to decipher.
+
+monitor.interface (channel)
+	Returns an interface for the monitor on the given channel.
+	channel: string of monitor's channel
+
+Querying the returned interface does not query the monitor, but returns
+an internal cache of the value. Querying before setting a value through
+the interface will return an initial default.
+
+The returned interface provides the follow. In the following the
+interface name 'mon' is a place holder for the returned interface.
+
+mon.channel ()
+	Returns the monitors channel as a string.
+
+mon.update ()
+	Flushes the interface's contents to the monitor.
+
+mon.set_colors (fg, bg)
+	Sets the current foreground, background colors.
+	If either color is nil, that color is not changed. See api_ref
+	term.colors.
+
+mon.get_colors ()
+	Returns the current foreground, background colors.
+
+mon.set_scale (scale)
+	Sets the monitor's display scale.
+	scale: an integer between 1 to 5.
+	* This call resets the cursor position to 0, 0.
+
+mon.get_scale ()
+	Returns an integer of the monitor's display scale.
+
+mon.get_resolution ()
+	Returns character width, height of the monitor's display. These values
+	are dependant on the current scale.
+
+mon.get_cursor ()
+	Returns x, y of current cursor position. Note, the monitor does not
+	display a cursor. This is the current write position.
+
+mon.set_cursor (x, y)
+	Sets cursors current position. Position is clipped to monitor's
+	resolution. Note, the monitor does not display a cursor. This is the
+	current write position.
+
+mon.set_char (x, y, char, fg, bg, update)
+	Sets the character at zero based coordinate x, y.
+	char: the ascii code to set (0 to 255), or single character string.
+	fg: the foreground color to set or nil for no change.
+	bg: the background color to set or nil for no change.
+	update: if not false the changes are flushed to the monitor.
+
+mon.get_char (x, y)
+	Returns the character at zero based coordinate x, y as
+	asciicode, forecolor, backcolor, or nil if x or y are out of range.
+
+mon.write (str, update)
+	Write the string at the current cursor position. Lines wrap but terminal
+	doesn't scroll. Excess is not written.
+	str: the string to write.
+	update: if not false the changes are flushed to the monitor.
+	* Cursor position is not updated.
+
+mon.blit (buff, x, y, w, h)
+	Blits a rectangular section to the terminal from a buffer.
+	Returns true if successful, or false and an error message if not.
+	buff: The buffer holding the data to write.
+	x: zero based left coordinate to write to.
+	y: zero based top coordinate to write to.
+	w: the width of the rectangular section to write to.
+	h: the height of the rectangular section to write to.
+	Any section of the rectangle which is not on the screen is omitted. x
+	and y can be negative.
+	The buffer is an indexed table of character data from left to right, top
+	to bottom in order. Each character data should be formed as:
+	{ char = <asciicode>, fg = <forecolor>, bg = <backcolor> }. If any table
+	cell is not a table that character is not altered (transparent).
+
+mon.cache (x, y, w, h)
+	Returns a buffer of the character data from the terminal buffer, of the
+	form used by `monitor.blit`, or nil if w * h has no size.
+	x: zero based left coordinate to read from.
+	y: zero based top coordinate to read from.
+	w: the width of the rectangular section to read from.
+	h: the height of the rectangular section to read from.
+	Any section of the rectangle which is not on the screen is set to zero
+	(not a table, will blit as transparent).
+	x and y can be negative.
+
+mon.clear (char, x, y, w, h, update)
+	Clears a rectangular section of the monitor's display.
+	char: the ascii code to set (0 to 255), or single character string. nil
+			defaults to zero.
+	x: zero based left coordinate to clear, nil defaults to zero.
+	y: zero based top coordinate to clear, nil defaults to zero.
+	w: width of rectangular section to clear, nil defaults to monitor's right.
+	h: height of rectangular section to clear, nil defaults to monitor's bottom.
+	update: if not false the changes are flushed to the monitor.
+	`monitor.clear ()` will clear to whole monitor to black.
+	* The cursor position is not moved.
+
+mon.scroll (lines, x, y, w, h, update)
+	Scrolls a rectangular section the given lines.
+	lines: the lines to scroll, negative moves up, positive moves down.
+	x: zero based left coordinate to scroll, nil defaults to zero.
+	y: zero based top coordinate to scroll, nil defaults to zero.
+	w: width of rectangular section to scroll, nil defaults to monitor's right.
+	h: height of rectangular section to scroll, nil defaults to monitor's bottom.
+	update: if not false the changes are flushed to the monitor.
+	`monitor.scroll (-1)` scrolls the whole monitor up one line.
+	* Lines not overwritten by the scrolling are not cleared.
+
+mon.print (fmt, ... )
+	Writes the string to the current cursor position updating the cursor
+	position. Lines wrap and the terminal scrolls if the write goes beyond
+	the bottom line.
+	Parameter are as for `string.format`.
+	Changes are flushed to the monitor.
+
 
 
 Robot
@@ -1292,10 +1431,10 @@ Events
 	Queued when a floppy is placed in or removed from a slot.
 	action: true if placed in or false if removed.
 
-"digilines", msg, sender, channel
+"digilines", msg, target, channel
 	Queued when the computer receives a digilines message.
 	msg: the message string or table received.
-	sender: the digilines channel of the message sender.
+	target: the digilines channel of the message target.
 	channel: the computer's digilines channel. This will be an empty string
 	if not set.
 	* This event is not fired if the digilines mod is not loaded.

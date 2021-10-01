@@ -239,4 +239,144 @@ lwcomputers.register_clipboard (name, size, itemdef)
 
 
 
+lwcomputers.format_character (ascii, fg, bg)
+	Returns a single number value for a character in the monitor's display.
+	ascii: Number of the character ascii code to set (0 to 255).
+	fg: Number of the foreground color for the character (0 to 15) (see
+		 api_ref.txt term.colors).
+	bg: Number of the background color for the character (0 to 15) (see
+		 api_ref.txt term.colors).
+
+
+
+lwcomputers.unformat_character (character)
+	Returns ascii, fg, bg for the character value (reverse of
+	lwcomputers.format_character).
+	character: Number character value to decipher.
+
+
+
+lwcomputers.get_monitor_interface (pos, channel)
+	Returns an interface for the monitor on the given channel.
+	pos: World position of the block containing the returned interface,
+		  as table.
+	channel: string of monitor's channel
+
+Querying the returned interface does not query the monitor, but returns
+an internal cache of the value. Querying before setting a value through
+the interface will return an initial default.
+
+The returned interface provides the follow. In the following the
+interface name 'monitor' is a place holder for the returned interface.
+
+monitor.channel ()
+	Returns the monitors channel as a string.
+
+monitor.update ()
+	Flushes the interface's contents to the monitor.
+
+monitor.set_colors (fg, bg)
+	Sets the current foreground, background colors.
+	If either color is nil, that color is not changed. See api_ref.txt
+	term.colors.
+
+monitor.get_colors ()
+	Returns the current foreground, background colors.
+
+monitor.set_scale (scale)
+	Sets the monitor's display scale.
+	scale: an integer between 1 to 5.
+	* This call resets the cursor position to 0, 0.
+
+monitor.get_scale ()
+	Returns an integer of the monitor's display scale.
+
+monitor.get_resolution ()
+	Returns character width, height of the monitor's display. These values
+	are dependant on the current scale.
+
+monitor.get_cursor ()
+	Returns x, y of current cursor position. Note, the monitor does not
+	display a cursor. This is the current write position.
+
+monitor.set_cursor (x, y)
+	Sets cursors current position. Position is clipped to monitor's
+	resolution. Note, the monitor does not display a cursor. This is the
+	current write position.
+
+monitor.set_char (x, y, char, fg, bg, update)
+	Sets the character at zero based coordinate x, y.
+	char: the ascii code to set (0 to 255), or single character string.
+	fg: the foreground color to set or nil for no change.
+	bg: the background color to set or nil for no change.
+	update: if not false the changes are flushed to the monitor.
+
+monitor.get_char (x, y)
+	Returns the character at zero based coordinate x, y as
+	asciicode, forecolor, backcolor, or nil if x or y are out of range.
+
+monitor.write (str, update)
+	Write the string at the current cursor position. Lines wrap but terminal
+	doesn't scroll. Excess is not written.
+	str: the string to write.
+	update: if not false the changes are flushed to the monitor.
+	* Cursor position is not updated.
+
+monitor.blit (buff, x, y, w, h)
+	Blits a rectangular section to the terminal from a buffer.
+	Returns true if successful, or false and an error message if not.
+	buff: The buffer holding the data to write.
+	x: zero based left coordinate to write to.
+	y: zero based top coordinate to write to.
+	w: the width of the rectangular section to write to.
+	h: the height of the rectangular section to write to.
+	Any section of the rectangle which is not on the screen is omitted. x
+	and y can be negative.
+	The buffer is an indexed table of character data from left to right, top
+	to bottom in order. Each character data should be formed as:
+	{ char = <asciicode>, fg = <forecolor>, bg = <backcolor> }. If any table
+	cell is not a table that character is not altered (transparent).
+
+monitor.cache (x, y, w, h)
+	Returns a buffer of the character data from the terminal buffer, of the
+	form used by `monitor.blit`, or nil if w * h has no size.
+	x: zero based left coordinate to read from.
+	y: zero based top coordinate to read from.
+	w: the width of the rectangular section to read from.
+	h: the height of the rectangular section to read from.
+	Any section of the rectangle which is not on the screen is set to zero
+	(not a table, will blit as transparent).
+	x and y can be negative.
+
+monitor.clear (char, x, y, w, h, update)
+	Clears a rectangular section of the monitor's display.
+	char: the ascii code to set (0 to 255), or single character string. nil
+			defaults to zero.
+	x: zero based left coordinate to clear, nil defaults to zero.
+	y: zero based top coordinate to clear, nil defaults to zero.
+	w: width of rectangular section to clear, nil defaults to monitor's right.
+	h: height of rectangular section to clear, nil defaults to monitor's bottom.
+	update: if not false the changes are flushed to the monitor.
+	`monitor.clear ()` will clear to whole monitor to black.
+	* The cursor position is not moved.
+
+monitor.scroll (lines, x, y, w, h, update)
+	Scrolls a rectangular section the given lines.
+	lines: the lines to scroll, negative moves up, positive moves down.
+	x: zero based left coordinate to scroll, nil defaults to zero.
+	y: zero based top coordinate to scroll, nil defaults to zero.
+	w: width of rectangular section to scroll, nil defaults to monitor's right.
+	h: height of rectangular section to scroll, nil defaults to monitor's bottom.
+	update: if not false the changes are flushed to the monitor.
+	`monitor.scroll (-1)` scrolls the whole monitor up one line.
+	* Lines not overwritten by the scrolling are not cleared.
+
+monitor.print (fmt, ... )
+	Writes the string to the current cursor position updating the cursor
+	position. Lines wrap and the terminal scrolls if the write goes beyond
+	the bottom line.
+	Parameter are as for `string.format`.
+	Changes are flushed to the monitor.
+
+
 --
