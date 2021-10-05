@@ -315,7 +315,7 @@ local function registerNode (name, description, box, display_offset)
 		description = description,
 		tiles = { "lwmonitor.png", "lwmonitor.png", "lwmonitor.png",
 					 "lwmonitor.png", "lwmonitor.png", "lwmonitor_face.png" },
-		groups = { cracky = 3, },
+		groups = { cracky = 2, oddly_breakable_by_hand = 2 },
 		paramtype = "light",
 		paramtype2 = "facedir",
 		on_rotate = minetest.global_exists ("screwdriver") and screwdriver.rotate_simple,

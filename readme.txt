@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.18
+0.1.19
 
 
 Minetest Version
@@ -552,7 +552,9 @@ digilines channel. After the first time if the display face is right
 clicked a touch digilines message is sent with the monitor's channel as
 "touch:x,y" where x is the zero based character column and y is the zero
 based row, from left, top. Right clicking any other side restores the
-channel form, so a following right click will display it.
+channel form, so a following right click will display it. The monitors
+are also digilines conductors, so if using multiple monitors for a large
+display only one need be connected to a digilines cable.
 
 The world position of the monitor can be gained by sending a string
 digilines message as "position". A message will be returned on the
@@ -582,4 +584,5 @@ The following api is exposed:
 lwcomputers.format_character (ascii, fg, bg)
 lwcomputers.unformat_character (character)
 lwcomputers.get_monitor_interface (pos, channel)
-See mod_api.txt for details.
+lwcomputers.get_multimonitor_interface (pos, width, height, ... )
+See docs/mod_api.txt for details.

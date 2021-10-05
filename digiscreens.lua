@@ -123,7 +123,7 @@ local function registerNode (name, description, box, resolution, display_offset)
 	minetest.register_node (name, {
 		description = description,
 		tiles = { "lwdigiscreen_bg.png", },
-		groups = { cracky = 3, },
+		groups = { cracky = 2, oddly_breakable_by_hand = 2 },
 		paramtype = "light",
 		paramtype2 = "facedir",
 		on_rotate = minetest.global_exists ("screwdriver") and screwdriver.rotate_simple,

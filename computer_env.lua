@@ -696,8 +696,8 @@ local function new_computer_env (computer)
 		local d = computer.display
 
 		char = ((char or 0) % 256)
-		fg = fg or lwcomp.colors.white
-		bg = bg or lwcomp.colors.black
+		fg = fg or forecolor
+		bg = bg or backcolor
 		x = tonumber (x or 0) or 0
 		y = tonumber (y or 0) or 0
 		w = tonumber (w or computer.width) or computer.width
@@ -1338,6 +1338,14 @@ local function new_computer_env (computer)
 	ENV.monitor.interface = function (channel)
 		if lwcomp.digilines_supported then
 			return lwcomputers.get_monitor_interface (computer.pos, channel)
+		end
+
+		return nil
+	end
+
+	ENV.monitor.multi_interface = function (width, height, ... )
+		if lwcomp.digilines_supported then
+			return lwcomputers.get_multimonitor_interface (computer.pos, width, height, ... )
 		end
 
 		return nil

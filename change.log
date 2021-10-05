@@ -128,3 +128,9 @@ v0.1.17
 
 v0.1.18
 *	Added monitors.
+
+
+v0.1.19
+*	Added multi-monitor interface.
+*	Altered groups for digiscreens and monitors (now breakable by hand).
+*	Changed term.clear default colors to currently set colors.
