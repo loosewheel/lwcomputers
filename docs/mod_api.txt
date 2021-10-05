@@ -260,20 +260,47 @@ lwcomputers.get_monitor_interface (pos, channel)
 	Returns an interface for the monitor on the given channel.
 	pos: World position of the block containing the returned interface,
 		  as table.
-	channel: string of monitor's channel
+	channel: string of monitor's channel.
 
-Querying the returned interface does not query the monitor, but returns
+
+lwcomputers.get_multimonitor_interface (pos, width, height, ... )
+	Returns an interface for multiple monitors on the given channels. The
+	monitors must be arranged in a grid. The returned interface acts on
+	them as a single display.
+	pos: World position of the block containing the returned interface,
+		  as table.
+	width: Number of monitors per row in the grid.
+	height: Number of monitors high in the grid.
+	... : string monitor channels for each monitor in the grid, left to
+			right, top to bottom.
+
+
+Querying the returned interface does not query the monitor/s, but returns
 an internal cache of the value. Querying before setting a value through
 the interface will return an initial default.
 
 The returned interface provides the follow. In the following the
 interface name 'monitor' is a place holder for the returned interface.
+Single and multi-monitor interface act the same except where stated.
 
-monitor.channel ()
-	Returns the monitors channel as a string.
+monitor.channel ([index])
+	For single monitor interface, returns the monitor's channel as a
+	string.
+
+	For multi-monitor interface, returns the monitor's channel as a
+	string at the given index.
+
+	index: This parameter is only used on multi-monitor interfaces. The
+			 one based index of the monitor whose channel is returned. The
+			 index is from left, top to right, bottom. If omitted 1 is
+			 assumed.
+
+monitor.monitors ()
+	Returns the width, height of the multi-monitor grid, as passed to the
+	interface function. For single monitor interface 1, 1 is returned.
 
 monitor.update ()
-	Flushes the interface's contents to the monitor.
+	Flushes the interface's contents to the monitor/s.
 
 monitor.set_colors (fg, bg)
 	Sets the current foreground, background colors.
@@ -284,31 +311,32 @@ monitor.get_colors ()
 	Returns the current foreground, background colors.
 
 monitor.set_scale (scale)
-	Sets the monitor's display scale.
+	Sets the monitor/s' display scale.
 	scale: an integer between 1 to 5.
 	* This call resets the cursor position to 0, 0.
 
 monitor.get_scale ()
-	Returns an integer of the monitor's display scale.
+	Returns an integer of the monitor/s' display scale.
 
 monitor.get_resolution ()
-	Returns character width, height of the monitor's display. These values
-	are dependant on the current scale.
+	Returns character width, height of the monitor/s' display. These
+	values are dependant on the current scale, and possibly the number of
+	monitors.
 
 monitor.get_cursor ()
 	Returns x, y of current cursor position. Note, the monitor does not
 	display a cursor. This is the current write position.
 
 monitor.set_cursor (x, y)
-	Sets cursors current position. Position is clipped to monitor's
+	Sets cursors current position. Position is clipped to monitor/s'
 	resolution. Note, the monitor does not display a cursor. This is the
 	current write position.
 
 monitor.set_char (x, y, char, fg, bg, update)
 	Sets the character at zero based coordinate x, y.
 	char: the ascii code to set (0 to 255), or single character string.
-	fg: the foreground color to set or nil for no change.
-	bg: the background color to set or nil for no change.
+	fg: the foreground color to set or nil for no current color.
+	bg: the background color to set or nil for no current color.
 	update: if not false the changes are flushed to the monitor.
 
 monitor.get_char (x, y)
@@ -377,6 +405,14 @@ monitor.print (fmt, ... )
 	the bottom line.
 	Parameter are as for `string.format`.
 	Changes are flushed to the monitor.
+
+monitor.is_touch (channel, msg)
+	Determines if a digilines message is a touch message from the
+	monitor/s of this interface. If it is x, y of the touched character
+	position is returned as numbers. If not nil is returned.
+	channel: Channel of the digilines message. For a touch message the
+				channel will be the channel of the monitor.
+	msg: The digilines message.
 
 
 --

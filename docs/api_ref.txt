@@ -319,13 +319,13 @@ os.shutdown ()
 os.sleep (secs)
 	Pauses code execution for the given number of seconds (real world), which
 	can be fractional. The time paused may not be exact, but extended to the
-	nearest processing tick (0.1 second intervals).
+	nearest processing tick (0.1 second intervals by default).
 	* This function yields.
 
 os.start_timer (secs)
 	Starts a single elapse timer. Seconds can be fractional. Returns an integer
 	identifier value that can be used with `os.kill_timer`.
-	* Timers elapse on tick boundaries (0.1 seconds).
+	* Timers elapse on tick boundaries (0.1 seconds by default).
 	* For repeat timer, re-start it in the event handler.
 
 os.time ([table])
@@ -344,9 +344,9 @@ os.to_realtime (secs)
 	* If the setting 'time_speed' is zero, `secs` is returned.
 
 
-Security
+security
 --------
-Security interface. Always defined but inactive in if computer/robot is
+Security interface. Always defined but inactive if computer/robot is
 public.
 
 security.add_access (name)
@@ -467,22 +467,18 @@ fs.path_extension (path)
 	Returns the path's file extension or nil if path is malformed. If the
 	path has no extension "" is returned.
 	Eg. fs.path_folder ("/here/there/file.txt") returns "txt".
-	Routs file path to computers file system.
 
 fs.path_folder (path)
 	Returns the path's folder or nil if path is malformed.
 	Eg. fs.path_folder ("/here/there/file.txt") returns "/here/there".
-	Routs file path to computers file system.
 
 fs.path_name (path)
 	Returns the path's file name or nil if path is malformed.
 	Eg. fs.path_folder ("/here/there/file.txt") returns "file.txt".
-	Routs file path to computers file system.
 
 fs.path_title (path)
 	Returns the path's file title or nil if path is malformed.
 	Eg. fs.path_folder ("/here/there/file.txt") returns "file".
-	Routs file path to computers file system.
 
 fs.remove (path)
 	Calls `os.remove`. Routs file path to computers file system.
@@ -515,22 +511,22 @@ term
 term.colors
 	Table of colors used by terminal, as `term.colors.<color>`.
 
-black = 0,
-orange = 1,
-magenta = 2,
-sky = 3,
-yellow = 4,
-pink = 5,
-cyan = 6,
-gray = 7,
-silver = 8,
-red = 9,
-green = 10,
-blue = 11,
-brown = 12,
-lime = 13,
-purple = 14,
-white = 15
+black		= 0,
+orange	= 1,
+magenta	= 2,
+sky		= 3,
+yellow	= 4,
+pink		= 5,
+cyan		= 6,
+gray		= 7,
+silver	= 8,
+red		= 9,
+green		= 10,
+blue		= 11,
+brown		= 12,
+lime		= 13,
+purple	= 14,
+white		= 15
 
 
 term.get_cursor ()
@@ -603,8 +599,8 @@ term.cache (x, y, w, h)
 term.clear (char, fg, bg, x, y, w, h)
 	Clears a rectangular section of the terminal display.
 	char: the ascii code to set for each character, nil defaults to zero.
-	fg: forecolor to set, nil defaults to `term.colors.white`.
-	bg: backcolor to set, nil defaults to `term.colors.black`.
+	fg: forecolor to set, nil defaults to currently set color.
+	bg: backcolor to set, nil defaults to currently set color.
 	x: zero based left coordinate to clear, nil defaults to zero.
 	y: zero based top coordinate to clear, nil defaults to zero.
 	w: width of rectangular section to clear, nil defaults to terminal right.
@@ -752,8 +748,9 @@ http.get (url, timeout, extra_headers, user_agent)
 
 
 mesecons
--------
+--------
 	Interface is always defined but is inactive if mesecons mod is not present.
+	See "mesecons" event.
 
 mesecons.supported ()
 	Returns true if mesecons interface is active, otherwise false.
@@ -768,7 +765,7 @@ mesecons.get (side)
 			"back"
 			nil - true if any side is on.
 	* Note: this returns the computer's set state (with mesecons.set). It does
-	not return the state set by an external source.
+	not return the state set by an external source. See "mesecons" event.
 
 mesecons.set (state, side)
 	If state is true, turns the mesecons state to on. Otherwise turns it off.
@@ -805,7 +802,7 @@ digilines.send (channel, msg)
 	supported.
 
 
-Printer
+printer
 -------
 	Interface is always defined but is inactive if digilines mod is not present.
 
@@ -912,18 +909,28 @@ monitor.format_character (ascii, fg, bg)
 	Returns a single number value for a character in the monitor's display.
 	ascii: Number of the character ascii code to set (0 to 255).
 	fg: Number of the foreground color for the character (0 to 15) (see
-		 api_ref term.colors).
+		 term.colors).
 	bg: Number of the background color for the character (0 to 15) (see
-		 api_ref term.colors).
+		 term.colors).
 
 monitor.unformat_character (character)
 	Returns ascii, fg, bg for the character value (reverse of
-	lwcomputers.format_character).
+	monitor.format_character).
 	character: Number character value to decipher.
 
 monitor.interface (channel)
 	Returns an interface for the monitor on the given channel.
-	channel: string of monitor's channel
+	channel: string of monitor's channel.
+
+
+monitor.multi_interface (width, height, ... )
+	Returns an interface for multiple monitors on the given channels. The
+	monitors must be arranged in a grid. The returned interface acts on
+	them as a single display.
+	width: Number of monitors per row in the grid.
+	height: Number of monitors high in the grid.
+	... : string monitor channels for each monitor in the grid, left to
+			right, top to bottom.
 
 Querying the returned interface does not query the monitor, but returns
 an internal cache of the value. Querying before setting a value through
@@ -931,32 +938,46 @@ the interface will return an initial default.
 
 The returned interface provides the follow. In the following the
 interface name 'mon' is a place holder for the returned interface.
+Single and multi-monitor interface act the same except where stated.
 
-mon.channel ()
-	Returns the monitors channel as a string.
+mon.channel ([index])
+	For single monitor interface, returns the monitor's channel as a
+	string.
+
+	For multi-monitor interface, returns the monitor's channel as a
+	string at the given index.
+
+	index: This parameter is only used on multi-monitor interfaces. The
+			 one based index of the monitor whose channel is returned. The
+			 index is from left, top to right, bottom. If omitted 1 is
+			 assumed.
+
+mon.monitors ()
+	Returns the width, height of the multi-monitor grid, as passed to the
+	interface function. For single monitor interface 1, 1 is returned.
 
 mon.update ()
-	Flushes the interface's contents to the monitor.
+	Flushes the interface's contents to the monitor/s.
 
 mon.set_colors (fg, bg)
 	Sets the current foreground, background colors.
-	If either color is nil, that color is not changed. See api_ref
-	term.colors.
+	If either color is nil, that color is not changed. See term.colors.
 
 mon.get_colors ()
 	Returns the current foreground, background colors.
 
 mon.set_scale (scale)
-	Sets the monitor's display scale.
+	Sets the monitor/s' display scale.
 	scale: an integer between 1 to 5.
 	* This call resets the cursor position to 0, 0.
 
 mon.get_scale ()
-	Returns an integer of the monitor's display scale.
+	Returns an integer of the monitor/s' display scale.
 
 mon.get_resolution ()
-	Returns character width, height of the monitor's display. These values
-	are dependant on the current scale.
+	Returns character width, height of the monitor/s' display. These
+	values are dependant on the current scale, and possibly the number of
+	monitors.
 
 mon.get_cursor ()
 	Returns x, y of current cursor position. Note, the monitor does not
@@ -970,8 +991,8 @@ mon.set_cursor (x, y)
 mon.set_char (x, y, char, fg, bg, update)
 	Sets the character at zero based coordinate x, y.
 	char: the ascii code to set (0 to 255), or single character string.
-	fg: the foreground color to set or nil for no change.
-	bg: the background color to set or nil for no change.
+	fg: the foreground color to set or nil for no current color.
+	bg: the background color to set or nil for no current color.
 	update: if not false the changes are flushed to the monitor.
 
 mon.get_char (x, y)
@@ -1041,9 +1062,17 @@ mon.print (fmt, ... )
 	Parameter are as for `string.format`.
 	Changes are flushed to the monitor.
 
+mon.is_touch (channel, msg)
+	Determines if a digilines message is a touch message from the
+	monitor/s of this interface. If it is x, y of the touched character
+	position is returned as numbers. If not nil is returned.
+	channel: Channel of the digilines message. For a touch message the
+				channel will be the channel of the monitor.
+	msg: The digilines message.
 
 
-Robot
+
+robot
 -----
 	This interface is only available for robots.
 
@@ -1124,7 +1153,8 @@ robot.place_right_down (nodename [, direction])
 	robot's storage and the node must be able to be placed to the position.
 	nodename: the string name of the node to place. "air" cannot be used.
 	direction: if given, the facing direction for the placed node, can be
-		{ "up", "down", "left", "right", "front", "back" }.
+				  one of:
+		"up", "down", "left", "right", "front", "back".
 	* Note, this action is delayed by the robot's action delay setting time.
 	* The file 'place_substitute.lua' in the mod folder contains a list of
 		item/node substitutes, useful for farming etc. Modify this file for
