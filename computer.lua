@@ -682,6 +682,106 @@ end
 
 
 
+local function on_blast (pos, intensity)
+	local meta = minetest.get_meta (pos)
+
+	if meta then
+		local id = meta:get_int ("lwcomputer_id")
+
+		if id > 0 then
+			local data = lwcomp.get_computer_data (id, pos)
+			local is_robot = meta:get_int ("robot") == 1
+
+			if intensity >= 1.0 then
+				local inv = meta:get_inventory ()
+
+				if inv then
+					local slots = inv:get_size ("main")
+
+					for slot = 1, slots do
+						local stack = inv:get_stack ("main", slot)
+
+						if stack and not stack:is_empty () then
+							if math.floor (math.random (0, 5)) == 3 then
+								minetest.item_drop (stack, nil, pos)
+							else
+								lwdrops.on_destroy (stack)
+							end
+						end
+					end
+
+					if is_robot then
+						local slots = inv:get_size ("storage")
+
+						for slot = 1, slots do
+							local stack = inv:get_stack ("storage", slot)
+
+							if stack and not stack:is_empty () then
+								if math.floor (math.random (0, 5)) == 3 then
+									minetest.item_drop (stack, nil, pos)
+								else
+									lwdrops.on_destroy (stack)
+								end
+							end
+						end
+					end
+				end
+
+				lwcomp.filesys:delete_hdd (id)
+
+				on_destruct (pos)
+				minetest.remove_node (pos)
+
+
+			else -- intensity < 1.0
+				local inv = meta:get_inventory ()
+
+				if inv then
+					local slots = inv:get_size ("main")
+
+					for slot = 1, slots do
+						local stack = inv:get_stack ("main", slot)
+
+						if stack and not stack:is_empty () then
+							minetest.item_drop (stack, nil, pos)
+						end
+					end
+
+					if is_robot then
+						local slots = inv:get_size ("storage")
+
+						for slot = 1, slots do
+							local stack = inv:get_stack ("storage", slot)
+
+							if stack and not stack:is_empty () then
+								minetest.item_drop (stack, nil, pos)
+							end
+						end
+					end
+				end
+
+				local node = minetest.get_node_or_nil (pos)
+				if node then
+					local items = minetest.get_node_drops (node, nil)
+
+					if items and #items > 0 then
+						local stack = ItemStack (items[1])
+
+						if stack then
+							preserve_metadata (pos, node, meta, { stack })
+							minetest.item_drop (stack, nil, pos)
+							on_destruct (pos)
+							minetest.remove_node (pos)
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+
+
 local function digilines_support ()
 	if lwcomp.digilines_supported then
 		return
@@ -801,6 +901,8 @@ minetest.register_node("lwcomputers:computer", {
 	paramtype2 = "facedir",
 	param2 = 1,
 	drop = "lwcomputers:computer",
+	floodable = false,
+
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
 
@@ -819,7 +921,8 @@ minetest.register_node("lwcomputers:computer", {
 	on_rightclick = on_rightclick,
 	on_drop = on_drop,
 	on_pickup = on_pickup,
-	on_destroy = on_destroy
+	on_destroy = on_destroy,
+	on_blast = on_blast
 })
 
 
@@ -841,6 +944,8 @@ minetest.register_node("lwcomputers:computer_on", {
 	paramtype2 = "facedir",
 	param2 = 1,
 	drop = "lwcomputers:computer",
+	floodable = false,
+
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
 
@@ -859,7 +964,8 @@ minetest.register_node("lwcomputers:computer_on", {
 	on_rightclick = on_rightclick,
 	on_drop = on_drop,
 	on_pickup = on_pickup,
-	on_destroy = on_destroy
+	on_destroy = on_destroy,
+	on_blast = on_blast
 })
 
 
@@ -906,6 +1012,8 @@ minetest.register_node("lwcomputers:computer_robot", {
 	param2 = 1,
    sunlight_propagates = true,
 	drop = "lwcomputers:computer_robot",
+	floodable = false,
+
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
 
@@ -925,7 +1033,8 @@ minetest.register_node("lwcomputers:computer_robot", {
 	on_rightclick = on_rightclick,
 	on_drop = on_drop,
 	on_pickup = on_pickup,
-	on_destroy = on_destroy
+	on_destroy = on_destroy,
+	on_blast = on_blast
 })
 
 
@@ -972,6 +1081,8 @@ minetest.register_node("lwcomputers:computer_robot_on", {
 	param2 = 1,
    sunlight_propagates = true,
 	drop = "lwcomputers:computer_robot",
+	floodable = false,
+
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
 
@@ -991,7 +1102,8 @@ minetest.register_node("lwcomputers:computer_robot_on", {
 	on_rightclick = on_rightclick,
 	on_drop = on_drop,
 	on_pickup = on_pickup,
-	on_destroy = on_destroy
+	on_destroy = on_destroy,
+	on_blast = on_blast
 })
 
 

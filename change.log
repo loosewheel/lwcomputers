@@ -134,3 +134,6 @@ v0.1.19
 *	Added multi-monitor interface.
 *	Altered groups for digiscreens and monitors (now breakable by hand).
 *	Changed term.clear default colors to currently set colors.
+
+v0.1.20
+*	Added on_blast handler to ensure removal of disk folder.

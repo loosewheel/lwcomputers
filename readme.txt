@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.19
+0.1.20
 
 
 Minetest Version
@@ -199,6 +199,7 @@ The world save folder for an item with a disk will be removed if:
 +	The item is destroyed with creative inventory trash.
 +	The item is destroyed with unified_inventory trash.
 +	The unified_inventory Clear inventory is used with the item in the inventory.
++	The item is blown up.
 
 
 The mod supports the following settings:
