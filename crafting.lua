@@ -200,7 +200,7 @@ minetest.register_craft({
 end
 
 
-if lwcomp.mesecon_supported then
+if lwcomp.mesecon_supported and mesecon.mvps_push then
 
 minetest.register_craft ({
    output = "lwcomputers:movefloor",

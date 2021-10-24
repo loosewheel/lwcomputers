@@ -3,7 +3,7 @@ local S = lwcomp.S
 
 
 
-if lwcomp.mesecon_supported then
+if lwcomp.mesecon_supported and mesecon.mvps_push then
 
 
 

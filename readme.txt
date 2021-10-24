@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.20
+0.1.21
 
 
 Minetest Version
@@ -45,6 +45,7 @@ mesecons
 digilines
 digistuff
 unifieddyes
+mesecons_mvps
 
 
 Installation
@@ -292,6 +293,15 @@ Robot's movement delay (float)
 	seconds.
 	Default: 0.5
 
+Allow chat (bool)
+	Allow chat command. If disabled the command is ignored.
+	Default: true
+
+Allow public chat (bool)
+	Allow chat command on public machines. If disabled the command is
+	ignored.
+	Default: true
+
 
 ** Notes
 
@@ -351,7 +361,7 @@ switch (all horizontal sides, one below, this height and one above).
 
 MoveFloor
 =========
-* This block is only available if mesecons is loaded.
+* This block is only available if mesecons and mesecons_mvps is loaded.
 
 The MoveFloor block responds to a mesecons power source in the 4 horizontal
 directions. If the power source is one higher the MoveFloor moves up to

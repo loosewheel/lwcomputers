@@ -51,3 +51,9 @@ lwcomputers_robot_action_delay (Robot's action delay) float 0.2
 
 # Delay in seconds for a robot's movement, min 0.1
 lwcomputers_robot_move_delay (Robot's movement delay) float 0.5
+
+# Allow chat command
+lwcomputers_allow_chat (Allow chat) bool true
+
+# Allow chat command on public machines
+lwcomputers_allow_public_chat (Allow public chat) bool true

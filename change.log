@@ -119,7 +119,7 @@ v0.1.15
 
 
 v0.1.16
-* Added digilines graphical screens.
+*	Added digilines graphical screens.
 
 
 v0.1.17
@@ -137,3 +137,11 @@ v0.1.19
 
 v0.1.20
 *	Added on_blast handler to ensure removal of disk folder.
+
+
+v0.1.21
+*	Fixed lighting.
+*	Added os.chat.
+*	Added Allow chat setting.
+*	Added Allow public chat setting.
+*	Fixed movefloor dependency on mesecons_mvps.

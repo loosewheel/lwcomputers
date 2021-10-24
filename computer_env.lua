@@ -12,7 +12,6 @@ local function new_computer_env (computer)
 	ENV.ipairs = _G.ipairs
 	ENV.pcall = _G.pcall
 	ENV.rawset = _G.rawset
-	ENV.vector = _G.vector
 	ENV.rawequal = _G.rawequal
 	ENV._VERSION = _G._VERSION
 	ENV.next = _G.next
@@ -63,6 +62,12 @@ local function new_computer_env (computer)
 		ENV.math[key] = value
 	end
 	setmetatable (ENV.math, getmetatable (_G.math))
+
+	ENV.vector = { }
+	for key, value in pairs (_G.vector) do
+		ENV.vector[key] = value
+	end
+	setmetatable (ENV.vector, getmetatable (_G.vector))
 
 	ENV.io = { }
 --	ENV.io.input = _G.io.input -- omitted
@@ -289,6 +294,11 @@ local function new_computer_env (computer)
 
 	ENV.os.kill_timer = function (tid)
 		computer.kill_timer (tid)
+	end
+
+
+	ENV.os.chat = function (message, name)
+		computer.chat (message, name)
 	end
 
 
@@ -1916,6 +1926,51 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.kill_timer = function (tid)
 		computer.timers[tostring (tid)] = nil
+	end
+
+
+	computer.chat = function (message, name)
+		if lwcomp.settings.allow_chat then
+			local meta = minetest.get_meta (computer.pos)
+			local player = tostring (name or "")
+
+			message = tostring (message or "")
+
+			if meta then
+				local owner = meta:get_string ("owner")
+
+				if owner:len () > 0 then
+					if player:len () > 0 and player ~= owner then
+						local access = computer.access_list ()
+
+						if access then
+							for i = 1, #access do
+								if access[i] == player then
+									local msg = string.format ("<%s %d> %s",
+																		owner,
+																		computer.computer_id (),
+																		message)
+
+									minetest.chat_send_player (player, msg)
+									break
+								end
+							end
+						end
+
+					else
+						minetest.chat_send_player (owner, message)
+					end
+
+				elseif lwcomp.settings.public_chat then
+					if player:len () > 0 then
+						minetest.chat_send_player (player, message)
+					else
+						minetest.chat_send_all (message)
+					end
+
+				end
+			end
+		end
 	end
 
 

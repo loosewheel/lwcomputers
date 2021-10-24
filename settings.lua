@@ -86,5 +86,11 @@ lwcomp.settings.floppy_max_items =
 lwcomp.settings.default_stack_max =
 	tonumber(minetest.settings:get("default_stack_max")) or 99
 
+lwcomp.settings.allow_chat =
+	minetest.settings:get_bool ("lwcomputers_allow_chat", true)
+
+lwcomp.settings.public_chat =
+	minetest.settings:get_bool ("lwcomputers_allow_public_chat", true)
+
 
 --
