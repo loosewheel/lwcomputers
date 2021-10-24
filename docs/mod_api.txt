@@ -1,6 +1,6 @@
 
 lwcomputers.version ()
-	Returns the lwcomputers version as a string. eg. "0.1.7".
+	Returns the lwcomputers version as a string. eg. "0.1.21".
 
 
 
@@ -177,7 +177,7 @@ lwcomputers.register_floppy_disk (name, label, itemdef)
 	itemdef: craftitem definition, as passed to minetest.register_craftitem.
 		The definition can contain an extra field named diskfiles. This must
 		be an indexed list of files to create on the disk when initialised.
-		The indexed list has a series of, or one, nested key tables. Each
+		The indexed list has a series of, or one, nested tables. Each
 		one defines one file on the disk. Each has two keys: source whose
 		value is the full path to the file containing the contents of the
 		file; and target whose value is the full path on disk for the file.

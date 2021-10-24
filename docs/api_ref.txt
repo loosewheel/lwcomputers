@@ -206,6 +206,20 @@ io.write (···)
 os
 --
 
+os.chat (message, name)
+	message: string message to send to chat.
+	name: target player's name (optional).
+	If the machine is private and name is not specified the message is only
+	sent to the owner. If name is given it must be the owner or a player
+	in the access list (see security) and the message is only sent to that
+	player, prefixed with the owner and computer id.
+	If the machine is public, if name is given the message is only sent to
+	that player. If name is not specified the message is sent to all.
+
+	*If Allow chat setting is disabled any call to os.chat is ignored.
+	*If Allow public chat setting is disabled any call to os.chat on a
+	public machine is ignored.
+
 os.clock ()
 	Seconds since lwcomputer computer was started.
 
