@@ -200,6 +200,8 @@ The world save folder for an item with a disk will be removed if:
 +	The item is destroyed with creative inventory trash.
 +	The item is destroyed with unified_inventory trash.
 +	The unified_inventory Clear inventory is used with the item in the inventory.
++	The item is destroyed with i3 inventory trash.
++	The i3 inventory Clear inventory is used with the item in the inventory.
 +	The item is blown up.
 
 
