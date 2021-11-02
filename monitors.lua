@@ -352,7 +352,7 @@ end
 registerNode (
 	"lwcomputers:monitor",
 	S("Monitor Display"),
-	{ -0.5, -0.5, -0.49, 0.5, 0.5, 0.5 },
+	{ -0.5, -0.5, -0.499, 0.5, 0.5, 0.5 },
 	-0.5
 )
 

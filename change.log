@@ -145,3 +145,7 @@ v0.1.21
 *	Added Allow chat setting.
 *	Added Allow public chat setting.
 *	Fixed movefloor dependency on mesecons_mvps.
+
+
+v0.1.22
+*	Increased dimension of monitor to improve accuracy of touch event.
