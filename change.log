@@ -149,3 +149,7 @@ v0.1.21
 
 v0.1.22
 *	Increased dimension of monitor to improve accuracy of touch event.
+
+
+v0.1.23
+*	Depreciated digiswitch, movefloor, extras, solid_conductor (moved to lwcomponents).

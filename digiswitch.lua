@@ -3,6 +3,14 @@ local S = lwcomp.S
 
 
 
+-- depreciated
+local digiswitch_groups = { cracky = 2, oddly_breakable_by_hand = 2 }
+if minetest.global_exists ("lwcomponents") then
+	digiswitch_groups.not_in_creative_inventory = 1
+end
+
+
+
 if lwcomp.digilines_supported and lwcomp.mesecon_supported then
 
 
@@ -170,7 +178,7 @@ minetest.register_node("lwcomputers:digiswitch", {
          {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
       }
    },
-	groups = { cracky = 2, oddly_breakable_by_hand = 2 },
+	groups = digiswitch_groups,
 	sounds = default.node_sound_stone_defaults (),
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),

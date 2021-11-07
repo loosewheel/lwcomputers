@@ -3,6 +3,10 @@ local S = lwcomp.S
 
 
 
+local depreciated = minetest.global_exists ("lwcomponents")
+
+
+
 local touchscreen = minetest.registered_nodes["digistuff:touchscreen"]
 if touchscreen then
 	local touchblock = table.copy (touchscreen)
@@ -30,8 +34,13 @@ if touchscreen then
 		}
     }
 
+if depreciated then
+	touchblock.groups.not_in_creative_inventory = 1
+end
+
 	minetest.register_node ("lwcomputers:touchscreen", touchblock)
 
+if not depreciated then
 	minetest.register_craft({
 		output = "lwcomputers:touchscreen",
 		recipe = {
@@ -40,6 +49,7 @@ if touchscreen then
 			{"default:glass","default:glass","default:stone"}
 		}
 	})
+end
 end
 
 
@@ -71,8 +81,13 @@ if panel then
 		}
     }
 
+if depreciated then
+	panelblock.groups.not_in_creative_inventory = 1
+end
+
 	minetest.register_node ("lwcomputers:panel", panelblock)
 
+if not depreciated then
 	minetest.register_craft({
 		output = "lwcomputers:panel",
 		recipe = {
@@ -81,6 +96,7 @@ if panel then
 			{"","digistuff:button","default:stone"}
 		}
 	})
+end
 end
 
 

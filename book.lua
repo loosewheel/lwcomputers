@@ -86,7 +86,7 @@ end
 
 
 
-minetest.register_craftitem("lwcomputers:book", {
+minetest.register_craftitem ("lwcomputers:book", {
    description = S("LWComputers Book"),
    short_description = S("LWComputers Book"),
    inventory_image = "book.png",

@@ -3,6 +3,14 @@ local S = lwcomp.S
 
 
 
+-- depreciated
+local movefloor_groups = { cracky = 2 }
+if minetest.global_exists ("lwcomponents") then
+	movefloor_groups.not_in_creative_inventory = 1
+end
+
+
+
 if lwcomp.mesecon_supported and mesecon.mvps_push then
 
 
@@ -187,7 +195,7 @@ minetest.register_node("lwcomputers:movefloor", {
          {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
       }
    },
-	groups = { cracky = 2 },
+	groups = movefloor_groups,
 	sounds = default.node_sound_wood_defaults (),
 	mesecons = mesecon_support (),
 

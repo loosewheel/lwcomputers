@@ -3,6 +3,14 @@ local S = lwcomp.S
 
 
 
+-- depreciated
+local solid_conductor_groups = { dig_immediate = 2, ud_param2_colorable = 1 }
+if minetest.global_exists ("lwcomponents") then
+	solid_conductor_groups.not_in_creative_inventory = 1
+end
+
+
+
 if minetest.global_exists ("unifieddyes") and
 	lwcomp.mesecon_supported and
 	lwcomp.digilines_supported then
@@ -34,10 +42,7 @@ mesecon.register_node (":lwcomputers:solid_conductor",
 				onstate = "lwcomputers:solid_conductor_on",
 			}
 		},
-		groups = {
-			dig_immediate = 2,
-			ud_param2_colorable = 1,
-		},
+		groups = solid_conductor_groups,
 	},
 	{
 		tiles = { "solid_conductor.png" },
@@ -100,10 +105,7 @@ mesecon.register_node (":lwcomputers:solid_horizontal_conductor",
 				onstate = "lwcomputers:solid_horizontal_conductor_on",
 			}
 		},
-		groups = {
-			dig_immediate = 2,
-			ud_param2_colorable = 1,
-		},
+		groups = solid_conductor_groups,
 	},
 	{
 		tiles = { "solid_conductor.png" },

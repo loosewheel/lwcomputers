@@ -1,6 +1,7 @@
 local lwcomp = ...
 
 
+
 minetest.register_craft ({
 	output = "lwcomputers:computer 1",
 	recipe = {
@@ -121,19 +122,6 @@ minetest.register_craft ({
 })
 
 
-if lwcomp.digilines_supported and lwcomp.mesecon_supported then
-
-minetest.register_craft ({
-   output = "lwcomputers:digiswitch 2",
-   recipe = {
-      { "default:stone", "default:stone" },
-      { "default:copper_ingot", "default:mese_crystal_fragment" },
-      { "default:stick", "default:stick" },
-   }
-})
-
-end
-
 
 if lwcomp.digilines_supported then
 
@@ -200,6 +188,25 @@ minetest.register_craft({
 end
 
 
+
+if not minetest.global_exists ("lwcomponents") then
+
+
+if lwcomp.digilines_supported and lwcomp.mesecon_supported then
+
+minetest.register_craft ({
+   output = "lwcomputers:digiswitch 2",
+   recipe = {
+      { "default:stone", "default:stone" },
+      { "default:copper_ingot", "default:mese_crystal_fragment" },
+      { "default:stick", "default:stick" },
+   }
+})
+
+end
+
+
+
 if lwcomp.mesecon_supported and mesecon.mvps_push then
 
 minetest.register_craft ({
@@ -237,6 +244,9 @@ minetest.register_craft ({
 })
 
 end
+
+
+end -- minetest.global_exists ("lwcomponents")
 
 
 

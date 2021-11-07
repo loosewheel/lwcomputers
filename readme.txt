@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.22
+0.1.23
 
 
 Minetest Version
@@ -46,6 +46,7 @@ digilines
 digistuff
 unifieddyes
 mesecons_mvps
+lwcomponents
 
 
 Installation
@@ -69,6 +70,10 @@ The following are also defined as variants of the original mod item, if
 the relevant mod is loaded.
 +	lwcomputers:touchscreen - digistuff:touchscreen as full sized node.
 +	lwcomputers:panel - digistuff:panel as full sized node.
+
+**	Note
+DigiSwitch, MoveFloor, Solid Color Conductors, lwcomputers:touchscreen
+and lwcomputers:panel have been depreciated. See lwcomponents.
 
 Each computer has an internal hard drive, and 3 slots for floppy disks
 (or a clipboard). The terminal display has a resolution of 50 characters
@@ -338,7 +343,7 @@ Los disk
 The los disk boots to a command prompt. See docs/los_ref.txt
 
 
-DigiSwitch
+DigiSwitch - Depreciated, see lwcomponents.
 ==========
 * This block is only available if both digilines and mesecons are loaded.
 
@@ -361,7 +366,7 @@ side name "switch" is give the power is supplied the same as a mesecons
 switch (all horizontal sides, one below, this height and one above).
 
 
-MoveFloor
+MoveFloor - Depreciated, see lwcomponents.
 =========
 * This block is only available if mesecons and mesecons_mvps is loaded.
 
@@ -380,7 +385,7 @@ If using a DigiSwitch as the power source use the side name "switch" or
 the MoveFloor will not move.
 
 
-Solid Color Conductors
+Solid Color Conductors - Depreciated, see lwcomponents.
 ======================
 
 * These blocks are only defined if mesecons, digilines, and unifieddyes are
