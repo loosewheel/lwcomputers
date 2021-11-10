@@ -15,7 +15,8 @@ end
 
 
 function lwcomputers.register_place_substitute (item, substitute)
-	if type (item) == "string" and type (substitute) == "string" then
+	if type (item) == "string" and (type (substitute) == "string" or
+			(type (substitute) == "table" and type (substitute[1]) == "string")) then
 		if not lwcomp.place_substitute[item] then
 			lwcomp.place_substitute[item] = substitute
 

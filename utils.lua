@@ -285,11 +285,19 @@ lwcomp.crafting_mods = dofile (lwcomp.modpath.."/crafting_mods.lua")
 
 
 
-function lwcomp.get_place_substitute (item)
+function lwcomp.get_place_substitute (item, dir)
 	local subst = lwcomp.place_substitute[item]
 
 	if subst then
-		return subst
+		if type (subst) == "table" then
+			if dir and type (subst[dir]) == "string" then
+				return subst[dir]
+			elseif type (subst[1]) == "string" then
+				return subst[1]
+			end
+		elseif type (subst) == "string" then
+			return subst
+		end
 	end
 
 	return item
@@ -585,6 +593,26 @@ function lwcomp.can_interact_with_node (pos, player)
 	end
 
 	return false
+end
+
+
+
+function lwcomp.find_item_def (name)
+	local def = minetest.registered_items[name]
+
+	if not def then
+		def = minetest.registered_craftitems[name]
+	end
+
+	if not def then
+		def = minetest.registered_nodes[name]
+	end
+
+	if not def then
+		def = minetest.registered_tools[name]
+	end
+
+	return def
 end
 
 

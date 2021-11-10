@@ -92,5 +92,8 @@ lwcomp.settings.allow_chat =
 lwcomp.settings.public_chat =
 	minetest.settings:get_bool ("lwcomputers_allow_public_chat", true)
 
+lwcomp.settings.use_mod_on_place =
+	minetest.settings:get_bool ("lwcomputers_use_mod_on_place", true)
+
 
 --

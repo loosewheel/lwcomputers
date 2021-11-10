@@ -153,3 +153,10 @@ v0.1.22
 
 v0.1.23
 *	Depreciated digiswitch, movefloor, extras, solid_conductor (moved to lwcomponents).
+
+
+v0.1.24
+*	Added directional options to place_substitute.
+*	Updated place_substitute with new farming plants.
+*	Improved placement.
+*	Added Use mod on_place setting.

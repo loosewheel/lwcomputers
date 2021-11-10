@@ -57,3 +57,6 @@ lwcomputers_allow_chat (Allow chat) bool true
 
 # Allow chat command on public machines
 lwcomputers_allow_public_chat (Allow public chat) bool true
+
+# Attempt to use mod on_place handler to place nodes
+lwcomputers_use_mod_on_place (Use mod on_place) bool true

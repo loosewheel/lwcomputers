@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.23
+0.1.24
 
 
 Minetest Version
@@ -307,6 +307,10 @@ Allow chat (bool)
 Allow public chat (bool)
 	Allow chat command on public machines. If disabled the command is
 	ignored.
+	Default: true
+
+Use mod on_place (bool)
+	Attempt to use mod on_place handler to place nodes.
 	Default: true
 
 

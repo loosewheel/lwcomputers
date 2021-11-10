@@ -1282,8 +1282,8 @@ local function new_computer_env (computer)
 				return computer.dig (sides[s])
 			end
 
-			ENV.robot["place_"..sides[s]] = function (nodename, param2)
-				return computer.place (sides[s], nodename, param2)
+			ENV.robot["place_"..sides[s]] = function (nodename, dir)
+				return computer.place (sides[s], nodename, dir)
 			end
 
 			ENV.robot["put_"..sides[s]] = function (item, listname)
@@ -1474,29 +1474,71 @@ local function get_place_dir (itemname, robot_pos, robot_param2, dir)
 
 		if side_pos then
 			local vdir = vector.subtract (side_pos, robot_pos)
-			local def = minetest.registered_items[itemname]
+			local def = lwcomp.find_item_def (itemname)
 
-			if not def then
-				def = minetest.registered_craftitems[itemname]
-			end
-
-			if not def then
-				def = minetest.registered_nodes[itemname]
-			end
-
-			if not def then
-				def = minetest.registered_tools[itemname]
-			end
-
-			if def and def.paramtype2 and def.paramtype2 == "wallmounted" then
-				return minetest.dir_to_wallmounted (vdir)
-			else
-				return minetest.dir_to_facedir (vdir, true)
+			if def and def.paramtype2 then
+				if def.paramtype2 == "wallmounted" then
+					return minetest.dir_to_wallmounted (vdir)
+				elseif def.paramtype2 == "facedir" then
+					return minetest.dir_to_facedir (vdir, false)
+				end
 			end
 		end
 	end
 
 	return 0
+end
+
+
+
+local function get_robot_side_vector (param2, side)
+	local dir = minetest.facedir_to_dir (param2)
+
+	if side == "up" then
+		return { x = 0, y = 1, z = 0 }
+	elseif side == "down" then
+		return { x = 0, y = -1, z = 0 }
+	elseif side == "left" then
+		return vector.rotate (dir, { x = 0, y = (math.pi * 1.5), z = 0 })
+	elseif side == "right" then
+		return vector.rotate (dir, { x = 0, y = (math.pi * 0.5), z = 0 })
+	elseif side == "back" then
+		return dir
+	else --if side == "front" then
+		return vector.rotate (dir, { x = 0, y = math.pi, z = 0 })
+	end
+end
+
+
+
+local function place_node (nodename, pos, param2, dir)
+	local stack = ItemStack (nodename)
+
+	if stack then
+		local vec = get_robot_side_vector (param2, dir)
+		local pointed_thing =
+		{
+			type = "node",
+			under = pos,
+			above = { x = pos.x - vec.x, y = pos.y - vec.y, z = pos.z - vec.z },
+		}
+		local def = lwcomp.find_item_def (nodename)
+
+		if nodename:sub (1, 8) == "farming:" then
+			pointed_thing.under = { x = pos.x + vec.x, y = pos.y + vec.y, z = pos.z + vec.z }
+			pointed_thing.above = pos
+		end
+
+		local result, msg = false, ""
+
+		if def and def.on_place then
+			result, msg = pcall (def.on_place, stack, nil, pointed_thing)
+		end
+
+		return result
+	end
+
+	return false
 end
 
 
@@ -2547,6 +2589,59 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	end
 
 
+	--computer.place = function (side, nodename, dir)
+		--nodename = tostring (nodename or "")
+
+		--if nodename:len () < 1 or nodename == "air" then
+			--return false
+		--end
+
+		--local stack = ItemStack (nodename)
+		--local meta = minetest.get_meta (computer.pos)
+		--local cur_node = minetest.get_node_or_nil (computer.pos)
+		--if not stack or not meta or not cur_node  then
+			--return false
+		--end
+
+		--local param2 = get_place_dir (stack:get_name (), computer.pos, cur_node.param2, dir)
+
+		--local inv = meta:get_inventory ()
+		--if not inv or not inv:contains_item ("storage", stack, false) then
+			--return false
+		--end
+
+		--local pos = get_robot_side (computer.pos, cur_node.param2, side)
+		--if not pos then
+			--return false
+		--end
+
+		--local node = get_far_node (pos)
+		--if not node then
+			--return false
+		--end
+
+		--if node.name ~= "air" then
+			--local nodedef = minetest.registered_nodes[node.name]
+
+			--if not nodedef or not nodedef.buildable_to or minetest.is_protected (pos, "") then
+				--return false
+			--end
+		--end
+
+		--if not inv:remove_item ("storage", stack) then
+			--return false
+		--end
+
+		--nodename = lwcomp.get_place_substitute (nodename, dir)
+
+		--minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+
+		--coroutine.yield ("sleep", lwcomp.settings.robot_action_delay)
+
+		--return true
+	--end
+
+
 	computer.place = function (side, nodename, dir)
 		nodename = tostring (nodename or "")
 
@@ -2578,11 +2673,29 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
+		local place_pos = { x = pos.x, y = pos.y, z = pos.z }
+
 		if node.name ~= "air" then
 			local nodedef = minetest.registered_nodes[node.name]
 
 			if not nodedef or not nodedef.buildable_to or minetest.is_protected (pos, "") then
 				return false
+			end
+
+			if nodedef.buildable_to then
+				if dir == "up" then
+					place_pos = get_robot_side (pos, cur_node.param2, "down")
+				elseif dir == "down" then
+					place_pos = get_robot_side (pos, cur_node.param2, "up")
+				elseif dir == "back" then
+					place_pos = get_robot_side (pos, cur_node.param2, "front")
+				elseif dir == "right" then
+					place_pos = get_robot_side (pos, cur_node.param2, "left")
+				elseif dir == "left" then
+					place_pos = get_robot_side (pos, cur_node.param2, "right")
+				else --if dir == "front" then
+					place_pos = get_robot_side (pos, cur_node.param2, "back")
+				end
 			end
 		end
 
@@ -2590,9 +2703,17 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
-		nodename = lwcomp.get_place_substitute (nodename)
+		if lwcomp.settings.use_mod_on_place then
+			if not place_node (nodename, place_pos, cur_node.param2, dir) then
+				nodename = lwcomp.get_place_substitute (nodename, dir)
 
-		minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+				minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+			end
+		else
+			nodename = lwcomp.get_place_substitute (nodename, dir)
+
+			minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+		end
 
 		coroutine.yield ("sleep", lwcomp.settings.robot_action_delay)
 
