@@ -1173,7 +1173,11 @@ robot.place_right_down (nodename [, direction])
 	* The file 'place_substitute.lua' in the mod folder contains a list of
 		item/node substitutes, useful for farming etc. Modify this file for
 		additional substitutes. The field name is the item/node to be
-		substituted. The value is what it is substituted with.
+		substituted. The value is what it is substituted with. This can be
+		a string value or a table with one indexed string of the default
+		substitute item. This table can optionally contain key values of
+		strings for each direction. Recognised keys are "up", "down", "left",
+		"right", "front", "back".
 
 robot.put_up (item [, listname])
 robot.put_down (item [, listname])

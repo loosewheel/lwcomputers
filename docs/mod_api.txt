@@ -137,12 +137,19 @@ lwcomputers.register_place_substitute (item, substitute)
 	item is removed from the robot's storage but the substitute is placed.
 	Returns true if successfully added to the list, false if not.
 	item: string name of the item to substitute.
-	substitute: string name of the substitute.
+	substitute: this can be a string value or a table with one indexed string
+	of the default substitute item. This table can optionally contain key
+	values of strings for each direction. Recognised keys are "up", "down",
+	"left", "right", "front", "back".
 	*	If the item already exits in the list the call is ignored and false
 		is returned.
 
 	eg:
 	if lwcomputers.register_place_substitute ("farming:seed_wheat", "farming:wheat_1") then
+	end
+
+	local torch = { "default:torch_wall", down = "default:torch", up = "default:torch_ceiling" }
+	if lwcomputers.register_place_substitute ("default:torch", torch) then
 	end
 
 
