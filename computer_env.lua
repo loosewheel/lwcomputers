@@ -1263,7 +1263,6 @@ local function new_computer_env (computer)
 	if computer.robot then
 		ENV.robot = { }
 
-		--local sides = { "up", "down", "front", "back", "left", "right" }
 		local sides = { "up", "down",
 							 "front", "front_up", "front_down",
 							 "back", "back_up", "back_down",
@@ -1507,38 +1506,6 @@ local function get_robot_side_vector (param2, side)
 	else --if side == "front" then
 		return vector.rotate (dir, { x = 0, y = math.pi, z = 0 })
 	end
-end
-
-
-
-local function place_node (nodename, pos, param2, dir)
-	local stack = ItemStack (nodename)
-
-	if stack then
-		local vec = get_robot_side_vector (param2, dir)
-		local pointed_thing =
-		{
-			type = "node",
-			under = pos,
-			above = { x = pos.x - vec.x, y = pos.y - vec.y, z = pos.z - vec.z },
-		}
-		local def = lwcomp.find_item_def (nodename)
-
-		if nodename:sub (1, 8) == "farming:" then
-			pointed_thing.under = { x = pos.x + vec.x, y = pos.y + vec.y, z = pos.z + vec.z }
-			pointed_thing.above = pos
-		end
-
-		local result, msg = false, ""
-
-		if def and def.on_place then
-			result, msg = pcall (def.on_place, stack, nil, pointed_thing)
-		end
-
-		return result
-	end
-
-	return false
 end
 
 
@@ -2551,7 +2518,13 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		end
 
 		if nodedef.can_dig then
-			if nodedef.can_dig (pos) == false then
+			local result, diggable = pcall (nodedef.can_dig, pos)
+
+			if not result then
+				minetest.log ("error", "can_dig handler for "..node.name.." crashed - "..diggable)
+
+				return nil
+			elseif diggable == false then
 				return nil
 			end
 		end
@@ -2562,23 +2535,29 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		end
 
 		local items = minetest.get_node_drops (node, nil)
+
 		if items then
+			drops = { }
+
 			for i = 1, #items do
-				local stack = ItemStack (items[i])
-				local name = items[i]:match ("[%S]+")
+				drops[i] = ItemStack (items[i])
+			end
 
-				if name == node.name and stack then
-					if nodedef.preserve_metadata then
-						nodedef.preserve_metadata (pos, node, minetest.get_meta (pos), { stack })
-					end
-				end
+			if nodedef and nodedef.preserve_metadata then
+				nodedef.preserve_metadata (pos, node, minetest.get_meta (pos), drops)
+			end
 
-				local over = inv:add_item ("storage", stack)
+			for i = 1, #items do
+				local over = inv:add_item ("storage", drops[i])
 
 				if over and over:get_count () > 0 then
-					minetest.item_drop (over, nil, pos)
+					utils.item_drop (over, nil, pos)
 				end
 			end
+		end
+
+		if nodedef and nodedef.sounds and nodedef.sounds.dug then
+			pcall (minetest.sound_play, nodedef.sounds.dug, { pos = pos })
 		end
 
 		minetest.remove_node (pos)
@@ -2587,59 +2566,6 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 		return node.name
 	end
-
-
-	--computer.place = function (side, nodename, dir)
-		--nodename = tostring (nodename or "")
-
-		--if nodename:len () < 1 or nodename == "air" then
-			--return false
-		--end
-
-		--local stack = ItemStack (nodename)
-		--local meta = minetest.get_meta (computer.pos)
-		--local cur_node = minetest.get_node_or_nil (computer.pos)
-		--if not stack or not meta or not cur_node  then
-			--return false
-		--end
-
-		--local param2 = get_place_dir (stack:get_name (), computer.pos, cur_node.param2, dir)
-
-		--local inv = meta:get_inventory ()
-		--if not inv or not inv:contains_item ("storage", stack, false) then
-			--return false
-		--end
-
-		--local pos = get_robot_side (computer.pos, cur_node.param2, side)
-		--if not pos then
-			--return false
-		--end
-
-		--local node = get_far_node (pos)
-		--if not node then
-			--return false
-		--end
-
-		--if node.name ~= "air" then
-			--local nodedef = minetest.registered_nodes[node.name]
-
-			--if not nodedef or not nodedef.buildable_to or minetest.is_protected (pos, "") then
-				--return false
-			--end
-		--end
-
-		--if not inv:remove_item ("storage", stack) then
-			--return false
-		--end
-
-		--nodename = lwcomp.get_place_substitute (nodename, dir)
-
-		--minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
-
-		--coroutine.yield ("sleep", lwcomp.settings.robot_action_delay)
-
-		--return true
-	--end
 
 
 	computer.place = function (side, nodename, dir)
@@ -2703,16 +2629,59 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
-		if lwcomp.settings.use_mod_on_place then
-			if not place_node (nodename, place_pos, cur_node.param2, dir) then
-				nodename = lwcomp.get_place_substitute (nodename, dir)
+		local def = lwcomp.find_item_def (nodename)
+		local placed = false
+		local vec = get_robot_side_vector (cur_node.param2, dir)
+		local pointed_thing =
+		{
+			type = "node",
+			under = place_pos,
+			above = { x = place_pos.x - vec.x,
+						 y = place_pos.y - vec.y,
+						 z = place_pos.z - vec.z },
+		}
 
-				minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+		if nodename:sub (1, 8) == "farming:" then
+			pointed_thing.under = { x = place_pos.x + vec.x,
+											y = place_pos.y + vec.y,
+											z = place_pos.z + vec.z }
+			pointed_thing.above = place_pos
+		end
+
+		if lwcomp.settings.use_mod_on_place then
+			if def and def.on_place then
+				local result, msg = pcall (def.on_place, stack, nil, pointed_thing)
+
+				placed = result
+
+				if not placed then
+					minetest.log ("error", "on_place handler for "..nodename.." crashed - "..msg)
+				end
 			end
-		else
-			nodename = lwcomp.get_place_substitute (nodename, dir)
+		end
+
+		if not placed then
+			local substitute = lwcomp.get_place_substitute (nodename, dir)
+
+			if nodename ~= substitute then
+				nodename = substitute
+				stack = ItemStack (nodename)
+				def = lwcomp.find_item_def (nodename)
+			end
 
 			minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+
+			if stack and def and def.after_place_node then
+				local result, msg = pcall (def.after_place_node, pos, nil, stack, pointed_thing)
+
+				if not result then
+					minetest.log ("error", "after_place_node handler for "..nodename.." crashed - "..msg)
+				end
+			end
+
+			if def and  def.sounds and def.sounds.place then
+				pcall (minetest.sound_play, def.sounds.place, { pos = pos })
+			end
 		end
 
 		coroutine.yield ("sleep", lwcomp.settings.robot_action_delay)
@@ -3141,7 +3110,6 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.find_inventory = function (listname)
 		local result = { }
---		local sides = { "up", "down", "front", "back", "left", "right" }
 		local sides = { "up", "down",
 							 "front", "front_up", "front_down",
 							 "back", "back_up", "back_down",
@@ -3228,7 +3196,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			inv:remove_item ("storage", stack)
 
 			if drop then
-				minetest.item_drop (stack, nil, computer.pos)
+				lwdrops.item_drop (stack, nil, computer.pos)
 			else
 				lwdrops.on_destroy (stack)
 			end
@@ -3251,7 +3219,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			inv:set_stack ("storage", name, nil)
 
 			if drop then
-				minetest.item_drop (stack, nil, computer.pos)
+				lwdrops.item_drop (stack, nil, computer.pos)
 			else
 				lwdrops.on_destroy (stack)
 			end

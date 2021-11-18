@@ -160,3 +160,7 @@ v0.1.24
 *	Updated place_substitute.lua with new farming plants.
 *	Improved placement.
 *	Added Use mod on_place setting.
+
+
+v0.1.25
+*	Improved item drop and place.
