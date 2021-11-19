@@ -164,3 +164,9 @@ v0.1.24
 
 v0.1.25
 *	Improved item drop and place.
+*	Fixed bug when dropping from storage overflow when digging.
+*	Fixed crafting group bug.
+
+
+v0.1.26
+*	Fixed bug in node placement.

@@ -95,5 +95,8 @@ lwcomp.settings.public_chat =
 lwcomp.settings.use_mod_on_place =
 	minetest.settings:get_bool ("lwcomputers_use_mod_on_place", true)
 
+lwcomp.settings.alert_handler_errors =
+	minetest.settings:get_bool ("lwcomputers_alert_handler_errors", true)
+
 
 --

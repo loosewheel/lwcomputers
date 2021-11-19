@@ -2521,7 +2521,9 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			local result, diggable = pcall (nodedef.can_dig, pos)
 
 			if not result then
-				minetest.log ("error", "can_dig handler for "..node.name.." crashed - "..diggable)
+				if lwcomp.settings.alert_handler_errors then
+					minetest.log ("error", "can_dig handler for "..node.name.." crashed - "..diggable)
+				end
 
 				return nil
 			elseif diggable == false then
@@ -2551,7 +2553,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 				local over = inv:add_item ("storage", drops[i])
 
 				if over and over:get_count () > 0 then
-					utils.item_drop (over, nil, pos)
+					lwdrops.item_drop (over, nil, pos)
 				end
 			end
 		end
@@ -2650,12 +2652,16 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 		if lwcomp.settings.use_mod_on_place then
 			if def and def.on_place then
-				local result, msg = pcall (def.on_place, stack, nil, pointed_thing)
+				local result, leftover = pcall (def.on_place, stack, nil, pointed_thing)
 
 				placed = result
 
 				if not placed then
-					minetest.log ("error", "on_place handler for "..nodename.." crashed - "..msg)
+					if lwcomp.settings.alert_handler_errors then
+						minetest.log ("error", "on_place handler for "..nodename.." crashed - "..leftover)
+					end
+				elseif leftover and leftover.get_count and leftover:get_count () > 0 then
+					inv:add_item ("storage", leftover)
 				end
 			end
 		end
@@ -2669,13 +2675,19 @@ function lwcomp.new_computer (pos, id, persists, robot)
 				def = lwcomp.find_item_def (nodename)
 			end
 
+			if not minetest.registered_nodes[nodename] then
+				return false
+			end
+
 			minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
 
 			if stack and def and def.after_place_node then
 				local result, msg = pcall (def.after_place_node, pos, nil, stack, pointed_thing)
 
 				if not result then
-					minetest.log ("error", "after_place_node handler for "..nodename.." crashed - "..msg)
+					if lwcomp.settings.alert_handler_errors then
+						minetest.log ("error", "after_place_node handler for "..nodename.." crashed - "..msg)
+					end
 				end
 			end
 
@@ -3018,13 +3030,15 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 				local items = { }
 				for i = 1, #recipes[r].items do
-					local stack = substitute_group (recipes[r].items[i], inv)
+					if type (recipes[r].items[i]) == "string" then
+						local stack = substitute_group (recipes[r].items[i], inv)
 
-					if stack then
-						if items[stack:get_name ()] then
-							items[stack:get_name ()] = items[stack:get_name ()] + stack:get_count ()
-						else
-							items[stack:get_name ()] = stack:get_count ()
+						if stack then
+							if items[stack:get_name ()] then
+								items[stack:get_name ()] = items[stack:get_name ()] + stack:get_count ()
+							else
+								items[stack:get_name ()] = stack:get_count ()
+							end
 						end
 					end
 				end

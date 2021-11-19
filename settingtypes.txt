@@ -60,3 +60,6 @@ lwcomputers_allow_public_chat (Allow public chat) bool true
 
 # Attempt to use mod on_place handler to place nodes
 lwcomputers_use_mod_on_place (Use mod on_place) bool true
+
+# Issue errors when handler's of other mods fail.
+lwcomputers_alert_handler_errors (Alert handler errors) bool true

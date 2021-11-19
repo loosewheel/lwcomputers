@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.1.25
+0.1.26
 
 
 Minetest Version
@@ -312,6 +312,10 @@ Allow public chat (bool)
 Use mod on_place (bool)
 	Attempt to use mod on_place handler to place nodes, fallback to manual
 	placement. If false always uses manual placement.
+	Default: true
+
+Alert handler errors
+	Issue errors when handler's of other mods fail.
 	Default: true
 
 
