@@ -170,3 +170,7 @@ v0.1.26
 *	Fixed bug in node placement.
 *	Fixed bug when dropping from storage overflow when digging.
 *	Fixed crafting group bug.
+
+
+v0.1.27
+*	Improved support of param2 for placed nodes (pallet index is used as well).

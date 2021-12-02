@@ -1467,7 +1467,7 @@ end
 
 
 
-local function get_place_dir (itemname, robot_pos, robot_param2, dir)
+local function get_place_dir (itemname, robot_pos, robot_param2, dir, pallet_index)
 	if dir then
 		local side_pos = get_robot_side (robot_pos, robot_param2, dir)
 
@@ -1476,10 +1476,19 @@ local function get_place_dir (itemname, robot_pos, robot_param2, dir)
 			local def = lwcomp.find_item_def (itemname)
 
 			if def and def.paramtype2 then
-				if def.paramtype2 == "wallmounted" then
-					return minetest.dir_to_wallmounted (vdir)
-				elseif def.paramtype2 == "facedir" then
-					return minetest.dir_to_facedir (vdir, false)
+				if def.paramtype2 == "wallmounted" or
+					def.paramtype2 == "colorwallmounted" then
+
+					return minetest.dir_to_wallmounted (vdir) + (pallet_index * 8)
+
+				elseif def.paramtype2 == "facedir" or
+						 def.paramtype2 == "colorfacedir" then
+
+					return minetest.dir_to_facedir (vdir, false) + (pallet_index * 32)
+
+				elseif def.paramtype2 == "color" then
+					return pallet_index
+
 				end
 			end
 		end
@@ -1506,6 +1515,23 @@ local function get_robot_side_vector (param2, side)
 	else --if side == "front" then
 		return vector.rotate (dir, { x = 0, y = math.pi, z = 0 })
 	end
+end
+
+
+
+local function get_palette_index (itemstack)
+	local stack = ItemStack (itemstack)
+	local color = 0
+
+	if stack then
+		local tab = stack:to_table ()
+
+		if tab and tab.meta and tab.meta.palette_index then
+			color = tonumber (tab.meta.palette_index) or 240
+		end
+	end
+
+	return color
 end
 
 
@@ -2584,7 +2610,8 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
-		local param2 = get_place_dir (stack:get_name (), computer.pos, cur_node.param2, dir)
+		local param2 = get_place_dir (stack:get_name (), computer.pos, cur_node.param2, dir,
+												get_palette_index (stack))
 
 		local inv = meta:get_inventory ()
 		if not inv or not inv:contains_item ("storage", stack, false) then
@@ -2631,7 +2658,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			return false
 		end
 
-		local def = lwcomp.find_item_def (nodename)
+		local def = lwcomp.find_item_def (stack:get_name ())
 		local placed = false
 		local vec = get_robot_side_vector (cur_node.param2, dir)
 		local pointed_thing =
@@ -2643,7 +2670,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 						 z = place_pos.z - vec.z },
 		}
 
-		if nodename:sub (1, 8) == "farming:" then
+		if stack:get_name ():sub (1, 8) == "farming:" then
 			pointed_thing.under = { x = place_pos.x + vec.x,
 											y = place_pos.y + vec.y,
 											z = place_pos.z + vec.z }
@@ -2658,8 +2685,10 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 				if not placed then
 					if lwcomp.settings.alert_handler_errors then
-						minetest.log ("error", "on_place handler for "..nodename.." crashed - "..leftover)
+						minetest.log ("error", "on_place handler for "..stack:get_name ().." crashed - "..leftover)
 					end
+				elseif not leftover then
+					inv:add_item ("storage", stack)
 				elseif leftover and leftover.get_count and leftover:get_count () > 0 then
 					inv:add_item ("storage", leftover)
 				end
@@ -2667,26 +2696,28 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		end
 
 		if not placed then
-			local substitute = lwcomp.get_place_substitute (nodename, dir)
+			local substitute = lwcomp.get_place_substitute (stack:get_name (), dir)
+			local orgstack = ItemStack (stack)
 
-			if nodename ~= substitute then
-				nodename = substitute
-				stack = ItemStack (nodename)
-				def = lwcomp.find_item_def (nodename)
+			if stack:get_name () ~= substitute then
+				stack = ItemStack (substitute)
+				def = lwcomp.find_item_def (stack:get_name ())
 			end
 
-			if not minetest.registered_nodes[nodename] then
+			if not minetest.registered_nodes[stack:get_name ()] then
+				inv:add_item ("storage", orgstack)
+
 				return false
 			end
 
-			minetest.set_node (pos, { name = nodename, param1 = 0, param2 = param2})
+			minetest.set_node (pos, { name = stack:get_name (), param1 = 0, param2 = param2})
 
 			if stack and def and def.after_place_node then
 				local result, msg = pcall (def.after_place_node, pos, nil, stack, pointed_thing)
 
 				if not result then
 					if lwcomp.settings.alert_handler_errors then
-						minetest.log ("error", "after_place_node handler for "..nodename.." crashed - "..msg)
+						minetest.log ("error", "after_place_node handler for "..stack:get_name ().." crashed - "..msg)
 					end
 				end
 			end
