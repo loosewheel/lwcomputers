@@ -167,9 +167,9 @@ end
 
 minetest.register_node("lwcomputers:digiswitch", {
    description = S("Digilines Switch"),
-   tiles = { "digiswitch_white.png", "digiswitch_bottom.png",
-				 "digiswitch_green.png", "digiswitch_red.png",
-				 "digiswitch_yellow.png", "digiswitch_blue.png" },
+   tiles = { "lwcomputers_digiswitch_white.png", "lwcomputers_digiswitch_bottom.png",
+				 "lwcomputers_digiswitch_green.png", "lwcomputers_digiswitch_red.png",
+				 "lwcomputers_digiswitch_yellow.png", "lwcomputers_digiswitch_blue.png" },
    sunlight_propagates = false,
    drawtype = "normal",
    node_box = {

@@ -313,8 +313,8 @@ end
 local function registerNode (name, description, box, display_offset)
 	minetest.register_node (name, {
 		description = description,
-		tiles = { "lwmonitor.png", "lwmonitor.png", "lwmonitor.png",
-					 "lwmonitor.png", "lwmonitor.png", "lwmonitor_face.png" },
+		tiles = { "lwcomputers_monitor.png", "lwcomputers_monitor.png", "lwcomputers_monitor.png",
+					 "lwcomputers_monitor.png", "lwcomputers_monitor.png", "lwcomputers_monitor_face.png" },
 		groups = { cracky = 2, oddly_breakable_by_hand = 2 },
 		paramtype = "light",
 		paramtype2 = "facedir",

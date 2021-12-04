@@ -7,7 +7,7 @@ minetest.register_tool ("lwcomputers:ink_cartridge", {
    description = S("Ink Cartridge"),
    short_description = S("Ink Cartridge"),
 	groups = { },
-	inventory_image = "ink_cartridge.png",
+	inventory_image = "lwcomputers_ink_cartridge.png",
 	range = 0.0,
 	stack_max = 1,
 	sound = { },

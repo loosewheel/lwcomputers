@@ -184,9 +184,9 @@ end
 
 minetest.register_node("lwcomputers:movefloor", {
    description = S("Moving Floor"),
-   tiles = { "lwmovefloortop.png", "lwmovefloortop.png",
-				 "lwmovefloorside.png", "lwmovefloorside.png",
-				 "lwmovefloorside.png", "lwmovefloorside.png" },
+   tiles = { "lwcomputers_movefloortop.png", "lwcomputers_movefloortop.png",
+				 "lwcomputers_movefloorside.png", "lwcomputers_movefloorside.png",
+				 "lwcomputers_movefloorside.png", "lwcomputers_movefloorside.png" },
    sunlight_propagates = false,
    drawtype = "normal",
    node_box = {

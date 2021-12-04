@@ -23,7 +23,7 @@ lwcomputers_double_click_time (Double click seconds) float 0.5
 lwcomputers_max_string_rep_size (Maximum string.rep length) int 64000
 
 # Maximum clipboard content length
-lwcomputers_max_clipboard_length (Maximum clipboard content length) int 64000
+lwcomputers_max_clipboard_length (Maximum clipboard content length) int 48000
 
 # Game epoch year
 lwcomputers_epoch_year (The year the in game calendar begins) int 2000
@@ -42,9 +42,6 @@ lwcomputers_max_hard_disk_items (Maximum hard disk items) int 8000
 
 # Maximum floppy disk size files and directories
 lwcomputers_max_floppy_disk_items (Maximum floppy disk items) int 1000
-
-# Store disk data in meta data instead of disk folder under world folder
-lwcomputers_use_meta_disks (Store disks in meta data) bool false
 
 # Delay in seconds for a robot's action, min 0.1
 lwcomputers_robot_action_delay (Robot's action delay) float 0.2

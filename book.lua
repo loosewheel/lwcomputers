@@ -6,12 +6,12 @@ local S = lwcomp.S
 function lwcomp.book_decode (rawstring)
 	local width, height = lwcomp.page_size ()
 	local chars = width * height
-	local pages = rawstring:len () / (chars * 2)
+	local pages = rawstring:len () / (chars * 4)
 	local contents = { }
 
 	for i = 1, pages do
-		local firstbyte = ((i - 1) * (chars * 2)) + 1
-		local lastbyte = i * (chars * 2)
+		local firstbyte = ((i - 1) * (chars * 4)) + 1
+		local lastbyte = i * (chars * 4)
 		local raw = rawstring:sub (firstbyte, lastbyte)
 		contents[i] = lwcomp.page_decode (raw)
 	end
@@ -36,6 +36,7 @@ end
 local function get_book_formspec (meta)
 	local contents = lwcomp.book_decode (meta:get_string ("contents"))
 	local curpage = meta:get_int ("page")
+	local pages = meta:get_int ("pages")
 	local width, height = lwcomp.page_size ()
 	local hscale, vscale = lwcomp.page_scale ()
 	local fw = (width * hscale) + 0.2
@@ -75,11 +76,20 @@ local function get_book_formspec (meta)
 		end
 	end
 
-	spec = spec..
-	"container_end[]\n"..
-	"button[0.2,"..tostring (fh - 1.0)..";1.0,0.8;prior;<]\n"..
-	"label["..tostring ((fw / 2) - 0.3)..","..tostring (fh - 0.6)..";"..tostring (curpage).."]\n"..
-	"button["..tostring (fw - 1.2)..","..tostring (fh - 1.0)..";1.0,0.8;next;>]\n"
+	local page_label = string.format ("%d / %d", curpage, pages)
+
+	spec = string.format ("%scontainer_end[]\n"..
+								 "button[0.2,%0.2f;1.0,0.8;first;<<]\n"..
+								 "button[1.2,%0.2f;1.0,0.8;prior;<]\n"..
+								 "label[%0.2f,%0.2f;%s]\n"..
+								 "button[%0.2f,%0.2f;1.0,0.8;next;>]\n"..
+								 "button[%0.2f,%0.2f;1.0,0.8;last;>>]\n",
+								 spec,
+								 fh - 1.0,
+								 fh - 1.0,
+								 (fw / 2) - (page_label:len () * 0.05), fh - 0.6, page_label,
+								 fw - 2.2, fh - 1.0,
+								 fw - 1.2, fh - 1.0)
 
 	return spec
 end
@@ -89,7 +99,7 @@ end
 minetest.register_craftitem ("lwcomputers:book", {
    description = S("LWComputers Book"),
    short_description = S("LWComputers Book"),
-   inventory_image = "book.png",
+   inventory_image = "lwcomputers_book.png",
    stack_max = 99,
    groups = { not_in_creative_inventory = 1 },
 
@@ -106,30 +116,6 @@ minetest.register_craftitem ("lwcomputers:book", {
 
       return nil
    end,
-
-	on_drop = function (itemstack, dropper, pos)
-		-- one or more string fields
-		local drops = lwdrops.store (itemstack, "contents")
-
-		if drops then
-			return minetest.item_drop (drops, dropper, pos)
-		end
-
-		return itemstack
-	end,
-
-	on_pickup = function (itemstack, fields)
-		local meta = itemstack:get_meta ()
-
-		if meta then
-			for k, v in pairs (fields) do
-				meta:set_string (k, v)
-			end
-		end
-
-		-- this itemstack is the one picked up
-		return itemstack
-	end
 })
 
 
@@ -145,6 +131,19 @@ minetest.register_on_player_receive_fields(function (player, formname, fields)
 						local meta = stack:get_meta ()
 
 						if meta then
+
+							if fields.first then
+								local page = meta:get_int ("page")
+
+								if page > 1 then
+									meta:set_int ("page", 1)
+									player:set_wielded_item (stack)
+
+									minetest.show_formspec (player:get_player_name (),
+																	"lwcomputers:book",
+																	get_book_formspec (meta))
+								end
+							end
 
 							if fields.prior then
 								local page = meta:get_int ("page")
@@ -167,6 +166,20 @@ minetest.register_on_player_receive_fields(function (player, formname, fields)
 								if page < pages then
 									page = page + 1
 									meta:set_int ("page", page)
+									player:set_wielded_item (stack)
+
+									minetest.show_formspec (player:get_player_name (),
+																	"lwcomputers:book",
+																	get_book_formspec (meta))
+								end
+							end
+
+							if fields.last then
+								local page = meta:get_int ("page")
+								local pages = meta:get_int ("pages")
+
+								if page < pages then
+									meta:set_int ("page", pages)
 									player:set_wielded_item (stack)
 
 									minetest.show_formspec (player:get_player_name (),

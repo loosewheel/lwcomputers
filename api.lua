@@ -68,34 +68,6 @@ end
 
 
 
-local function floppy_disk_on_drop (itemstack, dropper, pos)
-	-- one or more string fields
-	local drops = lwdrops.store (itemstack, "disk_data")
-
-	if drops then
-		return minetest.item_drop (drops, dropper, pos)
-	end
-
-	return itemstack
-end
-
-
-
-local function floppy_disk_on_pickup (itemstack, fields)
-	local meta = itemstack:get_meta ()
-
-	if meta then
-		for k, v in pairs (fields) do
-			meta:set_string (k, v)
-		end
-	end
-
-	-- this itemstack is the one picked up
-	return itemstack
-end
-
-
-
 local function floppy_disk_on_destroy (itemstack)
 	local meta = itemstack:get_meta ()
 
@@ -145,42 +117,12 @@ function lwcomputers.register_floppy_disk (name, label, itemdef)
 		itemdef.diskfiles = nil
 	end
 
-	itemdef.on_drop = floppy_disk_on_drop
-	itemdef.on_pickup = floppy_disk_on_pickup
 	itemdef.on_destroy = floppy_disk_on_destroy
 	itemdef.stack_max = 1
 
 	minetest.register_craftitem (name, itemdef)
 
 	return true
-end
-
-
-
-local function clipboard_on_drop (itemstack, dropper, pos)
-	-- one or more string fields
-	local drops = lwdrops.store (itemstack, "contents")
-
-	if drops then
-		return minetest.item_drop (drops, dropper, pos)
-	end
-
-	return itemstack
-end
-
-
-
-local function clipboard_on_pickup (itemstack, fields)
-	local meta = itemstack:get_meta ()
-
-	if meta then
-		for k, v in pairs (fields) do
-			meta:set_string (k, v)
-		end
-	end
-
-	-- this itemstack is the one picked up
-	return itemstack
 end
 
 
@@ -206,8 +148,6 @@ function lwcomputers.register_clipboard (name, size, itemdef)
 		size = size
 	}
 
-	itemdef.on_drop = clipboard_on_drop
-	itemdef.on_pickup = clipboard_on_pickup
 	itemdef.stack_max = 1
 
 	minetest.register_craftitem (name, itemdef)

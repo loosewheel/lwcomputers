@@ -52,22 +52,22 @@ local function generateTexture (pos, serdata, resolution)
 	for y = 1, resolution, 1 do
 		for x = 1, resolution, 16 do
 			ret = ret..
-					string.format (":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)"..
-										":%d,%d=(lwdigiscreen_pixel.png\\^[colorize\\:#%06X\\:255)",
+					string.format (":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)"..
+										":%d,%d=(lwdspx.png\\^[colorize\\:#%06X\\:255)",
 										x - 1, y - 1, tonumber (data[y][x], 16) or 0,
 										x, y - 1, tonumber (data[y][x + 1], 16) or 0,
 										x + 1, y - 1, tonumber (data[y][x + 2], 16) or 0,
@@ -99,7 +99,7 @@ local function updateDisplay (pos)
 	local data = meta:get_string ("data")
 	local entity = minetest.add_entity (pos, "lwcomputers:digiscreenimage")
 	local fdir = minetest.facedir_to_dir (minetest.get_node (pos).param2)
-	local etex = "lwdigiscreen_pixel.png"
+	local etex = "lwdspx.png"
 	etex = generateTexture (pos, data, def._resolution) or etex
 	entity:set_properties ({ textures = { etex } })
 	entity:set_yaw ((fdir.x ~= 0) and math.pi / 2 or 0)
@@ -113,7 +113,7 @@ minetest.register_entity ("lwcomputers:digiscreenimage", {
 		visual = "upright_sprite",
 		physical = false,
 		collisionbox = { 0, 0, 0, 0, 0, 0, },
-		textures = { "lwdigiscreen_pixel.png", },
+		textures = { "lwdspx.png", },
 	},
 })
 
@@ -122,7 +122,7 @@ minetest.register_entity ("lwcomputers:digiscreenimage", {
 local function registerNode (name, description, box, resolution, display_offset)
 	minetest.register_node (name, {
 		description = description,
-		tiles = { "lwdigiscreen_bg.png", },
+		tiles = { "lwcomputers_digiscreen_bg.png", },
 		groups = { cracky = 2, oddly_breakable_by_hand = 2 },
 		paramtype = "light",
 		paramtype2 = "facedir",

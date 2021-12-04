@@ -6,9 +6,6 @@ lwcomp.settings = { }
 lwcomp.settings.startup_delay =
 	tonumber(minetest.settings:get ("lwcomputers_startup_delay") or 3.0)
 
-lwcomp.settings.meta_disks =
-	minetest.settings:get_bool ("lwcomputers_use_meta_disks", false)
-
 lwcomp.settings.term_hres =
 	tonumber(minetest.settings:get("lwcomputers_term_hres") or 50)
 
@@ -32,7 +29,11 @@ lwcomp.settings.max_string_rep_size =
 	tonumber(minetest.settings:get("lwcomputers_max_string_rep_size") or 64000)
 
 lwcomp.settings.max_clipboard_length =
-	tonumber(minetest.settings:get("lwcomputers_max_clipboard_length") or 64000)
+	tonumber(minetest.settings:get("lwcomputers_max_clipboard_length") or 48000)
+
+if lwcomp.settings.max_clipboard_length > 48000 then
+	lwcomp.settings.max_clipboard_length = 48000
+end
 
 lwcomp.settings.time_scale =
 	tonumber(minetest.settings:get("time_speed") or 0)

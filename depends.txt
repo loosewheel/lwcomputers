@@ -1,5 +1,4 @@
 default
-lwdrops
 intllib?
 mesecons?
 digilines?

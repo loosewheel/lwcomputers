@@ -20,7 +20,7 @@ if minetest.global_exists ("unifieddyes") and
 mesecon.register_node (":lwcomputers:solid_conductor",
 	{
 		description = S("Solid Color Conductor"),
-		tiles = { "solid_conductor.png" },
+		tiles = { "lwcomputers_solid_conductor.png" },
 		is_ground_content = false,
 		sounds = ( default and default.node_sound_wood_defaults() ),
 		paramtype2 = "color",
@@ -32,7 +32,7 @@ mesecon.register_node (":lwcomputers:solid_conductor",
 		on_dig = unifieddyes.on_dig,
 	},
 	{
-		tiles = { "solid_conductor.png" },
+		tiles = { "lwcomputers_solid_conductor.png" },
 		mesecons =
 		{
 			conductor =
@@ -45,7 +45,7 @@ mesecon.register_node (":lwcomputers:solid_conductor",
 		groups = solid_conductor_groups,
 	},
 	{
-		tiles = { "solid_conductor.png" },
+		tiles = { "lwcomputers_solid_conductor.png" },
 		mesecons =
 		{
 			conductor =
@@ -83,7 +83,7 @@ unifieddyes.register_color_craft ({
 mesecon.register_node (":lwcomputers:solid_horizontal_conductor",
 	{
 		description = S("Solid Color Horizontal Conductor"),
-		tiles = { "solid_conductor.png" },
+		tiles = { "lwcomputers_solid_conductor.png" },
 		is_ground_content = false,
 		sounds = ( default and default.node_sound_wood_defaults() ),
 		paramtype2 = "color",
@@ -95,7 +95,7 @@ mesecon.register_node (":lwcomputers:solid_horizontal_conductor",
 		on_dig = unifieddyes.on_dig,
 	},
 	{
-		tiles = { "solid_conductor.png" },
+		tiles = { "lwcomputers_solid_conductor.png" },
 		mesecons =
 		{
 			conductor =
@@ -108,7 +108,7 @@ mesecon.register_node (":lwcomputers:solid_horizontal_conductor",
 		groups = solid_conductor_groups,
 	},
 	{
-		tiles = { "solid_conductor.png" },
+		tiles = { "lwcomputers_solid_conductor.png" },
 		mesecons =
 		{
 			conductor =

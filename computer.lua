@@ -253,11 +253,6 @@ local function preserve_metadata (pos, oldnode, oldmeta, drops)
 				imeta:set_string ("owner", meta:get_string ("owner"))
 				imeta:set_string ("access_by", meta:get_string ("access_by"))
 				imeta:set_int ("persists", meta:get_int ("persists"))
-
-				local disk_data = meta:get_string ("disk_data")
-				if disk_data:len () > 0 then
-					imeta:set_string ("disk_data", disk_data)
-				end
 			end
 		end
 	end
@@ -274,7 +269,6 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	local label = ""
 	local infotext = ""
 	local digilines_channel = ""
-	local disk_data = ""
 	local inventory = ""
 	local owner = ""
 	local access_by = ""
@@ -299,7 +293,6 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 		infotext = imeta:get_string ("infotext")
 		inventory = imeta:get_string ("inventory")
 		digilines_channel = imeta:get_string ("digilines_channel")
-		disk_data = imeta:get_string ("disk_data")
 		owner = imeta:get_string ("owner")
 		access_by = imeta:get_string ("access_by")
 		persists =  imeta:get_int ("persists")
@@ -318,11 +311,6 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	meta:set_string ("digilines_channel", digilines_channel)
 	meta:set_string ("owner", owner)
 	meta:set_string ("access_by", access_by)
-
-
-	if disk_data:len () > 0 then
-		meta:set_string ("disk_data", disk_data)
-	end
 
 	meta:set_string ("mesecon_front", lwcomp.mesecon_state_off)
 	meta:set_string ("mesecon_back", lwcomp.mesecon_state_off)
@@ -614,33 +602,6 @@ end
 
 
 
-local function on_drop (itemstack, dropper, pos)
-	local drops = lwdrops.store (itemstack, "disk_data")
-
-	if drops then
-		return minetest.item_drop (drops, dropper, pos)
-	end
-
-	return itemstack
-end
-
-
-
-local function on_pickup (itemstack, fields)
-	local meta = itemstack:get_meta ()
-
-	if meta then
-		for k, v in pairs (fields) do
-			meta:set_string (k, v)
-		end
-	end
-
-	-- this itemstack is the one picked up
-	return itemstack
-end
-
-
-
 local function on_destroy (itemstack)
 	local meta = itemstack:get_meta ()
 
@@ -705,7 +666,7 @@ local function on_blast (pos, intensity)
 							if math.floor (math.random (0, 5)) == 3 then
 								minetest.item_drop (stack, nil, pos)
 							else
-								lwdrops.on_destroy (stack)
+								lwcomp.on_destroy (stack)
 							end
 						end
 					end
@@ -720,7 +681,7 @@ local function on_blast (pos, intensity)
 								if math.floor (math.random (0, 5)) == 3 then
 									minetest.item_drop (stack, nil, pos)
 								else
-									lwdrops.on_destroy (stack)
+									lwcomp.on_destroy (stack)
 								end
 							end
 						end
@@ -886,8 +847,8 @@ end
 
 minetest.register_node("lwcomputers:computer", {
    description = S("Computer"),
-   tiles = { "computer.png", "computer.png", "computer.png",
-				 "computer.png", "computer.png", "computer_face.png" },
+   tiles = { "lwcomputers_computer.png", "lwcomputers_computer.png", "lwcomputers_computer.png",
+				 "lwcomputers_computer.png", "lwcomputers_computer.png", "lwcomputers_computer_face.png" },
    sunlight_propagates = false,
    drawtype = "normal",
    node_box = {
@@ -921,8 +882,6 @@ minetest.register_node("lwcomputers:computer", {
 	on_metadata_inventory_put = on_metadata_inventory_put,
 	on_metadata_inventory_take = on_metadata_inventory_take,
 	on_rightclick = on_rightclick,
-	on_drop = on_drop,
-	on_pickup = on_pickup,
 	on_destroy = on_destroy,
 	on_blast = on_blast
 })
@@ -931,8 +890,8 @@ minetest.register_node("lwcomputers:computer", {
 
 minetest.register_node("lwcomputers:computer_on", {
    description = S("Computer"),
-   tiles = { "computer.png", "computer.png", "computer.png",
-				 "computer.png", "computer.png", "computer_face_on.png" },
+   tiles = { "lwcomputers_computer.png", "lwcomputers_computer.png", "lwcomputers_computer.png",
+				 "lwcomputers_computer.png", "lwcomputers_computer.png", "lwcomputers_computer_face_on.png" },
    sunlight_propagates = false,
    drawtype = "normal",
    node_box = {
@@ -966,8 +925,6 @@ minetest.register_node("lwcomputers:computer_on", {
 	on_metadata_inventory_put = on_metadata_inventory_put,
 	on_metadata_inventory_take = on_metadata_inventory_take,
 	on_rightclick = on_rightclick,
-	on_drop = on_drop,
-	on_pickup = on_pickup,
 	on_destroy = on_destroy,
 	on_blast = on_blast
 })
@@ -976,8 +933,8 @@ minetest.register_node("lwcomputers:computer_on", {
 
 minetest.register_node("lwcomputers:computer_robot", {
    description = S("Robot"),
-   tiles = { "robot_top.png", "robot_bottom.png", "robot_left.png",
-				 "robot_right.png", "robot_back.png", "robot_face.png" },
+   tiles = { "lwcomputers_robot_top.png", "lwcomputers_robot_bottom.png", "lwcomputers_robot_left.png",
+				 "lwcomputers_robot_right.png", "lwcomputers_robot_back.png", "lwcomputers_robot_face.png" },
    drawtype = "nodebox",
 	node_box = {
 		type = "fixed",
@@ -1037,8 +994,6 @@ minetest.register_node("lwcomputers:computer_robot", {
 	on_metadata_inventory_take = on_metadata_inventory_take,
 	on_punch = on_punch_robot,
 	on_rightclick = on_rightclick,
-	on_drop = on_drop,
-	on_pickup = on_pickup,
 	on_destroy = on_destroy,
 	on_blast = on_blast
 })
@@ -1047,8 +1002,8 @@ minetest.register_node("lwcomputers:computer_robot", {
 
 minetest.register_node("lwcomputers:computer_robot_on", {
    description = S("Robot"),
-   tiles = { "robot_top.png", "robot_bottom.png", "robot_left.png",
-				 "robot_right.png", "robot_back.png", "robot_face_on.png" },
+   tiles = { "lwcomputers_robot_top.png", "lwcomputers_robot_bottom.png", "lwcomputers_robot_left.png",
+				 "lwcomputers_robot_right.png", "lwcomputers_robot_back.png", "lwcomputers_robot_face_on.png" },
    drawtype = "nodebox",
 	node_box = {
 		type = "fixed",
@@ -1108,8 +1063,6 @@ minetest.register_node("lwcomputers:computer_robot_on", {
 	on_metadata_inventory_take = on_metadata_inventory_take,
 	on_punch = on_punch_robot,
 	on_rightclick = on_rightclick,
-	on_drop = on_drop,
-	on_pickup = on_pickup,
 	on_destroy = on_destroy,
 	on_blast = on_blast
 })

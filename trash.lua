@@ -37,7 +37,7 @@ local function on_metadata_inventory_put (pos, listname, index, stack, player)
 			local inv = meta:get_inventory ()
 
 			if inv then
-				lwdrops.on_destroy (stack)
+				lwcomp.on_destroy (stack)
 
 				inv:set_stack (listname, index, nil)
 
@@ -53,8 +53,8 @@ end
 
 minetest.register_node("lwcomputers:trash", {
    description = S("Trash"),
-   tiles = { "trash.png", "trash.png", "trash_side.png",
-				 "trash_side.png", "trash_side.png", "trash_side.png" },
+   tiles = { "lwcomputers_trash.png", "lwcomputers_trash.png", "lwcomputers_trash_side.png",
+				 "lwcomputers_trash_side.png", "lwcomputers_trash_side.png", "lwcomputers_trash_side.png" },
    sunlight_propagates = false,
    drawtype = "normal",
    node_box = {

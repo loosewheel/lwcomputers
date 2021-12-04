@@ -7,28 +7,29 @@ if lwcomp.digilines_supported then
 
 
 
-local MAX_PAGES_PER_BOOK = 16
+local MAX_PAGES_PER_BOOK = 12
 
 
 
 local function get_formspec ()
 	local spec =
-	"formspec_version[3]\n"..
-	"size[11.75,12.75;true]\n"..
-	"no_prepend[]\n"..
-	"bgcolor[#E7DAA8]\n"..
-	"field[1.0,1.0;4.0,0.8;channel;Channel;${channel}]\n"..
-	"button[5.5,1.0;2.0,0.8;setchannel;Set]\n"..
-	"item_image[1.0,2.5;1.0,1.0;lwcomputers:ink_cartridge]\n"..
-	"list[context;ink;2.25,2.5;1,1;]\n"..
-	"item_image[3.5,2.5;1.0,1.0;default:paper]\n"..
-	"list[context;paper;4.75,2.5;1,1;]\n"..
-	"item_image_button[8.5,2.5;1.0,1.0;lwcomputers:book;book;]\n"..
-	"tooltip[book;Make Book;#094109;#FFFFFF]\n"..
-	"list[context;book;9.75,2.5;1,1;]\n"..
-	"list[context;main;1.0,3.75;8,2;]\n"..
-	"list[current_player;main;1.0,7.0;8,4;]\n"..
-	"listcolors[#545454;#6E6E6E;#DBCF9F]\n"
+	"formspec_version[3]"..
+	"size[11.75,12.75;true]"..
+	"no_prepend[]"..
+	"bgcolor[#E7DAA8]"..
+	"field[1.0,1.0;4.0,0.8;channel;Channel;${channel}]"..
+	"button[5.5,1.0;2.0,0.8;setchannel;Set]"..
+	"item_image[1.0,2.5;1.0,1.0;lwcomputers:ink_cartridge]"..
+	"list[context;ink;2.25,2.5;1,1;]"..
+	"item_image[3.5,2.5;1.0,1.0;default:paper]"..
+	"list[context;paper;4.75,2.5;1,1;]"..
+	"item_image_button[8.5,2.5;1.0,1.0;lwcomputers:book;book;]"..
+	"tooltip[book;Make Book;#094109;#FFFFFF]"..
+	"list[context;book;9.75,2.5;1,1;]"..
+	"list[context;main;2.25,3.75;6,2;]"..
+	"list[current_player;main;1.0,7.0;8,4;]"..
+	"listring[]"..
+	"listcolors[#545454;#6E6E6E;#DBCF9F]"
 
 	return spec
 end
@@ -170,8 +171,8 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	local channel = imeta:get_string ("channel")
 	local inventory =
 	"{ "..
-	"main = { [1] = '', [2] = '', [3] = '', [4] = '', [5] = '', [6] = '', [7] = '', [8] = '', "..
-	"         [9] = '', [10] = '', [11] = '', [12] = '', [13] = '', [14] = '', [15] = '', [16] = '' }, "..
+	"main = { [1] = '', [2] = '', [3] = '', [4] = '', [5] = '', [6] = '', "..
+	"         [7] = '', [8] = '', [9] = '', [10] = '', [11] = '', [12] = '' }, "..
 	"ink = { [1] = '' }, "..
 	"paper = { [1] = '' }, "..
 	"book = { [1] = '' } }"
@@ -192,8 +193,8 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 
 	local inv = meta:get_inventory ()
 
-	inv:set_size("main", 16)
-	inv:set_width("main", 8)
+	inv:set_size("main", 12)
+	inv:set_width("main", 6)
 	inv:set_size("ink", 1)
 	inv:set_width("ink", 1)
 	inv:set_size("paper", 1)
@@ -330,7 +331,7 @@ local function get_pages (meta)
 			end
 		end
 
-		return 16 - count
+		return 12 - count
 	end
 
 	return 0
@@ -383,14 +384,14 @@ end
 local function query_status (pos, meta, channel)
 	local status = "ready"
 
-	if meta:get_int ("has_page") == 1 then
-		status = "printing"
-	elseif get_ink (meta) < 1 then
+	if get_ink (meta) < 1 then
 		status = "no ink"
 	elseif get_paper (meta) < 1 then
 		status = "no paper"
 	elseif get_pages (meta) < 1 then
 		status = "tray full"
+	elseif meta:get_int ("has_page") == 1 then
+		status = "printing"
 	end
 
 	lwcomp.digilines_receptor_send (
@@ -622,8 +623,8 @@ end
 
 minetest.register_node("lwcomputers:printer", {
    description = S("Printer"),
-   tiles = { "printer.png", "printer.png", "printer.png",
-				 "printer.png", "printer.png", "printer_face.png" },
+   tiles = { "lwcomputers_printer.png", "lwcomputers_printer.png", "lwcomputers_printer.png",
+				 "lwcomputers_printer.png", "lwcomputers_printer.png", "lwcomputers_printer_face.png" },
    sunlight_propagates = false,
    drawtype = "normal",
    node_box = {

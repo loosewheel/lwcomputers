@@ -71,9 +71,9 @@ local function build_form_constants ()
 	"button[11.0,"..tostring (kby)..";0.95,0.7;KEY_DELETE;Del]"..
 	"list[context;main;12.5,"..tostring (kby)..";3,1;]"..
 	"image_button["..tostring (fw - 1.2)..","..tostring (kby)..
-	";0.7,0.7;power_button.png;power;;false;false;power_button.png]"..
+	";0.7,0.7;lwcomputers_power_button.png;power;;false;false;lwcomputers_power_button.png]"..
 	"image_button["..tostring (fw - 1.2)..","..tostring (fh - 3.4).. --tostring (kby + 0.8)..
-	";0.7,0.7;reboot_button.png;reboot;;false;false;reboot_button.png]"
+	";0.7,0.7;lwcomputers_reboot_button.png;reboot;;false;false;lwcomputers_reboot_button.png]"
 
 	kby = kby + 0.7
 
@@ -215,11 +215,11 @@ function lwcomp.term_formspec (data)
 	if data.persists then
 		btns = btns..
 		"image_button["..tostring (fw - 2.2)..","..tostring (fh - 3.4)..
-		";0.7,0.7;persist_button_on.png;persists;;false;false;persist_button_on.png]"
+		";0.7,0.7;lwcomputers_persist_button_on.png;persists;;false;false;lwcomputers_persist_button_on.png]"
 	else
 		btns = btns..
 		"image_button["..tostring (fw - 2.2)..","..tostring (fh - 3.4)..
-		";0.7,0.7;persist_button_off.png;persists;;false;false;persist_button_off.png]"
+		";0.7,0.7;lwcomputers_persist_button_off.png;persists;;false;false;lwcomputers_persist_button_off.png]"
 	end
 
 	if data.robot then

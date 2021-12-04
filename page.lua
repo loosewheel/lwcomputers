@@ -26,6 +26,8 @@ function lwcomp.page_decode (rawstring)
 	local chars = width * height
 	local content = { }
 
+	rawstring = lwcomp.from_hex (rawstring)
+
 	for i = 1, chars do
 		if i <= rawstring:len () then
 			local byte = ((i - 1) * 2) + 1
@@ -68,7 +70,7 @@ function lwcomp.page_encode (page)
 		end
 	end
 
-	return raw
+	return lwcomp.to_hex (raw)
 end
 
 
@@ -106,7 +108,7 @@ end
 minetest.register_craftitem ("lwcomputers:page", {
    description = S("LWComputers Page"),
    short_description = S("LWComputers Page"),
-   inventory_image = "page.png",
+   inventory_image = "lwcomputers_page.png",
    stack_max = 1,
    groups = { not_in_creative_inventory = 1 },
 

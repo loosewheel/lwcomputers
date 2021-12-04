@@ -25,7 +25,7 @@ end
 lwcomputers.register_clipboard ("lwcomputers:clipboard", nil, {
    description = S("Computer Clipboard"),
    short_description = S("Computer Clipboard"),
-   inventory_image = "clipboard_item.png",
+   inventory_image = "lwcomputers_clipboard_item.png",
    on_use = on_use
 })
 

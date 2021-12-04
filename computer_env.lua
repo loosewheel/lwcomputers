@@ -2431,7 +2431,6 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		local infotext = meta:get_string ("infotext")
 		local digilines_channel = meta:get_string ("digilines_channel")
 		local formspec = meta:get_string ("formspec")
-		local disk_data = meta:get_string ("disk_data")
 		local inventory = "{ "..
 		"main = { [1] = '', [2] = '', [3] = '' }, "..
 		"storage = { [1] = '', [2] = '', [3] = '', [4] = '', [5] = '', [6] = '', [7] = '', [8] = '', "..
@@ -2470,9 +2469,6 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		meta:set_string ("digilines_channel", digilines_channel)
 		meta:set_string ("formspec", formspec)
 		meta:set_string ("inventory", inventory)
-		if disk_data:len () > 0 then
-			meta:set_string ("disk_data", disk_data)
-		end
 
 		for i = 1, slots do
 			if inv_main[i] then
@@ -2579,7 +2575,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 				local over = inv:add_item ("storage", drops[i])
 
 				if over and over:get_count () > 0 then
-					lwdrops.item_drop (over, nil, pos)
+					minetest.item_drop (over, nil, pos)
 				end
 			end
 		end
@@ -3241,9 +3237,9 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			inv:remove_item ("storage", stack)
 
 			if drop then
-				lwdrops.item_drop (stack, nil, computer.pos)
+				minetest.item_drop (stack, nil, computer.pos)
 			else
-				lwdrops.on_destroy (stack)
+				lwcomp.on_destroy (stack)
 			end
 
 			coroutine.yield ("sleep", lwcomp.settings.robot_action_delay)
@@ -3264,9 +3260,9 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			inv:set_stack ("storage", name, nil)
 
 			if drop then
-				lwdrops.item_drop (stack, nil, computer.pos)
+				minetest.item_drop (stack, nil, computer.pos)
 			else
-				lwdrops.on_destroy (stack)
+				lwcomp.on_destroy (stack)
 			end
 
 			coroutine.yield ("sleep", lwcomp.settings.robot_action_delay)

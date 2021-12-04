@@ -617,4 +617,47 @@ end
 
 
 
+function lwcomp.to_hex (str)
+	local hex = ""
+
+	str = tostring (str) or ""
+
+	for i = 1, str:len () do
+		hex = hex..string.format ("%02X", str:byte (i))
+	end
+
+	return hex
+end
+
+
+
+function lwcomp.from_hex (hex)
+	local str = ""
+
+	hex = tostring (hex) or ""
+
+	for i = 1, hex:len (), 2 do
+		str = str..string.char (tonumber (hex:sub (i, i + 1), 16) or 0)
+	end
+
+	return str
+end
+
+
+
+function lwcomp.on_destroy (itemstack)
+	local stack = ItemStack (itemstack)
+
+	if stack and stack:get_count () > 0 then
+		local def = lwcomp.find_item_def (stack:get_name ())
+
+		if def and def.on_destroy then
+			def.on_destroy (stack)
+		end
+	end
+end
+
+
+
+
 --

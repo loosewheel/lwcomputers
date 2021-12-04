@@ -41,7 +41,7 @@ end
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_black", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
-   inventory_image = "floppy_black.png",
+   inventory_image = "lwcomputers_floppy_black.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 }
 })
@@ -51,7 +51,7 @@ lwcomputers.register_floppy_disk ("lwcomputers:floppy_black", nil, {
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_blue", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
-   inventory_image = "floppy_blue.png",
+   inventory_image = "lwcomputers_floppy_blue.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 }
 })
@@ -61,7 +61,7 @@ lwcomputers.register_floppy_disk ("lwcomputers:floppy_blue", nil, {
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_red", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
-   inventory_image = "floppy_red.png",
+   inventory_image = "lwcomputers_floppy_red.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 }
 })
@@ -71,7 +71,7 @@ lwcomputers.register_floppy_disk ("lwcomputers:floppy_red", nil, {
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_green", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
-   inventory_image = "floppy_green.png",
+   inventory_image = "lwcomputers_floppy_green.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 }
 })
@@ -81,7 +81,7 @@ lwcomputers.register_floppy_disk ("lwcomputers:floppy_green", nil, {
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_yellow", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
-   inventory_image = "floppy_yellow.png",
+   inventory_image = "lwcomputers_floppy_yellow.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 }
 })
@@ -91,7 +91,7 @@ lwcomputers.register_floppy_disk ("lwcomputers:floppy_yellow", nil, {
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_white", nil, {
    description = S("Floppy disk"),
    short_description = S("Floppy disk"),
-   inventory_image = "floppy_white.png",
+   inventory_image = "lwcomputers_floppy_white.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 }
 })
@@ -101,7 +101,7 @@ lwcomputers.register_floppy_disk ("lwcomputers:floppy_white", nil, {
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_lua", "lua_disk", {
    description = S("Lua disk"),
    short_description = S("Lua disk"),
-   inventory_image = "floppy_lua.png",
+   inventory_image = "lwcomputers_floppy_lua.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 },
 	diskfiles = {
@@ -114,7 +114,7 @@ lwcomputers.register_floppy_disk ("lwcomputers:floppy_lua", "lua_disk", {
 lwcomputers.register_floppy_disk ("lwcomputers:floppy_los", "los_disk", {
    description = S("Los disk"),
    short_description = S("Los disk"),
-   inventory_image = "floppy_los.png",
+   inventory_image = "lwcomputers_floppy_los.png",
    on_use = on_use,
 	groups = { floppy_disk = 1 },
 	diskfiles = {

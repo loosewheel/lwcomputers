@@ -1,14 +1,6 @@
-local version = "0.1.27"
+local version = "0.2.0"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
-
-
-
-if not lwdrops then
-	minetest.log ("error", "lwcomputers could not find dependency lwdrops")
-
-	return
-end
 
 
 
@@ -30,12 +22,8 @@ local worldpath = minetest.get_worldpath ()
 loadfile (modpath.."/settings.lua") (lwcomp)
 loadfile (modpath.."/utils.lua") (lwcomp, mod_storage, http_api)
 loadfile (modpath.."/api.lua") (lwcomp)
-if lwcomp.settings.meta_disks then
-	loadfile (modpath.."/filesys_meta.lua") (lwcomp)
-else
-	minetest.mkdir (worldpath.."/lwcomputers")
-	loadfile (modpath.."/filesys.lua") (lwcomp)
-end
+minetest.mkdir (worldpath.."/lwcomputers")
+loadfile (modpath.."/filesys.lua") (lwcomp)
 loadfile (modpath.."/clipboard.lua") (lwcomp)
 loadfile (modpath.."/floppy.lua") (lwcomp)
 loadfile (modpath.."/term_formspec.lua") (lwcomp)

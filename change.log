@@ -174,3 +174,11 @@ v0.1.26
 
 v0.1.27
 *	Improved support of param2 for placed nodes (pallet index is used as well).
+
+
+v0.2.0
+*	Removed dependency lwdrops.
+*	Removed metadata disk option.
+*	Books can now have a max of 12 pages.
+*	Max clipboard size reduced to 48000
+*	Less disposal options to remove redundant disk data.
