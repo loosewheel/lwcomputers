@@ -105,7 +105,10 @@ minetest.register_craftitem ("lwcomputers:book", {
 
    on_use = function (itemstack, user, pointed_thing)
 		if itemstack and user and user:is_player () then
-			local meta = itemstack:get_meta()
+			-- convert here
+			itemstack = lwcomp.convert_page_data (itemstack)
+
+			local meta = itemstack:get_meta ()
 
 			if meta then
 				minetest.show_formspec (user:get_player_name (),
@@ -114,7 +117,14 @@ minetest.register_craftitem ("lwcomputers:book", {
 			end
 		end
 
-      return nil
+      return itemstack
+   end,
+
+   on_drop = function (itemstack, dropper, pos)
+		-- convert here
+		itemstack = lwcomp.convert_page_data (itemstack)
+
+		return minetest.item_drop (itemstack, dropper, pos)
    end,
 })
 

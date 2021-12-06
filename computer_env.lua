@@ -2575,7 +2575,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 				local over = inv:add_item ("storage", drops[i])
 
 				if over and over:get_count () > 0 then
-					minetest.item_drop (over, nil, pos)
+					lwcomp.item_drop (over, nil, pos)
 				end
 			end
 		end
@@ -3237,7 +3237,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			inv:remove_item ("storage", stack)
 
 			if drop then
-				minetest.item_drop (stack, nil, computer.pos)
+				lwcomp.item_drop (stack, nil, computer.pos)
 			else
 				lwcomp.on_destroy (stack)
 			end
@@ -3260,7 +3260,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 			inv:set_stack ("storage", name, nil)
 
 			if drop then
-				minetest.item_drop (stack, nil, computer.pos)
+				lwcomp.item_drop (stack, nil, computer.pos)
 			else
 				lwcomp.on_destroy (stack)
 			end

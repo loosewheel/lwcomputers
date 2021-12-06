@@ -83,6 +83,9 @@ local function on_receive_fields (pos, formname, fields, sender)
 					local page = inv:get_stack ("main", i)
 
 					if page and page:get_name () == "lwcomputers:page" then
+						-- convert here
+						page = lwcomp.convert_page_data (page)
+
 						local imeta = page:get_meta ()
 
 						if imeta then
@@ -121,6 +124,7 @@ local function on_receive_fields (pos, formname, fields, sender)
 							imeta:set_string ("contents", contents)
 							imeta:set_string ("description", description)
 							imeta:set_string ("title", description)
+							imeta:set_int ("version", 2)
 
 							for i = 1, #used do
 								local page = inv:get_stack ("main", used[i])
@@ -449,6 +453,7 @@ local function end_page (pos, meta)
 					imeta:set_string ("contents", meta:get_string ("contents"))
 					imeta:set_string ("title", title)
 					imeta:set_string ("description", title)
+					imeta:set_int ("version", 2)
 					inv:add_item ("main", page)
 
 					local ink = inv:get_stack ("ink", 1)

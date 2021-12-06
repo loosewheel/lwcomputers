@@ -22,6 +22,57 @@ end
 
 
 
+function lwcomp.convert_page_data (itemstack)
+	if itemstack then
+		local meta = itemstack:get_meta ()
+
+		if meta and meta:get_int ("version") < 1 then
+			local contents = meta:get_string ("contents")
+			local check =
+			{
+				["0"] = true,
+				["1"] = true,
+				["2"] = true,
+				["3"] = true,
+				["4"] = true,
+				["5"] = true,
+				["6"] = true,
+				["7"] = true,
+				["8"] = true,
+				["9"] = true,
+				["A"] = true,
+				["B"] = true,
+				["C"] = true,
+				["D"] = true,
+				["E"] = true,
+				["F"] = true,
+			}
+
+			for i = 1, contents:len () do
+				if not check[contents:sub (i, i)] then
+					-- max 12 pages
+					meta:set_string ("contents", lwcomp.to_hex (contents):sub (1, 57600))
+					meta:set_int ("version", 2)
+
+					if meta:get_int ("pages") > 12 then
+						meta:set_int ("pages", 12)
+
+						if meta:get_int ("page") > 12 then
+							meta:set_int ("page", 12)
+						end
+					end
+
+					return itemstack
+				end
+			end
+		end
+	end
+
+	return itemstack
+end
+
+
+
 function lwcomp.page_decode (rawstring)
 	local chars = width * height
 	local content = { }
@@ -114,16 +165,28 @@ minetest.register_craftitem ("lwcomputers:page", {
 
    on_use = function (itemstack, user, pointed_thing)
 		if itemstack and user and user:is_player () then
+			-- convert here
+			itemstack = lwcomp.convert_page_data (itemstack)
+
 			local meta = itemstack:get_meta()
-			local contents = meta:get_string ("contents")
 
+			if meta then
+				local contents = meta:get_string ("contents")
 
-			minetest.show_formspec (user:get_player_name (),
-											"lwcomputers:page",
-											get_page_formspec (meta:get_string ("contents")))
+				minetest.show_formspec (user:get_player_name (),
+												"lwcomputers:page",
+												get_page_formspec (meta:get_string ("contents")))
+			end
 		end
 
-      return nil
+      return itemstack
+   end,
+
+   on_drop = function (itemstack, dropper, pos)
+		-- convert here
+		itemstack = lwcomp.convert_page_data (itemstack)
+
+		return minetest.item_drop (itemstack, dropper, pos)
    end,
 })
 

@@ -664,7 +664,7 @@ local function on_blast (pos, intensity)
 
 						if stack and not stack:is_empty () then
 							if math.floor (math.random (0, 5)) == 3 then
-								minetest.item_drop (stack, nil, pos)
+								lwcomp.item_drop (stack, nil, pos)
 							else
 								lwcomp.on_destroy (stack)
 							end
@@ -679,7 +679,7 @@ local function on_blast (pos, intensity)
 
 							if stack and not stack:is_empty () then
 								if math.floor (math.random (0, 5)) == 3 then
-									minetest.item_drop (stack, nil, pos)
+									lwcomp.item_drop (stack, nil, pos)
 								else
 									lwcomp.on_destroy (stack)
 								end
@@ -704,7 +704,7 @@ local function on_blast (pos, intensity)
 						local stack = inv:get_stack ("main", slot)
 
 						if stack and not stack:is_empty () then
-							minetest.item_drop (stack, nil, pos)
+							lwcomp.item_drop (stack, nil, pos)
 						end
 					end
 
@@ -715,7 +715,7 @@ local function on_blast (pos, intensity)
 							local stack = inv:get_stack ("storage", slot)
 
 							if stack and not stack:is_empty () then
-								minetest.item_drop (stack, nil, pos)
+								lwcomp.item_drop (stack, nil, pos)
 							end
 						end
 					end
@@ -730,7 +730,7 @@ local function on_blast (pos, intensity)
 
 						if stack then
 							preserve_metadata (pos, node, meta, { stack })
-							minetest.item_drop (stack, nil, pos)
+							lwcomp.item_drop (stack, nil, pos)
 							on_destruct (pos)
 							minetest.remove_node (pos)
 						end

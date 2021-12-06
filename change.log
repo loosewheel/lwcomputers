@@ -182,3 +182,11 @@ v0.2.0
 *	Books can now have a max of 12 pages.
 *	Max clipboard size reduced to 48000
 *	Less disposal options to remove redundant disk data.
+
+
+v0.2.1
+*	Implemented conversion to new page/book encoding:
+	If a page or book is used it is convereted.
+	If a page or book is dropped by a player it is convereted.
+	If a page or book is dropped by a mod component that calls on_drop it is convereted.
+	Any books that are converted will only retain the first 12 pages.
