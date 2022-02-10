@@ -2535,7 +2535,9 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 		local nodedef = minetest.registered_nodes[node.name]
 
-		if not nodedef or not nodedef.diggable or minetest.is_protected (pos, "") then
+		if not nodedef or not nodedef.diggable or minetest.is_protected (pos, "") or
+			minetest.get_item_group (node.name, "unbreakable") > 0 then
+
 			return nil
 		end
 

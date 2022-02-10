@@ -190,3 +190,7 @@ v0.2.1
 	If a page or book is dropped by a player it is convereted.
 	If a page or book is dropped by a mod component that calls on_drop it is convereted.
 	Any books that are converted will only retain the first 12 pages.
+
+
+v0.2.2
+*	Robots cannot dig nodes with group 'unbreakable'.
