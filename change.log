@@ -194,3 +194,7 @@ v0.2.1
 
 v0.2.2
 *	Robots cannot dig nodes with group 'unbreakable'.
+
+
+v0.2.3
+*	Fixed crash if digiscreens are given nil for a pixel,

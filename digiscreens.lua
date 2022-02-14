@@ -199,7 +199,7 @@ local function registerNode (name, description, box, resolution, display_offset)
 
 						for x = 1, resolution, 1 do
 							if type (msg[y][x]) ~= "string" then
-								msg[y][x] = string.format ("%06X", tonumber (msg[y][x], 16) or 0)
+								msg[y][x] = string.format ("%06X", tonumber (msg[y][x] or 0) or 0)
 							else
 								if string.sub (msg[y][x], 1, 1) == "#" then
 									msg[y][x] = string.sub (msg[y][x], 2, -1)
