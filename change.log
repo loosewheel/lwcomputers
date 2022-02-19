@@ -197,4 +197,9 @@ v0.2.2
 
 
 v0.2.3
-*	Fixed crash if digiscreens are given nil for a pixel,
+*	Fixed crash if digiscreens are given nil for a pixel.
+
+
+v0.2.4
+*	Fixed bug undeclared global in filesys.lua
+*	Fixed missing texture in monitors.

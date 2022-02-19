@@ -107,7 +107,7 @@ local function updateDisplay (pos)
 	local color = meta:get_string ("color") or "sb"
 	local entity = minetest.add_entity (pos, "lwcomputers:monitorimage")
 	local fdir = minetest.facedir_to_dir (node.param2)
-	local etex = "lwmonitors_pixel.png"
+	local etex = "lwdspx.png"
 	etex = generateTexture (pos, data, scale, color) or etex
 	entity:set_properties ({ textures = { etex } })
 	entity:set_yaw ((fdir.x ~= 0) and math.pi / 2 or 0)
@@ -121,7 +121,7 @@ minetest.register_entity ("lwcomputers:monitorimage", {
 		visual = "upright_sprite",
 		physical = false,
 		collisionbox = { 0, 0, 0, 0, 0, 0, },
-		textures = { "lwmonitors_pixel.png", },
+		textures = { "lwdspx.png", },
 	},
 })
 

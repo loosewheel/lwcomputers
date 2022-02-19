@@ -709,7 +709,7 @@ function filesys:open (path, mode)
 				exists = true
 			end
 
-			if not exits and
+			if not exists and
 				((used >= max_size) or (items >= max_items)) then
 
 				return nil, "disk full"
