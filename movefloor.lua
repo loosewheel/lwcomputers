@@ -141,7 +141,7 @@ local function movefloor_move (pos, node, rulename, is_sticky)
 	end
 
 	if play_sound then
-		minetest.sound_play("movestone", { pos = list[i], max_hear_distance = 20, gain = 0.5 }, true)
+		minetest.sound_play("movestone", { pos = pos, max_hear_distance = 20, gain = 0.5 }, true)
 	end
 
 end

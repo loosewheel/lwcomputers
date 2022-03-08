@@ -157,16 +157,16 @@ local function registerNode (name, description, box, resolution, display_offset)
 		on_destruct = removeEntity,
 
 		on_receive_fields = function (pos, _, fields, sender)
-			local name = sender:get_player_name ()
+			local player_name = sender:get_player_name ()
 
 			if not fields.channel then
 				return
 			end
 
-			if minetest.is_protected (pos, name) and
-				not minetest.check_player_privs (name, "protection_bypass") then
+			if minetest.is_protected (pos, player_name) and
+				not minetest.check_player_privs (player_name, "protection_bypass") then
 
-				minetest.record_protection_violation (pos, name)
+				minetest.record_protection_violation (pos, player_name)
 
 				return
 			end

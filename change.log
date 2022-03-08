@@ -203,3 +203,9 @@ v0.2.3
 v0.2.4
 *	Fixed bug undeclared global in filesys.lua
 *	Fixed missing texture in monitors.
+
+
+v0.2.5
+*	Added short description to printed pages and books.
+*	Bug fixes and code cleanup.
+*	Added farming:sunflower to place_substitutes.lua.

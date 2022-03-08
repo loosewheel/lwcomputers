@@ -6,7 +6,6 @@ local S = lwcomp.S
 local function on_use (itemstack, user, pointed_thing)
 	if itemstack and user and user:is_player () then
 		local meta = itemstack:get_meta()
-		local contents = meta:get_string ("contents")
 		local formspec =
 		"formspec_version[3]\n"..
 		"size[13,12.5]\n"..

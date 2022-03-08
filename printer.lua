@@ -123,6 +123,7 @@ local function on_receive_fields (pos, formname, fields, sender)
 							imeta:set_int ("pages", pages)
 							imeta:set_string ("contents", contents)
 							imeta:set_string ("description", description)
+							imeta:set_string ("short_description", description)
 							imeta:set_string ("title", description)
 							imeta:set_int ("version", 2)
 
@@ -213,7 +214,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 		if placer:is_player () then
 			local angle = placer:get_look_horizontal ()
 			local node = minetest.get_node (pos)
-			local param2 = 2
+			local param2
 
 			if angle >= (math.pi * 0.25) and angle < (math.pi * 0.75) then
 				-- x-
@@ -453,6 +454,7 @@ local function end_page (pos, meta)
 					imeta:set_string ("contents", meta:get_string ("contents"))
 					imeta:set_string ("title", title)
 					imeta:set_string ("description", title)
+					imeta:set_string ("short_description", title)
 					imeta:set_int ("version", 2)
 					inv:add_item ("main", page)
 
@@ -506,8 +508,6 @@ end
 local function set_position (pos, meta, position)
 	if meta:get_int ("has_page") == 1 then
 		local cpos = string.split (position, ",")
-		local fg = lwcomp.colors.black
-		local bg = lwcomp.colors.white
 
 		if #cpos < 1 then
 			cpos[1] = 0

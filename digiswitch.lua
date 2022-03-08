@@ -16,8 +16,6 @@ if lwcomp.digilines_supported and lwcomp.mesecon_supported then
 
 
 local function get_mesecon_rule_for_side (side)
-	local base = nil
-
 	if side == "white" then
 		return { { x = 0, y = 1, z = 0 } }
 	elseif side == "red" then

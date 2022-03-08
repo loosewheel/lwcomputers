@@ -1,5 +1,4 @@
 local lwcomp = ...
-local S = lwcomp.S
 
 
 
@@ -98,7 +97,7 @@ function lwcomputers.get_monitor_interface (pos, channel)
 
 
 	monitor.get_cursor = function ()
-		local mw, mh = monitor.get_resolution ()
+		local mw = monitor.get_resolution ()
 		local y = math.floor (_cur_pos / mw)
 		local x = _cur_pos - math.floor (y * mw)
 
@@ -162,7 +161,7 @@ function lwcomputers.get_monitor_interface (pos, channel)
 
 
 	monitor.write = function (str, update)
-		local mw, mh = monitor.get_resolution ()
+		local mw = monitor.get_resolution ()
 		local x, y = monitor.get_cursor ()
 
 		for i = 1, str:len () do
@@ -209,6 +208,10 @@ function lwcomputers.get_monitor_interface (pos, channel)
 					local b = buff[(cy * w) + cx + 1]
 
 					if type (b) == "table" then
+						local char = (b.char or 0) % 256
+						local fg = (b.fg or lwcomp.colors.white) % 16
+						local bg = (b.bg or lwcomp.colors.black) % 16
+
 						monitor.set_char (sx, sy, char, fg, bg, update)
 					end
 				end
@@ -412,9 +415,6 @@ function lwcomputers.get_monitor_interface (pos, channel)
 			local coords = msg:sub (7, -1):split ()
 
 			if #coords == 2 then
-				local x = tonumber (coords[1])
-				local y = tonumber (coords[2])
-
 				return tonumber (coords[1]), tonumber (coords[2])
 			end
 		end
@@ -546,7 +546,7 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 
 
 	monitors.get_cursor = function ()
-		local mw, mh = monitors.get_resolution ()
+		local mw = monitors.get_resolution ()
 		local y = math.floor (_cur_pos / mw)
 		local x = _cur_pos - math.floor (y * mw)
 
@@ -610,7 +610,7 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 
 
 	monitors.write = function (str, update)
-		local mw, mh = monitors.get_resolution ()
+		local mw = monitors.get_resolution ()
 		local x, y = monitors.get_cursor ()
 
 		for i = 1, str:len () do
@@ -657,6 +657,10 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 					local b = buff[(cy * w) + cx + 1]
 
 					if type (b) == "table" then
+						local char = (b.char or 0) % 256
+						local fg = (b.fg or lwcomp.colors.white) % 16
+						local bg = (b.bg or lwcomp.colors.black) % 16
+
 						monitors.set_char (sx, sy, char, fg, bg, update)
 					end
 				end

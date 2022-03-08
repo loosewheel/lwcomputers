@@ -269,7 +269,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	local label = ""
 	local infotext = ""
 	local digilines_channel = ""
-	local inventory = ""
+	local inventory
 	local owner = ""
 	local access_by = ""
 	local persists = 0
@@ -344,7 +344,7 @@ local function after_place_node (pos, placer, itemstack, pointed_thing)
 	if placer and placer:is_player () then
 		local angle = placer:get_look_horizontal ()
 		local node = minetest.get_node (pos)
-		local param2 = 2
+		local param2
 
 		if angle >= (math.pi * 0.25) and angle < (math.pi * 0.75) then
 			-- x-
@@ -650,7 +650,6 @@ local function on_blast (pos, intensity)
 		local id = meta:get_int ("lwcomputer_id")
 
 		if id > 0 then
-			local data = lwcomp.get_computer_data (id, pos)
 			local is_robot = meta:get_int ("robot") == 1
 
 			if intensity >= 1.0 then
@@ -672,9 +671,9 @@ local function on_blast (pos, intensity)
 					end
 
 					if is_robot then
-						local slots = inv:get_size ("storage")
+						local rslots = inv:get_size ("storage")
 
-						for slot = 1, slots do
+						for slot = 1, rslots do
 							local stack = inv:get_stack ("storage", slot)
 
 							if stack and not stack:is_empty () then
@@ -709,9 +708,9 @@ local function on_blast (pos, intensity)
 					end
 
 					if is_robot then
-						local slots = inv:get_size ("storage")
+						local rslots = inv:get_size ("storage")
 
-						for slot = 1, slots do
+						for slot = 1, rslots do
 							local stack = inv:get_stack ("storage", slot)
 
 							if stack and not stack:is_empty () then

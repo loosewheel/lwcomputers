@@ -631,7 +631,7 @@ function filesys:mkdir (path)
 	local fpath, root, form = self:get_full_path (path)
 
 	if fpath then
-		local used, items = get_disk_used (root)
+		local _, items = get_disk_used (root)
 		local max_items = lwcomp.settings.hdd_max_items
 
 		if form == "floppy" then
@@ -957,7 +957,7 @@ function filesys:set_label (drivepath, label)
 							local mount = imeta:get_string ("label")
 
 							if mount:len () < 1 then
-								mount = "floppy_"..tostring (id)
+								mount = "floppy_"..tostring (imeta:get_int ("lwcomputer_id"))
 							end
 
 							if tokens[1] == mount then
@@ -1166,7 +1166,7 @@ function filesys:get_disk_free (drivepath)
 		path = "/"..drives[drivepath + 1].mount
 	end
 
-	local fpath, root, form = self:get_full_path (path)
+	local fpath, _, form = self:get_full_path (path)
 
 	if fpath then
 		local used = get_disk_used (fpath)

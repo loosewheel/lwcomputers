@@ -178,7 +178,6 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 	local formspec = meta:get_string ("formspec")
 
 	if formspec == "" then
-		local def = minetest.registered_nodes[node.name]
 		local hit = minetest.pointed_thing_to_face_pos(clicker, pointed_thing)
 		local scale = meta:get_int ("scale")
 		local hx = math.max (math.min (hit.x - pos.x + 0.5, 1), 0)

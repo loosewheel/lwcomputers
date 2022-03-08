@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.2.4
+0.2.5
 
 
 Minetest Version

@@ -308,7 +308,7 @@ local function new_computer_env (computer)
 
 
 	ENV.os.paste_from_clipboard = function ()
-		return ccomputer.get_clipboard_contends ()
+		return computer.get_clipboard_contends ()
 	end
 
 
@@ -769,11 +769,11 @@ local function new_computer_env (computer)
 
 						if wy < computer.height then
 							local r = d[(ry * computer.width) + mx + 1]
-							local w = d[(wy * computer.width) + mx + 1]
+							local wr = d[(wy * computer.width) + mx + 1]
 
-							w.char = r.char
-							w.fg = r.fg
-							w.bg = r.bg
+							wr.char = r.char
+							wr.fg = r.fg
+							wr.bg = r.bg
 						end
 					end
 				end
@@ -789,11 +789,11 @@ local function new_computer_env (computer)
 
 						if wy >= 0 then
 							local r = d[(ry * computer.width) + mx + 1]
-							local w = d[(wy * computer.width) + mx + 1]
+							local wr = d[(wy * computer.width) + mx + 1]
 
-							w.char = r.char
-							w.fg = r.fg
-							w.bg = r.bg
+							wr.char = r.char
+							wr.fg = r.fg
+							wr.bg = r.bg
 						end
 					end
 				end
@@ -1384,7 +1384,7 @@ end
 
 
 local function get_mesecon_rule_for_side (pos, param2, side)
-	local base = nil
+	local base
 
 	if side == "up" then
 		return { { x = 0, y = 1, z = 0 } }
@@ -1400,7 +1400,7 @@ local function get_mesecon_rule_for_side (pos, param2, side)
 		return nil
 	end
 
-	local rule = nil
+	local rule
 
 	if param2 == 3 then -- -x
 		rule = { x = base.z * -1, y = 0, z = base.x }
@@ -1418,7 +1418,7 @@ end
 
 
 local function get_robot_side (pos, param2, side)
-	local base = nil
+	local base
 
 	if side == "up" then
 		return { x = pos.x, y = pos.y + 1, z = pos.z }
@@ -1536,11 +1536,11 @@ end
 
 
 
-function lwcomp.new_computer (pos, id, persists, robot)
+function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robot)
 	local computer =
 	{
-		id = id,
-		pos =  { x = pos.x, y = pos.y, z = pos.z },
+		id = computer_id,
+		pos =  vector.new (computer_pos),
 		robot = robot,
 		width = lwcomp.settings.term_hres,
 		height = lwcomp.settings.term_vres,
@@ -1564,7 +1564,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		shift = false,
 		ctrl = false,
 		alt = false,
-		persists = persists,
+		persists = computer_persists,
 		filesys = { },
 		display = { },
 		events = { },
@@ -1583,7 +1583,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	end
 
 
-	computer.filesys = lwcomp.filesys:new (id, pos)
+	computer.filesys = lwcomp.filesys:new (computer_id, computer_pos)
 
 
 	computer.ENV = new_computer_env (computer)
@@ -1592,7 +1592,6 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	computer.redraw_formspec = function (force)
 		if not computer.suspend_redraw and (computer.redraw or force) then
 			local meta = minetest.get_meta (computer.pos)
-			local id = meta:get_int ("lwcomputer_id")
 
 			meta:set_string("formspec", lwcomp.term_formspec (computer))
 
@@ -1781,7 +1780,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		timer:stop ()
 
 		-- create hdd if not yet
-		lwcomp.filesys:create_hdd (id)
+		lwcomp.filesys:create_hdd (computer.id)
 
 		computer.ENV.term.clear ()
 		computer.ENV.term.set_cursor (0, 0)
@@ -1829,7 +1828,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 						computer.yielded = "booting"
 						computer.sleep_secs = 0
 						computer.sleep_start = 0
-						minetest.get_meta (pos):set_int ("running", 1)
+						minetest.get_meta (computer.pos):set_int ("running", 1)
 						computer.clock_base = minetest.get_us_time ()
 
 						timer:start (lwcomp.settings.running_tick)
@@ -1874,7 +1873,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		computer.ENV.term.set_blink (true)
 
 		computer.running = false
-		minetest.get_meta (pos):set_int ("running", 0)
+		minetest.get_meta (computer.pos):set_int ("running", 0)
 		computer.thread = nil
 		computer.yielded = "dead"
 		computer.cursorx = 0
@@ -2134,7 +2133,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.digilines_send = function (channel, msg)
 		if lwcomp.digilines_supported then
-			lwcomp.digilines_receptor_send (pos, digiline.rules.default, channel, msg or "")
+			lwcomp.digilines_receptor_send (computer.pos, digiline.rules.default, channel, msg or "")
 		end
 	end
 
@@ -2146,7 +2145,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.mesecons_get = function (side)
 		if lwcomp.mesecon_supported then
-			local meta = minetest.get_meta (pos)
+			local meta = minetest.get_meta (computer.pos)
 
 			if meta then
 				if side then
@@ -2168,23 +2167,23 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.mesecons_set = function (state, side)
 		if lwcomp.mesecon_supported then
-			local meta = minetest.get_meta (pos)
+			local meta = minetest.get_meta (computer.pos)
 
 			if meta then
 				if side then
-					local rule = get_mesecon_rule_for_side (pos, meta:get_int ("param2"), side)
+					local rule = get_mesecon_rule_for_side (computer.pos, meta:get_int ("param2"), side)
 
 					if rule then
 						local cur_state = meta:get_string ("mesecon_"..side) == lwcomp.mesecon_state_on
 
 						if state then
 							if not cur_state then
-								lwcomp.mesecon_receptor_on (pos, rule)
+								lwcomp.mesecon_receptor_on (computer.pos, rule)
 								meta:set_string ("mesecon_"..side, lwcomp.mesecon_state_on)
 							end
 						else
 							if cur_state then
-								lwcomp.mesecon_receptor_off (pos, rule)
+								lwcomp.mesecon_receptor_off (computer.pos, rule)
 								meta:set_string ("mesecon_"..side, lwcomp.mesecon_state_off)
 							end
 						end
@@ -2201,12 +2200,12 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 						if state then
 							if not cur_state then
-								rules[#rules + 1] = get_mesecon_rule_for_side (pos, param2, sides[i])[1]
+								rules[#rules + 1] = get_mesecon_rule_for_side (computer.pos, param2, sides[i])[1]
 								actioned[#actioned + 1] = sides[i]
 							end
 						else
 							if cur_state then
-								rules[#rules + 1] = get_mesecon_rule_for_side (pos, param2, sides[i])[1]
+								rules[#rules + 1] = get_mesecon_rule_for_side (computer.pos, param2, sides[i])[1]
 								actioned[#actioned + 1] = sides[i]
 							end
 						end
@@ -2214,13 +2213,13 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 					if #rules then
 						if state then
-							lwcomp.mesecon_receptor_on (pos, rules)
+							lwcomp.mesecon_receptor_on (computer.pos, rules)
 
 							for i = 1, #actioned do
 								meta:set_string ("mesecon_"..actioned[i], lwcomp.mesecon_state_on)
 							end
 						else
-							lwcomp.mesecon_receptor_off (pos, rules)
+							lwcomp.mesecon_receptor_off (computer.pos, rules)
 
 							for i = 1, #actioned do
 								meta:set_string ("mesecon_"..actioned[i], lwcomp.mesecon_state_off)
@@ -2234,7 +2233,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 
 	computer.get_clipboard_contends = function ()
-		local meta = minetest.get_meta (pos)
+		local meta = minetest.get_meta (computer.pos)
 
 		if meta then
 			local inv = meta:get_inventory ()
@@ -2267,7 +2266,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	computer.set_clipboard_contents = function (contents)
 		contents = (tostring (contents or "")):sub (1, lwcomp.settings.max_clipboard_length)
 
-		local meta = minetest.get_meta (pos)
+		local meta = minetest.get_meta (computer.pos)
 
 		if meta then
 			local inv = meta:get_inventory ()
@@ -2301,15 +2300,15 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 
 	computer.toggle_persists = function ()
-		local meta = minetest.get_meta (pos)
+		local meta = minetest.get_meta (computer.pos)
 
 		if meta then
 			if computer.persists then
-				minetest.forceload_free_block (pos, false)
+				minetest.forceload_free_block (computer.pos, false)
 				computer.persists = false
 				meta:set_int ("persists", 0)
 			else
-				if minetest.forceload_block (pos, false) then
+				if minetest.forceload_block (computer.pos, false) then
 					computer.persists = true
 					meta:set_int ("persists", 1)
 				end
@@ -2563,7 +2562,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 		local items = minetest.get_node_drops (node, nil)
 
 		if items then
-			drops = { }
+			local drops = { }
 
 			for i = 1, #items do
 				drops[i] = ItemStack (items[i])
@@ -2764,7 +2763,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 
 	computer.cur_pos = function (nodename)
-		return { x = computer.pos.x, y = computer.pos.y, z = computer.pos.z }
+		return vector.new (computer.pos)
 	end
 
 
@@ -2815,7 +2814,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	computer.put = function (side, item, listname)
 		listname = tostring (listname or "main")
 		local count = 1
-		local name = nil
+		local name
 
 		local meta = minetest.get_meta (computer.pos)
 		local cur_node = minetest.get_node_or_nil (computer.pos)
@@ -2910,7 +2909,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 	computer.pull = function (side, item, listname)
 		listname = tostring (listname or "main")
 		local count = 1
-		local name = nil
+		local name
 
 		local meta = minetest.get_meta (computer.pos)
 		local cur_node = minetest.get_node_or_nil (computer.pos)
@@ -3207,7 +3206,7 @@ function lwcomp.new_computer (pos, id, persists, robot)
 
 	computer.remove_item = function (item, drop)
 		local count = 1
-		local name = nil
+		local name
 
 		local meta = minetest.get_meta (computer.pos)
 		if not meta then

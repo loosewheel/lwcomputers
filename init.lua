@@ -1,4 +1,4 @@
-local version = "0.2.4"
+local version = "0.2.5"
 local mod_storage = minetest.get_mod_storage ()
 local http_api = minetest.request_http_api ()
 
@@ -70,10 +70,10 @@ local function restart_computers ()
 
 				else
 					if meta:get_int ("running") == 1 then
-						local data = lwcomp.get_computer_data (id, stats.pos)
+						local comp_data = lwcomp.get_computer_data (id, stats.pos)
 
-						if data then
-							data.startup ()
+						if comp_data then
+							comp_data.startup ()
 						end
 					end
 				end

@@ -1,5 +1,4 @@
 local lwcomp = ...
-local S = lwcomp.S
 
 
 local term_form_width = 16.8 -- formspec units
