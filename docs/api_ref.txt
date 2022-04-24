@@ -24,10 +24,16 @@ _G
 	Refers to computer's environment table.
 
 getfenv ([f])
-	Std lua.
+	Returns the current environment in use by the function. f can be a Lua
+	function or a number that specifies the function at that stack level:
+	Level 1 is the function calling getfenv. If the given function is not
+	a Lua function, or if f is 0, getfenv returns the sandbox environment.
+	The default for f is 1. If the environment is above the sandbox nil is
+	returned.
 
 getmetatable (object)
-	Std lua.
+	Returns the metatable of object, which must be a the table. If object is
+	string, coroutine, table, math or vector nil is returned.
 
 ipairs (t)
 	Std lua.
@@ -57,13 +63,13 @@ print (fmt, ... )
 	Calls `term.print`. Not as std, parameters as for `string.format`.
 
 rawequal (v1, v2)
-	Std lua.
+	Omitted.
 
 rawget (table, index)
-	Std lua.
+	Omitted.
 
 rawset (table, index, value)
-	Std lua.
+	Omitted.
 
 require
 	Omitted.
@@ -72,10 +78,14 @@ select (index, ···)
 	Std lua.
 
 setfenv (f, table)
-	Std lua.
+	Sets the environment to be used by the given function if the current
+	environment is not above the sandbox. f can be a Lua  function or a
+	number that specifies the function at that stack level: Level 1 is the
+	function calling setfenv. setfenv returns the given function.
 
 setmetatable (table, metatable)
-	Std lua.
+	Sets the metatable of the table. Metatables of string, coroutine, table,
+	math and vector cannot be set.
 
 tonumber (e [, base])
 	Std lua.
