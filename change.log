@@ -209,3 +209,8 @@ v0.2.5
 *	Added short description to printed pages and books.
 *	Bug fixes and code cleanup.
 *	Added farming:sunflower to place_substitutes.lua.
+
+
+v0.2.6
+*	Fixed security issues with setfenv, getfenv, setmetatable, getmetatable
+	rawget, rawset, rawequal.

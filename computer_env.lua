@@ -8,23 +8,23 @@ local function new_computer_env (computer)
 	ENV.assert = _G.assert
 	ENV.tostring = _G.tostring
 	ENV.tonumber = _G.tonumber
-	ENV.rawget = _G.rawget
+--	ENV.rawget = _G.rawget -- omitted
 	ENV.ipairs = _G.ipairs
 	ENV.pcall = _G.pcall
-	ENV.rawset = _G.rawset
-	ENV.rawequal = _G.rawequal
+--	ENV.rawset = _G.rawset -- omitted
+--	ENV.rawequal = _G.rawequal -- omitted
 	ENV._VERSION = _G._VERSION
 	ENV.next = _G.next
 	ENV.type = _G.type
 	ENV.xpcall = _G.xpcall
-	ENV.setfenv = _G.setfenv
-	ENV.getmetatable = _G.getmetatable
+--	ENV.setfenv = _G.setfenv -- modify
+--	ENV.getmetatable = _G.getmetatable -- modify
 	ENV.error = _G.error
 	ENV.pairs = _G.pairs
-	ENV.setmetatable = _G.setmetatable
+--	ENV.setmetatable = _G.setmetatable -- modify
 	ENV.select = _G.select
 	ENV.unpack = _G.unpack
-	ENV.getfenv = _G.getfenv
+--	ENV.getfenv = _G.getfenv -- modify
 --	ENV.load = _G.load -- modify
 --	ENV.loadfile = _G.loadfile -- modify
 --	ENV.loadstring = _G.loadstring -- modify
@@ -36,6 +36,65 @@ local function new_computer_env (computer)
 --	ENV.jit = _G.jit -- omitted
 --	ENV.collectgarbage = _G.collectgarbage -- omitted
 	ENV._G = ENV
+
+
+	ENV.getfenv = function (func)
+		if type (func) == "number" and func == 0 then
+			return ENV
+		end
+
+		local env = getfenv (func)
+
+		if env and env ~= _G then
+			return env
+		end
+
+		return nil
+	end
+
+
+	ENV.setfenv = function (func, table)
+		local env = getfenv (func)
+
+		if not env or env ~= _G then
+			setfenv (func, table)
+
+			return func
+		end
+	end
+
+
+	ENV.getmetatable = function (object)
+		if type (object) == "table" then
+			local mt = getmetatable (object)
+
+			if mt ~= getmetatable (ENV.string) and
+				mt ~= getmetatable (ENV.coroutine) and
+				mt ~= getmetatable (ENV.table) and
+				mt ~= getmetatable (ENV.math) and
+				mt ~= getmetatable (ENV.vector) then
+
+				return mt
+			end
+		end
+
+		return nil
+	end
+
+
+	ENV.setmetatable = function (object, metatable)
+		if type (object) == "table" then
+			if object ~= ENV.string and
+				object ~= ENV.coroutine and
+				object ~= ENV.table and
+				object ~= ENV.math and
+				object ~= ENV.vector then
+
+				setmetatable (object, metatable)
+			end
+		end
+	end
+
 
 	ENV.string = { }
 	for key, value in pairs (_G.string) do
