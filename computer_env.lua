@@ -39,8 +39,13 @@ local function new_computer_env (computer)
 
 
 	ENV.getfenv = function (func)
-		if type (func) == "number" and func == 0 then
-			return ENV
+		if type (func) == "number" then
+			if func == 0 then
+				return ENV
+			elseif func > 0 then
+				-- over this function
+				func = func + 1
+			end
 		end
 
 		local env = getfenv (func)
@@ -54,6 +59,13 @@ local function new_computer_env (computer)
 
 
 	ENV.setfenv = function (func, table)
+		if type (func) == "number" then
+			if func > 0 then
+				-- over this function
+				func = func + 1
+			end
+		end
+
 		local env = getfenv (func)
 
 		if not env or env ~= _G then

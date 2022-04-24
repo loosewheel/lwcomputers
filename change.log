@@ -214,3 +214,7 @@ v0.2.5
 v0.2.6
 *	Fixed security issues with setfenv, getfenv, setmetatable, getmetatable
 	rawget, rawset, rawequal.
+
+
+v0.2.7
+*	Fixed numeric indexing for getfenv amd setfenv.
