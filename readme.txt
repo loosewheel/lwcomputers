@@ -46,6 +46,7 @@ digistuff
 unifieddyes
 mesecons_mvps
 lwcomponents
+lwwires
 
 
 Installation
