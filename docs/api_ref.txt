@@ -709,6 +709,13 @@ utils.decompress (compressed_data, method, ... )
 	...: indicates method-specific arguments. Currently, no methods use this.
 	Calls `minetest.decompress`.
 
+utils.dump (obj, name, dumped)
+	Returns a string which makes obj human-readable, handles reference loops.
+	obj: arbitrary variable
+	name: string, default: "_"
+	dumped: table, default: {}
+	Calls `dump2`.
+
 
 wireless
 --------
@@ -824,6 +831,98 @@ digilines.set_channel (channel)
 digilines.send (channel, msg)
 	Sends a message to the given digilines channel. This call is ignored if not
 	supported.
+
+
+lwwires
+-------
+	Interface is always defined but is inactive if lwwires mod is not present.
+	See "bundle_on" and "bundle_off" events.
+
+wires.supported ()
+	Returns true if lwwires interface is active, otherwise false.
+
+wires.current_state (side)
+	Returns a table of internal power states of wires for the bundle at side,
+	or nil if side is not valid or not a bundle or lwwires is not enabled.
+
+	side: the side of the computer to query. Can be -
+			"up"
+			"down"
+			"left"
+			"right"
+			"front"
+			"back"
+
+	In the returned table the key is the color string, and its value is true
+	if powered or false if not.
+
+wires.wire (idx)
+	Returns either the wire number or wire color depending on idx. If lwwires
+	is not enabled nil is returned.
+
+	idx: If a number the color string is returned.
+		  If a color string the wire number is returned.
+		  If idx is not recognized nil is returned.
+
+wires.color_string_list ()
+	Returns a list of color strings with every wire, or an empty list if
+	lwwires is not enabled.
+
+wires.is_wire_in_list (wire, list)
+	Returns true if wire is in the list of wires, otherwise false. If lwwires
+	is not enabled false is returned.
+
+	wire: Can be wire number or color string.
+	list: List of wire numbers or color strings.
+
+wires.bundle_on (side, wires)
+	If the node at side is a bundle turns the wires on.
+
+	side: the side of the computer to action. Can be -
+			"up"
+			"down"
+			"left"
+			"right"
+			"front"
+			"back"
+	wires: Can be wire number, color string, or a list of wire numbers or
+			 color strings.
+
+	Returns true if successful, false if not (either side is not a bundle,
+	wires is invalid or lwwires is not enabled).
+
+wires.bundle_off (side, wires)
+	If the node at side is a bundle turns the wires off.
+
+	side: the side of the computer to action. Can be -
+			"up"
+			"down"
+			"left"
+			"right"
+			"front"
+			"back"
+	wires: Can be wire number, color string, or a list of wire numbers or
+			 color strings.
+
+	Returns true if successful, false if not (either side is not a bundle,
+	wires is invalid or lwwires is not enabled).
+
+wires.bundle_power (side, wires)
+	Returns a table of external power states of wires for the bundle at side,
+	or nil if side is not valid or not a bundle or lwwires is not enabled.
+
+	side: the side of the computer to query. Can be -
+			"up"
+			"down"
+			"left"
+			"right"
+			"front"
+			"back"
+	wires: Can be wire number, color string, a list of wire numbers or
+			 color strings, or nil. If nil all 16 wires are returned.
+
+	In the returned table the key is the color string, and its value is true
+	if powered or false if not.
 
 
 printer
@@ -1505,6 +1604,24 @@ Events
 	state: the new state ("on" or "off").
 	side: the side of the computer ("front", "back", "left" or "right").
 	* This event is not fired if the mesecons mod is not loaded.
+
+"bundle_on", side, wires
+	Queued when the wire/s state of a bundle cable connected to the computer
+	is switched on. Note that if a bundle cable or wire is placed this
+	message may be queued without a change in the wire's state.
+	side: the side the bundle is attached to. Will be "up", "down", "left",
+			"right", "front" or "back".
+	wires: a list of the wire color strings that turned on.
+	* This event is not fired if the lwwires mod is not loaded.
+
+"bundle_off", side, wires
+	Queued when the wire/s state of a bundle cable connected to the computer
+	is switched off. Note that if a bundle cable or wire is placed this
+	message may be queued without a change in the wire's state.
+	side: the side the bundle is attached to. Will be "up", "down", "left",
+			"right", "front" or "back".
+	wires: a list of the wire color strings that turned off.
+	* This event is not fired if the lwwires mod is not loaded.
 
 
 Booting
