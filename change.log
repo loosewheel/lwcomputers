@@ -218,3 +218,10 @@ v0.2.6
 
 v0.2.7
 *	Fixed numeric indexing for getfenv amd setfenv.
+
+
+v0.2.8
+*	Fixed disk root folder for local installs.
+*	Removed filesys_meta.lua from project
+*	Added support for lwwires.
+*	Added utils.dump () to computer's api.

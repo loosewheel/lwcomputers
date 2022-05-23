@@ -4,7 +4,7 @@ local S = lwcomp.S
 
 
 -- depreciated
-local digiswitch_groups = { cracky = 2, oddly_breakable_by_hand = 2 }
+local digiswitch_groups = { cracky = 2, oddly_breakable_by_hand = 2, wires_connect = 1 }
 if minetest.global_exists ("lwcomponents") then
 	digiswitch_groups.not_in_creative_inventory = 1
 end

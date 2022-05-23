@@ -844,6 +844,74 @@ end
 
 
 
+local function wires_support ()
+	if lwcomp.wires_supported then
+		return
+		{
+			bundle_on = function (pos, wires, bundle_pos)
+				-- called to notify when any wires are turned on
+				-- no return used
+				local meta = minetest.get_meta (pos)
+
+				if meta then
+					local id = meta:get_int ("lwcomputer_id")
+
+					if id > 0 then
+						local data = lwcomp.get_computer_data (id, pos)
+
+						if data then
+							data.wires_queue_bundle_on (bundle_pos, wires)
+						end
+					end
+				end
+			end,
+
+			bundle_off = function (pos, wires, bundle_pos)
+				-- called to notify when any wires are turned off
+				-- no return used
+				local meta = minetest.get_meta (pos)
+
+				if meta then
+					local id = meta:get_int ("lwcomputer_id")
+
+					if id > 0 then
+						local data = lwcomp.get_computer_data (id, pos)
+
+						if data then
+							data.wires_queue_bundle_off (bundle_pos, wires)
+						end
+					end
+				end
+			end,
+
+			current_state = function (pos, bundle_pos)
+				-- return table where key is color string and
+				-- value is true/false for on/off, for every wire
+				local wires = { }
+				local meta = minetest.get_meta (pos)
+
+				if meta then
+					local id = meta:get_int ("lwcomputer_id")
+
+					if id > 0 then
+						local data = lwcomp.get_computer_data (id, pos)
+
+						if data then
+							wires = data.wires_current_state_by_pos (bundle_pos)
+						end
+					end
+				end
+
+				return wires
+			end
+		}
+	end
+
+	return nil
+end
+
+
+
 minetest.register_node("lwcomputers:computer", {
    description = S("Computer"),
    tiles = { "lwcomputers_computer.png", "lwcomputers_computer.png", "lwcomputers_computer.png",
@@ -856,7 +924,7 @@ minetest.register_node("lwcomputers:computer", {
          {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
       }
    },
-	groups = { cracky = 2, oddly_breakable_by_hand = 2 },
+	groups = { cracky = 2, oddly_breakable_by_hand = 2, bundles_connect = 1 },
 	sounds = default.node_sound_wood_defaults (),
 	paramtype = "light",
 	param1 = 0,
@@ -867,6 +935,7 @@ minetest.register_node("lwcomputers:computer", {
 
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
+	_wires = wires_support (),
 
    on_construct = on_construct,
    on_destruct = on_destruct,
@@ -899,7 +968,7 @@ minetest.register_node("lwcomputers:computer_on", {
          {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
       }
    },
-	groups = { cracky = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory = 1 },
+	groups = { cracky = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory = 1, bundles_connect = 1 },
 	sounds = default.node_sound_wood_defaults (),
 	paramtype = "light",
 	param1 = 0,
@@ -910,6 +979,7 @@ minetest.register_node("lwcomputers:computer_on", {
 
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
+	_wires = wires_support (),
 
    on_construct = on_construct,
    on_destruct = on_destruct,
@@ -978,6 +1048,7 @@ minetest.register_node("lwcomputers:computer_robot", {
 
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
+	_wires = wires_support (),
 
    on_construct = on_construct_robot,
    on_destruct = on_destruct,
@@ -1047,6 +1118,7 @@ minetest.register_node("lwcomputers:computer_robot_on", {
 
 	mesecons = mesecon_support (),
 	digiline = digilines_support (),
+	_wires = wires_support (),
 
    on_construct = on_construct_robot,
    on_destruct = on_destruct,

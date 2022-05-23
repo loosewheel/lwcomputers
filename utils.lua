@@ -16,10 +16,41 @@ end
 
 
 
+local function get_worldpath ()
+	local path = minetest.get_worldpath ()
+	local tokens = { }
+	local complete = { }
+
+	if path:sub (1, 1) == "/" then
+		tokens[1] = ""
+	end
+
+	for t in string.gmatch (path, "[^/]+") do
+		tokens[#tokens + 1] = t
+	end
+
+	for i = 1, #tokens do
+		if tokens[i] == ".." then
+			if #complete < 1 then
+				return nil, "invalid path"
+			end
+
+			table.remove (complete, #complete)
+		else
+			complete[#complete + 1] = tokens[i]
+		end
+	end
+
+	return table.concat (complete, "/")
+end
+
+
+
 lwcomp.modpath = minetest.get_modpath("lwcomputers")
-lwcomp.worldpath = minetest.get_worldpath()
+lwcomp.worldpath = get_worldpath()
 lwcomp.computer_data = { }
 lwcomp.computer_list = minetest.deserialize (mod_storage:get_string ("computer_list") or "")
+
 
 if type (lwcomp.computer_list) ~= "table" then
 	lwcomp.computer_list = { }
@@ -70,6 +101,17 @@ else
 	-- dummy
 	lwcomp.digilines_receptor_send = function (pos, rules, channel, msg)
 	end
+end
+
+
+
+-- check for lwwires
+if minetest.global_exists ("lwwires") then
+	lwcomp.wires_supported = true
+
+else
+	lwcomp.wires_supported = false
+
 end
 
 

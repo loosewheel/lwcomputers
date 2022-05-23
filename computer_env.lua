@@ -981,6 +981,11 @@ local function new_computer_env (computer)
 	end
 
 
+	ENV.utils.dump = function (obj, name, dumped)
+		return dump2 (obj, name, dumped)
+	end
+
+
 
 	-- wireless
 
@@ -1448,8 +1453,76 @@ local function new_computer_env (computer)
 	end
 
 
+	-- wires support
+
+	ENV.wires = { }
+
+
+	ENV.wires.supported = function ()
+		return computer.wires_supported ()
+	end
+
+
+	ENV.wires.current_state = function (side)
+		local cur = computer.wires_current_state (side)
+
+		if cur["white"] ~= nil then
+			return cur
+		end
+
+		return nil
+	end
+
+
+	ENV.wires.wire = function (idx)
+		return computer.wires_wire (idx)
+	end
+
+
+	ENV.wires.color_string_list = function ()
+		return computer.wires_color_string_list ()
+	end
+
+
+	ENV.wires.is_wire_in_list = function (wire, list)
+		return computer.wires_is_wire_in_list (wire, list)
+	end
+
+
+	ENV.wires.bundle_on = function (side, wires)
+		return computer.wires_bundle_on (side, wires)
+	end
+
+
+	ENV.wires.bundle_off = function (side, wires)
+		return computer.wires_bundle_off (side, wires)
+	end
+
+
+	ENV.wires.bundle_power = function (side, wires)
+		return computer.wires_bundle_power (side, wires)
+	end
+
 
 	return ENV
+end
+
+
+
+local function get_far_node (pos)
+	local node = minetest.get_node (pos)
+
+	if node.name == "ignore" then
+		minetest.get_voxel_manip ():read_from_map (pos, pos)
+
+		node = minetest.get_node (pos)
+
+		if node.name == "ignore" then
+			return nil
+		end
+	end
+
+	return node
 end
 
 
@@ -1586,6 +1659,29 @@ local function get_robot_side_vector (param2, side)
 	else --if side == "front" then
 		return vector.rotate (dir, { x = 0, y = math.pi, z = 0 })
 	end
+end
+
+
+
+local function get_computer_side_name (pos, param2, side_pos)
+	local side = vector.round (vector.subtract (side_pos, pos))
+	local dir = minetest.facedir_to_dir (param2)
+
+	if vector.equals (side, { x = 0, y = 1, z = 0 }) then
+		return "up"
+	elseif vector.equals (side, { x = 0, y = -1, z = 0 }) then
+		return "down"
+	elseif vector.equals (side, vector.round (vector.rotate (dir, { x = 0, y = (math.pi * 1.5), z = 0 }))) then
+		return "left"
+	elseif vector.equals (side, vector.round (vector.rotate (dir, { x = 0, y = (math.pi * 0.5), z = 0 }))) then
+		return "right"
+	elseif vector.equals (side, dir) then
+		return "back"
+	elseif vector.equals (side, vector.round (vector.rotate (dir, { x = 0, y = math.pi, z = 0 }))) then
+		return "front"
+	end
+
+	return nil
 end
 
 
@@ -2406,24 +2502,226 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 	end
 
 
-	-- robot
+	-- wires
 
 
-	local function get_far_node (pos)
-		local node = minetest.get_node (pos)
+	computer.wires_supported = function ()
+		return lwcomp.wires_supported
+	end
 
-		if node.name == "ignore" then
-			minetest.get_voxel_manip ():read_from_map (pos, pos)
 
-			node = minetest.get_node (pos)
+	computer.wires_queue_bundle_on = function (side_pos, wires)
+		if lwcomp.wires_supported then
+			local node = get_far_node (computer.pos)
 
-			if node.name == "ignore" then
-				return nil
+			if node then
+				local side = get_computer_side_name (computer.pos, node.param2, side_pos)
+
+				if side then
+					computer.queue_event ("bundle_on", side, wires)
+				end
+			end
+		end
+	end
+
+
+	computer.wires_queue_bundle_off = function (side_pos, wires)
+		if lwcomp.wires_supported then
+			local node = get_far_node (computer.pos)
+
+			if node then
+				local side = get_computer_side_name (computer.pos, node.param2, side_pos)
+
+				if side then
+					computer.queue_event ("bundle_off", side, wires)
+				end
+			end
+		end
+	end
+
+
+	computer.wires_current_state = function (side)
+		local wires = { }
+
+		if lwcomp.wires_supported then
+			local sides = { ["up"] = true, ["down"] = true, ["left"] = true,
+								 ["right"] = true, ["front"] = true, ["back"] = true }
+			local meta = minetest.get_meta (computer.pos)
+
+			if meta and sides[side] then
+				wires = minetest.deserialize (meta:get_string ("bundle_state_"..side))
+
+				if type (wires) ~= "table" then
+					local colors = lwwires.color_string_list ()
+					wires = { }
+
+					for k, v in pairs (colors) do
+						wires[v] = false
+					end
+				end
 			end
 		end
 
-		return node
+		return wires
 	end
+
+
+	computer.wires_set_current_state = function (side, wires, state)
+		if lwcomp.wires_supported then
+			local cur = computer.wires_current_state (side)
+			local meta = minetest.get_meta (computer.pos)
+			wires = (type (wires) == "table" and wires) or { wires }
+
+			if meta then
+				for k, v in ipairs (wires) do
+					local color = lwwires.wire (v)
+
+					if color then
+						if type (color) == "string" then
+							cur[color] = state
+						else
+							cur[v] = state
+						end
+					end
+				end
+
+				meta:set_string ("bundle_state_"..side, minetest.serialize (cur))
+
+				return true
+			end
+		end
+
+		return false
+	end
+
+
+	computer.wires_current_state_by_pos = function (side_pos)
+		if lwcomp.wires_supported then
+			local node = get_far_node (computer.pos)
+
+			if node then
+				local side = get_computer_side_name (computer.pos, node.param2, side_pos)
+
+				if side then
+					return computer.wires_current_state (side)
+				end
+			end
+		end
+
+		return { }
+	end
+
+
+	computer.wires_wire = function (idx)
+		if lwcomp.wires_supported then
+			return lwwires.wire (idx)
+		end
+
+		return nil
+	end
+
+
+	computer.wires_color_string_list = function ()
+		if lwcomp.wires_supported then
+			return lwwires.color_string_list ()
+		end
+
+		return { }
+	end
+
+
+	computer.wires_is_wire_in_list = function (wire, list)
+		if lwcomp.wires_supported then
+			return lwwires.is_wire_in_list (wire, list)
+		end
+
+		return false
+	end
+
+
+	computer.wires_bundle_on = function (side, wires)
+		if lwcomp.wires_supported and wires then
+			local sides = { ["up"] = true, ["down"] = true, ["left"] = true,
+								 ["right"] = true, ["front"] = true, ["back"] = true }
+
+			if sides[side] then
+				local node = get_far_node (computer.pos)
+
+				if node then
+					local bundle_pos = get_robot_side (computer.pos, node.param2, side)
+
+					if bundle_pos then
+						if lwwires.bundle_on (computer.pos, bundle_pos, wires) then
+							computer.wires_set_current_state (side, wires, true)
+
+							return true
+						end
+					end
+				end
+			end
+		end
+
+		return false
+	end
+
+
+	computer.wires_bundle_off = function (side, wires)
+		if lwcomp.wires_supported and wires then
+			local sides = { ["up"] = true, ["down"] = true, ["left"] = true,
+								 ["right"] = true, ["front"] = true, ["back"] = true }
+
+			if sides[side] then
+				local node = get_far_node (computer.pos)
+
+				if node then
+					local bundle_pos = get_robot_side (computer.pos, node.param2, side)
+
+					if bundle_pos then
+						local old = computer.wires_current_state (side)
+
+						computer.wires_set_current_state (side, wires, false)
+						if lwwires.bundle_off (computer.pos, bundle_pos, wires) then
+							return true
+						else
+							local meta = minetest.get_meta (computer.pos)
+
+							if meta then
+								meta:set_string ("bundle_state_"..side, minetest.serialize (old))
+							end
+						end
+					end
+				end
+			end
+		end
+
+		return false
+	end
+
+
+	computer.wires_bundle_power = function (side, wires)
+		if lwcomp.wires_supported then
+			local sides = { ["up"] = true, ["down"] = true, ["left"] = true,
+								 ["right"] = true, ["front"] = true, ["back"] = true }
+
+			if sides[side] then
+				local node = get_far_node (computer.pos)
+
+				if node then
+					local bundle_pos = get_robot_side (computer.pos, node.param2, side)
+
+					if bundle_pos then
+						return lwwires.bundle_power (bundle_pos, wires)
+					end
+				end
+			end
+		end
+
+		return nil
+	end
+
+
+
+	-- robot
 
 
 	computer.detect = function (side)
