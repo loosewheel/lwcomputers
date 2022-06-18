@@ -58,7 +58,7 @@ local function new_computer_env (computer)
 	end
 
 
-	ENV.setfenv = function (func, table)
+	ENV.setfenv = function (func, tab)
 		if type (func) == "number" then
 			if func > 0 then
 				-- over this function
@@ -69,7 +69,11 @@ local function new_computer_env (computer)
 		local env = getfenv (func)
 
 		if not env or env ~= _G then
-			setfenv (func, table)
+			if type (tab) ~= "table" then
+				error ("bad argument #2 to 'setfenv' (table expected, got "..type (tab)..")", 2)
+			end
+
+			setfenv (func, tab)
 
 			return func
 		end
@@ -235,6 +239,11 @@ local function new_computer_env (computer)
 	end
 
 
+	ENV.os.clock_speed = function ()
+		return lwcomp.settings.running_tick
+	end
+
+
 	ENV.os.remove = function (path)
 		return computer.filesys:remove (path)
 	end
@@ -301,6 +310,11 @@ local function new_computer_env (computer)
 
 	ENV.os.peek_event = function (event)
 		return computer.peek_event (tostring (event or ""))
+	end
+
+
+	ENV.os.remove_event = function (event)
+		return computer.remove_event (tostring (event or ""))
 	end
 
 
@@ -373,6 +387,11 @@ local function new_computer_env (computer)
 	end
 
 
+	ENV.os.has_clipboard = function ()
+		return computer.has_clipboard ()
+	end
+
+
 	ENV.os.copy_to_clipboard = function (contents)
 		return computer.set_clipboard_contents (contents)
 	end
@@ -390,6 +409,11 @@ local function new_computer_env (computer)
 
 	ENV.os.to_realtime = function (secs)
 		return lwcomp.to_realtime (secs)
+	end
+
+
+	ENV.os.version = function ()
+		return lwcomputers.version ()
 	end
 
 
@@ -1008,7 +1032,11 @@ local function new_computer_env (computer)
 	-- globals
 
 	ENV.load = function (func, chunkname)
-		local fxn, msg = load (func, chunkname)
+		if type (func) ~= "function" then
+			error ("bad argument #1 to 'load' (string expected, got "..type (func), 2)
+		end
+
+		local fxn, msg = load (func, tostring (chunkname or "=(load)"))
 
 		if not fxn then
 			return fxn, msg
@@ -1025,7 +1053,11 @@ local function new_computer_env (computer)
 
 
 	ENV.loadstring = function (str, chunkname)
-		local fxn, msg = loadstring (str, chunkname)
+		if type (str) ~= "string" then
+			error ("bad argument #1 to 'loadstring' (string expected, got "..type (str), 2)
+		end
+
+		local fxn, msg = loadstring (str, tostring (chunkname or str:sub (1, 50)))
 
 		if not fxn then
 			return fxn, msg
@@ -1219,7 +1251,7 @@ local function new_computer_env (computer)
 			local stamp = ENV.os.clock ()
 			while (ENV.os.clock () - stamp) < 1.0 do
 				if ENV.os.peek_event ("digilines") then
-					local event = { ENV.os.get_event ("digilines") }
+					local event = { ENV.os.remove_event ("digilines") }
 
 					if event[3] == channel then
 						return tonumber (event[2] or 0) or 0
@@ -1243,7 +1275,7 @@ local function new_computer_env (computer)
 			local stamp = ENV.os.clock ()
 			while (ENV.os.clock () - stamp) < 1.0 do
 				if ENV.os.peek_event ("digilines") then
-					local event = { ENV.os.get_event ("digilines") }
+					local event = { ENV.os.remove_event ("digilines") }
 
 					if event[3] == channel then
 						return tonumber (event[2] or 0) or 0
@@ -1267,7 +1299,7 @@ local function new_computer_env (computer)
 			local stamp = ENV.os.clock ()
 			while (ENV.os.clock () - stamp) < 1.0 do
 				if ENV.os.peek_event ("digilines") then
-					local event = { ENV.os.get_event ("digilines") }
+					local event = { ENV.os.remove_event ("digilines") }
 
 					if event[3] == channel then
 						return tonumber (event[2] or 0) or 0
@@ -1291,7 +1323,7 @@ local function new_computer_env (computer)
 			local stamp = ENV.os.clock ()
 			while (ENV.os.clock () - stamp) < 1.0 do
 				if ENV.os.peek_event ("digilines") then
-					local event = { ENV.os.get_event ("digilines") }
+					local event = { ENV.os.remove_event ("digilines") }
 
 					if event[3] == channel then
 						local res = string.split (event[2] or "0,0")
@@ -1316,8 +1348,9 @@ local function new_computer_env (computer)
 
 			local stamp = ENV.os.clock ()
 			while (ENV.os.clock () - stamp) < 1.0 do
+
 				if ENV.os.peek_event ("digilines") then
-					local event = { ENV.os.get_event ("digilines") }
+					local event = { ENV.os.remove_event ("digilines") }
 
 					if event[3] == channel then
 						return event[2]
@@ -1719,6 +1752,8 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 		clicked = { x = -1, y = -1 },
 		clicked_when = -20,
 		click_count = 0,
+		shift_when = -20,
+		shift_locked = true,
 		running = false,
 		clock_base = 0,
 		thread = nil,
@@ -1731,6 +1766,7 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 		shift = false,
 		ctrl = false,
 		alt = false,
+		awaken = nil,
 		persists = computer_persists,
 		filesys = { },
 		display = { },
@@ -1780,10 +1816,12 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 		local args = { ... }
 
 		if computer.running and computer.thread then
-			args[1] = tostring (args[1] or "")
-
-			if args[1]:len () > 0 then
+			if type (args[1]) == "string" and args[1]:len () > 0 then
 				computer.events[#computer.events + 1] = args
+
+				if lwcomp.settings.awake_on_event and not computer.awaken then
+					computer.awaken = minetest.after (lwcomp.settings.running_tick * 1.5, computer.tick)
+				end
 			end
 		end
 	end
@@ -1808,6 +1846,25 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 	end
 
 
+	computer.remove_event = function (event)
+		if #computer.events > 0 then
+			if event:len () > 0 then
+				for i = 1, #computer.events do
+					if computer.events[i][1] == event then
+						return unpack (table.remove (computer.events, i))
+					end
+				end
+
+			else
+				return unpack (table.remove (computer.events, 1))
+
+			end
+		end
+
+		return nil
+	end
+
+
 	-- hook callback
 	computer.overrun = function ()
 		if (minetest.get_us_time () - computer.resumed_at) > lwcomp.settings.max_no_yield_Msecs then
@@ -1821,7 +1878,7 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 		if computer.running and computer.thread then
 
 			for k, v in pairs (computer.timers) do
-				if v <= minetest.get_us_time() then
+				if v <= minetest.get_us_time () then
 					computer.queue_event ("timer", tonumber (k))
 					computer.timers[k] = nil
 				end
@@ -1864,6 +1921,14 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 
 					end
 
+					if computer.awaken then
+						if #computer.events < 1 then
+							computer.awaken = nil
+						else
+							computer.awaken = minetest.after (lwcomp.settings.running_tick, computer.tick)
+						end
+					end
+
 				elseif computer.yielded == "sleep" then
 					if ((minetest.get_us_time () - computer.sleep_start) / 1000000.0) >= computer.sleep_secs then
 						run = true
@@ -1876,6 +1941,10 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 						debug.sethook ()
 					end
 
+					if computer.awaken then
+						computer.awaken = minetest.after (lwcomp.settings.running_tick, computer.tick)
+					end
+
 				elseif computer.yielded == "http_result" then
 					run = true
 
@@ -1886,6 +1955,10 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 
 					debug.sethook ()
 
+					if computer.awaken then
+						computer.awaken = minetest.after (lwcomp.settings.running_tick, computer.tick)
+					end
+
 				elseif computer.yielded == "booting" then
 					run = true
 
@@ -1895,6 +1968,10 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 					result, yielded, param = coroutine.resume (computer.thread)
 
 					debug.sethook ()
+
+					if computer.awaken then
+						computer.awaken = minetest.after (lwcomp.settings.running_tick, computer.tick)
+					end
 
 				elseif computer.yielded == "http_fetch" then
 					if (minetest.get_us_time () - computer.resumed_at) > 31000000 then
@@ -1907,6 +1984,10 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 						result, yielded, param = coroutine.resume (computer.thread, false, "timed out")
 
 						debug.sethook ()
+					end
+
+					if computer.awaken then
+						computer.awaken = minetest.after (lwcomp.settings.running_tick, computer.tick)
 					end
 				end
 
@@ -2396,6 +2477,37 @@ function lwcomp.new_computer (computer_pos, computer_id, computer_persists, robo
 				end
 			end
 		end
+	end
+
+
+	computer.has_clipboard = function ()
+		local meta = minetest.get_meta (computer.pos)
+
+		if meta then
+			local inv = meta:get_inventory ()
+
+			if inv then
+				local slots = inv:get_size ("main")
+
+				for i = 1, slots do
+					local stack = inv:get_stack ("main", i)
+
+					if stack and not stack:is_empty () then
+						local clipboard = lwcomp.is_clipboard (stack:get_name ())
+
+						if clipboard then
+							local imeta = stack:get_meta ()
+
+							if imeta then
+								return true
+							end
+						end
+					end
+				end
+			end
+		end
+
+		return false
 	end
 
 

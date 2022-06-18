@@ -225,3 +225,26 @@ v0.2.8
 *	Removed filesys_meta.lua from project
 *	Added support for lwwires.
 *	Added utils.dump () to computer's api.
+
+
+v0.2.9
+*	Added os.version () to computer's api.
+*	Added error check for file class when not called as class.
+*	Added parameter validation to monitor.get_char () and monitors.get_char ().
+*	Added visible cursor to monitor interface (inverted colors, doesn't blink).
+*	Added os.remove_event () to computer's api.
+*	Fixed printer's empty slot query.
+*	Added Clear button to printers (ejects page when started but not finished).
+*	Shift key automatically cancels on next character key press. If double
+	clicked stays on, only first of double click sends key event.
+*	Fixed bug with error message failing to prep floppy.
+*	Added scale 0.3 and 0.6 to monitors (res 3x2 and 6x4).
+*	Added os.has_clipboard () to computer's api.
+* 	Increased width of clipboard. If mt ver >= 5.4.0 font is mono.
+*	Added Awake on event setting. If true, the computer processes events
+	when unloaded. This allows computers to process wireless, digilines,
+	mesecons, timer, bundle_on and bundle_off messages without making the
+	computer persistent. Running continues until the computer's event queue
+	is empty.
+*	Added os.clock_speed () to computer's api.
+*	Improved file opening time.

@@ -375,15 +375,19 @@ function lwcomp.get_computer_data (id, pos)
 			lwcomp.store_computer_list ()
 		end
 	elseif pos then
-		data.pos = { x = pos.x, y = pos.y, z = pos.z }
+		if data.pos.x ~= pos.x or data.pos.y ~= pos.y or data.pos.z ~= pos.z then
+			data.pos = { x = pos.x, y = pos.y, z = pos.z }
 
-		lwcomp.computer_list[name] =
-		{
-			pos = { x = pos.x, y = pos.y, z = pos.z },
-		}
+			lwcomp.computer_list[name] =
+			{
+				pos = { x = pos.x, y = pos.y, z = pos.z },
+			}
 
-		if data.filesys then
-			data.filesys.pos = { x = pos.x, y = pos.y, z = pos.z }
+			if data.filesys then
+				data.filesys.pos = { x = pos.x, y = pos.y, z = pos.z }
+			end
+
+			lwcomp.store_computer_list ()
 		end
 	end
 
@@ -442,7 +446,7 @@ function lwcomp.send_message (sender_id, msg, target_id)
 					-- no longer there
 					lwcomp.remove_computer_data (target_id)
 
-				elseif target_id ~= sender_id then
+				elseif id == target_id and target_id ~= sender_id then
 					local data = lwcomp.get_computer_data (target_id, stats.pos)
 
 					if data then
@@ -453,7 +457,7 @@ function lwcomp.send_message (sender_id, msg, target_id)
 
 				end
 			end
-			-- else out of range or doesn't exist
+			-- else doesn't exist
 		end
 
 	else
@@ -472,7 +476,6 @@ function lwcomp.send_message (sender_id, msg, target_id)
 					remove_list[#remove_list + 1] = target_id
 
 				else
-
 					if target_id ~= sender_id then
 						local data = lwcomp.get_computer_data (target_id, stats.pos)
 
@@ -481,7 +484,7 @@ function lwcomp.send_message (sender_id, msg, target_id)
 						end
 					end
 				end
-			-- else out of range or doesn't exist
+			-- else doesn't exist
 			end
 		end
 
@@ -713,6 +716,30 @@ function lwcomp.item_drop (itemstack, dropper, pos)
 	return minetest.item_drop (itemstack, dropper, pos)
 end
 
+
+
+local minetest_version
+
+do
+	local parts = { }
+
+	for n in string.gmatch (minetest.get_version ().string or "", "%d+") do
+		parts[#parts + 1] = n
+	end
+
+	minetest_version =
+	{
+		major = (tonumber (parts[1]) or 0),
+		minor = (tonumber (parts[2]) or 0),
+		patch = (tonumber (parts[3]) or 0)
+	}
+end
+
+
+
+function lwcomp.get_minetest_version ()
+	return minetest_version
+end
 
 
 

@@ -24,7 +24,7 @@ CC BY 4.0
 
 Version
 =======
-0.2.8
+0.2.9
 
 
 Minetest Version
@@ -285,8 +285,13 @@ Use mod on_place (bool)
 	placement. If false always uses manual placement.
 	Default: true
 
-Alert handler errors
+Alert handler errors (bool)
 	Issue errors when handler's of other mods fail.
+	Default: true
+
+Awake on event (bool)
+	Run the computer to process an event when received when it is unloaded.
+	Running continues until the computer's event queue is empty.
 	Default: true
 
 
@@ -386,8 +391,9 @@ Printers can print out pages and assemble them into books. They require
 an ink cartridge and paper to print. An ink cartridge prints 200 pages.
 If the book button is pressed, any pages in the out tray are assembled into
 a book in order of the out tray slots, up to 12 pages. The title of the
-book is the title of the first page. The computer's api has a printer
-interface which wraps these messages.
+book is the title of the first page. If the printer is jammed the Clear
+button will clear it. The computer's api has a printer interface which
+wraps these messages.
 
 Printers connect to digilines cables. After setting the channel, send
 messages to operate.

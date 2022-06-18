@@ -31,8 +31,49 @@ lwcomputers.unformat_character = unformatCharacter
 
 
 
--- scale  1    2     3     4     5
---       9x6 18x12 27x18 36x24 45x30
+-- scale  0.3  0.6   1    2     3     4     5
+--        3x2  6x4  9x6 18x12 27x18 36x24 45x30
+
+
+
+local function fixScale (scale)
+	local s = string.format ("%0.1f", scale)
+
+	if s == "0.3" then
+		return 30
+	elseif s == "0.6" then
+		return 60
+	elseif s == "2.0" then
+		return 2
+	elseif s == "3.0" then
+		return 3
+	elseif s == "4.0" then
+		return 4
+	elseif s == "5.0" then
+		return 5
+	end
+
+	return 1
+end
+
+
+local function getScaleResolution (scale)
+	if scale == 30 then
+		return 3, 2, 42
+	elseif scale == 60 then
+		return 6, 4, 84
+	elseif scale == 2 then
+		return 18, 12, 252
+	elseif scale == 3 then
+		return 27, 18, 378
+	elseif scale == 4 then
+		return 35, 24, 504
+	elseif scale == 5 then
+		return 45, 30, 630
+	end
+
+	return 9, 6, 126
+end
 
 
 
@@ -70,29 +111,38 @@ local function generateTexture (pos, serdata, scale, color)
 		return
 	end
 
-	for y = 1, scale * 6, 1 do
+	local sx, sy, sc = getScaleResolution (scale)
+
+	local texture = string.format ("[combine:%dx%d", sc, sc)
+
+	for y = 1, sy, 1 do
 		if type (data[y]) ~= "table" then
 			minetest.log ("error", "[lwcomputers:monitor] Invalid row "..y..
 										  " at "..minetest.pos_to_string (pos, 0))
-
 			return
 		end
-	end
 
-	local ret = string.format ("[combine:%dx%d", scale * 126, scale * 126)
+		local line = ""
 
-	for y = 1, scale * 6, 1 do
-		for x = 1, scale * 9, 1 do
-			local ascii, fg, bg = unformatCharacter (data[y][x])
+		for x = 1, sx, 3 do
+			local dline = data[y]
+			local ascii1, fg1, bg1 = unformatCharacter (dline[x])
+			local ascii2, fg2, bg2 = unformatCharacter (dline[x + 1])
+			local ascii3, fg3, bg3 = unformatCharacter (dline[x + 2])
 
-			ret = ret..
-					string.format (":%d,%d=(%02d%02d.png\\^[verticalframe\\:256\\:%d)",
-										(x - 1) * 14, (y - 1) * 21,
-										fg, bg,
-										ascii)
+			line = line..
+					string.format (":%d,%d=(%02d%02d.png\\^[verticalframe\\:256\\:%d)"..
+										":%d,%d=(%02d%02d.png\\^[verticalframe\\:256\\:%d)"..
+										":%d,%d=(%02d%02d.png\\^[verticalframe\\:256\\:%d)",
+										(x - 1) * 14, (y - 1) * 21, fg1, bg1, ascii1,
+										(x) * 14, (y - 1) * 21, fg2, bg2, ascii2,
+										(x + 1) * 14, (y - 1) * 21, fg3, bg3, ascii3)
 		end
+
+		texture = texture..line
 	end
-	return ret
+
+	return texture
 end
 
 
@@ -128,17 +178,16 @@ minetest.register_entity ("lwcomputers:monitorimage", {
 
 
 local function on_construct (pos)
-	local scale = 1
 	local meta = minetest.get_meta (pos)
 	meta:set_string ("formspec", "field[channel;Channel;${channel}]")
-	meta:set_int ("scale", scale)
+	meta:set_int ("scale", 1)
 	meta:set_string ("color", "sb")
 
 	local disp = { }
-	for y = 1, scale * 6, 1 do
+	for y = 1, 6, 1 do
 		disp[y] = { }
 
-		for x = 1, scale * 9, 1 do
+		for x = 1, 9, 1 do
 			disp[y][x] = 0
 		end
 	end
@@ -183,11 +232,12 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 		local hx = math.max (math.min (hit.x - pos.x + 0.5, 1), 0)
 		local hz = math.max (math.min (hit.z - pos.z + 0.5, 1), 0)
 		local hy = math.max (math.min (hit.y - pos.y + 0.5, 1), 0)
-		local y = math.floor ((1 - hy) * (scale * 6))
+		local sx, sy = getScaleResolution (scale)
+		local y = math.floor ((1 - hy) * sy)
 
 		if node.param2 == 0 then
 			if hit.z == (pos.z - 0.5) then
-				local x = math.floor (hx * (scale * 9))
+				local x = math.floor (hx * sx)
 
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
@@ -200,7 +250,7 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 
 		elseif node.param2 == 1 then
 			if hit.x == (pos.x - 0.5) then
-				local x = math.floor ((1 - hz) * (scale * 9))
+				local x = math.floor ((1 - hz) * sx)
 
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
@@ -213,7 +263,7 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 
 		elseif node.param2 == 2 then
 			if hit.z == (pos.z + 0.5) then
-				local x = math.floor ((1 - hx) * (scale * 9))
+				local x = math.floor ((1 - hx) * sx)
 
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
@@ -226,7 +276,7 @@ local function on_rightclick (pos, node, clicker, itemstack, pointed_thing)
 
 		elseif node.param2 == 3 then
 			if hit.x == (pos.x + 0.5) then
-				local x = math.floor (hz * (scale * 9))
+				local x = math.floor (hz * sx)
 
 				digilines.receptor_send (pos,
 												 digiline.rules.default,
@@ -252,18 +302,19 @@ local function effector_action (pos, node, channel, msg)
 
 	elseif type (msg) == "string" then
 		if msg:sub (1, 6) == "scale:" then
-			local scale = math.min (math.max (tonumber (msg:sub (7, -1)) or 1, 1), 5)
+			local scale = fixScale (tonumber (msg:sub (7, -1)) or 1)
 			local old = minetest.deserialize (meta:get_string ("data") or "return { }")
+			local sx, sy = getScaleResolution (scale)
 
 			local data = { }
-			for y = 1, scale * 6, 1 do
+			for y = 1, sy, 1 do
 				data[y] = { }
 
 				if type(old[y]) ~= "table" then
 					old[y] = { }
 				end
 
-				for x = 1, scale * 9, 1 do
+				for x = 1, sx, 1 do
 					data[y][x] = tonumber (old[y][x]) or 0
 				end
 			end
@@ -284,16 +335,17 @@ local function effector_action (pos, node, channel, msg)
 
 	elseif type (msg) == "table" then
 		local scale = meta:get_int ("scale")
+		local sx, sy = getScaleResolution (scale)
 
 		local data = { }
-		for y = 1, scale * 6, 1 do
+		for y = 1, sy, 1 do
 			data[y] = { }
 
 			if type(msg[y]) ~= "table" then
 				msg[y] = { }
 			end
 
-			for x = 1, scale * 9, 1 do
+			for x = 1, sx, 1 do
 				data[y][x] = tonumber (msg[y][x]) or 0
 			end
 		end

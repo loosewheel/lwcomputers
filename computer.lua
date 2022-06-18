@@ -143,9 +143,22 @@ local function on_receive_fields (pos, formname, fields, sender)
 						data.id = id
 
 						if k == "KEY_SHIFT" then
-							data.shift = not data.shift
-							data.update_formspec ()
-							data.queue_event ("key", key, data.ctrl, data.alt, data.shift)
+							if data.shift and
+								not data.shift_locked and
+								(os.clock () - data.shift_when) <= lwcomp.settings.double_click_time then
+
+								data.shift_locked = true
+							else
+								data.shift = not data.shift
+								data.update_formspec ()
+								data.queue_event ("key", key, data.ctrl, data.alt, data.shift)
+
+								data.shift_locked = false
+
+								if data.shift then
+									data.shift_when = os.clock ()
+								end
+							end
 
 						elseif k == "KEY_CAPS" then
 							data.caps = not data.caps
@@ -190,6 +203,11 @@ local function on_receive_fields (pos, formname, fields, sender)
 									end
 
 									data.queue_event ("char", string.char (char), char)
+
+									if data.shift and not data.shift_locked then
+										data.shift = false
+										data.update_formspec ()
+									end
 								end
 							end
 
@@ -409,6 +427,11 @@ local function on_timer (pos, elapsed)
 		local data = lwcomp.get_computer_data (id, pos)
 
 		if data then
+			if data.awaken then
+				data.awaken:cancel ()
+				data.awaken = nil
+			end
+
 			data.tick ()
 		end
 	end
@@ -516,7 +539,7 @@ local function on_metadata_inventory_put (pos, listname, index, stack, player)
 						end
 
 						if not lwcomp.filesys:prep_floppy_disk (id, imeta, floppy.files) then
-							minetest.log ("error", "lwcomputers - could not prep "..floppy.name)
+							minetest.log ("error", "lwcomputers - could not prep "..itemname)
 						end
 
 						local inv = minetest.get_meta (pos):get_inventory ()

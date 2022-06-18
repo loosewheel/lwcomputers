@@ -6,20 +6,63 @@ if lwcomp.digilines_supported then
 
 
 
+local function fixScale (scale)
+	local s = string.format ("%0.1f", scale)
+
+	if s == "0.3" then
+		return 0.3
+	elseif s == "0.6" then
+		return 0.6
+	elseif s == "2.0" then
+		return 2
+	elseif s == "3.0" then
+		return 3
+	elseif s == "4.0" then
+		return 4
+	elseif s == "5.0" then
+		return 5
+	end
+
+	return 1
+end
+
+
+local function getScaleResolution (scale)
+	if scale == 0.3 then
+		return 3, 2, 42
+	elseif scale == 0.6 then
+		return 6, 4, 84
+	elseif scale == 2 then
+		return 18, 12, 252
+	elseif scale == 3 then
+		return 27, 18, 378
+	elseif scale == 4 then
+		return 35, 24, 504
+	elseif scale == 5 then
+		return 45, 30, 630
+	end
+
+	return 9, 6, 126
+end
+
+
+
 function lwcomputers.get_monitor_interface (pos, channel)
 	local monitor = { }
 
 	local _buffer = { }
 	local _scale = 1
 	local _pos = { x = pos.x, y = pos.y, z = pos.z }
-	local _cur_pos = 0
 	local _fg = 7
 	local _bg = 0
+	local _cur_x = 0
+	local _cur_y = 0
+	local _cur_blink = false
 
-	for y = 1, _scale * 6, 1 do
+	for y = 1, 6, 1 do
 		_buffer[y] = { }
 
-		for x = 1, _scale * 9, 1 do
+		for x = 1, 9, 1 do
 			_buffer[y][x] = 0
 		end
 	end
@@ -36,10 +79,24 @@ function lwcomputers.get_monitor_interface (pos, channel)
 
 
 	monitor.update = function ()
+		local char, fg, bg
+
+		if _cur_blink then
+			char, fg, bg = monitor.get_char (_cur_x, _cur_y)
+
+			if char then
+				monitor.set_char (_cur_x, _cur_y, char, 15 - fg, 15 - bg, false)
+			end
+		end
+
 		digilines.receptor_send (_pos,
 										 digiline.rules.default,
 										 channel,
-										 _buffer)
+										 table.copy (_buffer))
+
+		if char then
+			monitor.set_char (_cur_x, _cur_y, char, fg, bg, false)
+		end
 	end
 
 
@@ -60,17 +117,18 @@ function lwcomputers.get_monitor_interface (pos, channel)
 
 
 	monitor.set_scale = function (scale)
-		_scale = math.min (math.max (tonumber (scale) or 1, 1), 5)
+		_scale = fixScale (tonumber (scale) or 1)
+		local sx, sy = getScaleResolution (_scale)
 
 		local buffer = { }
-		for y = 1, _scale * 6, 1 do
+		for y = 1, sy, 1 do
 			buffer[y] = { }
 
 			if type(_buffer[y]) ~= "table" then
 				_buffer[y] = { }
 			end
 
-			for x = 1, _scale * 9, 1 do
+			for x = 1, sx, 1 do
 				buffer[y][x] = tonumber (_buffer[y][x]) or 0
 			end
 		end
@@ -82,7 +140,8 @@ function lwcomputers.get_monitor_interface (pos, channel)
 										 channel,
 										 "scale:"..tostring (_scale))
 
-		_cur_pos = 0
+		_cur_x = 0
+		_cur_y = 0
 	end
 
 
@@ -92,16 +151,14 @@ function lwcomputers.get_monitor_interface (pos, channel)
 
 
 	monitor.get_resolution = function ()
-		return (_scale * 9), (_scale * 6)
+		local sx, sy = getScaleResolution (_scale)
+
+		return sx, sy
 	end
 
 
 	monitor.get_cursor = function ()
-		local mw = monitor.get_resolution ()
-		local y = math.floor (_cur_pos / mw)
-		local x = _cur_pos - math.floor (y * mw)
-
-		return x, y
+		return _cur_x, _cur_y
 	end
 
 
@@ -110,7 +167,28 @@ function lwcomputers.get_monitor_interface (pos, channel)
 		x = math.min (math.max (math.floor (tonumber (x) or 0), 0), mw)
 		y = math.min (math.max (math.floor (tonumber (y) or 0), 0), mh)
 
-		_cur_pos = (y * (_scale * 9)) + x
+		_cur_x = x
+		_cur_y = y
+
+		if _cur_blink then
+			monitor.update ()
+		end
+	end
+
+
+	monitor.set_blink = function (blink, update)
+		if _cur_blink ~= blink then
+			_cur_blink = blink
+
+			if update ~= false then
+				monitor.update ()
+			end
+		end
+	end
+
+
+	monitor.get_blink = function ()
+		return _cur_blink
 	end
 
 
@@ -149,8 +227,8 @@ function lwcomputers.get_monitor_interface (pos, channel)
 
 	monitor.get_char = function (x, y)
 		local mw, mh = monitor.get_resolution ()
-		x = (math.modf (x))
-		y = (math.modf (y))
+		x = (math.modf (x or -1))
+		y = (math.modf (y or -1))
 
 		if x >= 0 and x < mw and y >= 0 and y < mh then
 			return lwcomputers.unformat_character (_buffer[y + 1][x + 1])
@@ -293,14 +371,16 @@ function lwcomputers.get_monitor_interface (pos, channel)
 		end
 
 		local str = string.rep (char, w)
-		local cur_pos = _cur_pos
+		local cur_x = _cur_x
+		local cur_y = _cur_y
 
 		for r = 0, h - 1 do
 			monitor.set_cursor (x, y + r)
 			monitor.write (str, false)
 		end
 
-		_cur_pos = cur_pos
+		_cur_x = cur_x
+		_cur_y = cur_y
 
 		if update ~= false then
 			monitor.update ()
@@ -440,16 +520,34 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 	local _buffer = { }
 	local _scale = 1
 	local _pos = { x = pos.x, y = pos.y, z = pos.z }
-	local _cur_pos = 0
 	local _fg = 7
 	local _bg = 0
+	local _cur_x = 0
+	local _cur_y = 0
+	local _cur_blink = false
+	local _invalid = { }
 
 
-	for y = 1, _scale * 6 * width, 1 do
+	local function invalidate (x, y)
+		local sx, sy = getScaleResolution (_scale)
+
+		_invalid[math.floor (y / sy) + 1][math.floor (x / sx) + 1] = true
+	end
+
+
+	for y = 1, 6 * height, 1 do
 		_buffer[y] = { }
 
-		for x = 1, _scale * 9 * height, 1 do
+		for x = 1, 9 * width, 1 do
 			_buffer[y][x] = 0
+		end
+	end
+
+
+	for h = 1, height, 1 do
+		_invalid[h] = { }
+		for w = 1, width, 1 do
+			_invalid[h][w] = true
 		end
 	end
 
@@ -465,26 +563,49 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 
 
 	monitors.update = function ()
+		local char, fg, bg
+
+		if _cur_blink then
+			char, fg, bg = monitors.get_char (_cur_x, _cur_y)
+
+			if char then
+				monitors.set_char (_cur_x, _cur_y, char, 15 - fg, 15 - bg, false)
+			end
+		end
+
+		local sx, sy = getScaleResolution (_scale)
+
 		for h = 1, height do
 			for w = 1, width do
-				local buf = { }
+				if _invalid[h][w] then
+					local buf = { }
 
-				for r = 1, (_scale * 6) do
-					buf[r] = { }
+					for r = 1, sy do
+						buf[r] = { }
 
-					for c = 1, (_scale * 9) do
-						local sr = ((h - 1) * (_scale * 6)) + r
-						local sc = ((w - 1) * (_scale * 9)) + c
+						for c = 1, sx do
+							local sr = ((h - 1) * sy) + r
+							local sc = ((w - 1) * sx) + c
 
-						buf[r][c] = _buffer[sr][sc]
+							buf[r][c] = _buffer[sr][sc]
+						end
 					end
-				end
 
-				digilines.receptor_send (_pos,
-												 digiline.rules.default,
-												 channels[((h - 1) * width) + w],
-												 buf)
+					digilines.receptor_send (_pos,
+													 digiline.rules.default,
+													 channels[((h - 1) * width) + w],
+													 buf)
+				end
 			end
+		end
+
+		if char then
+			monitors.set_char (_cur_x, _cur_y, char, fg, bg, false)
+		end
+
+		_invalid = { }
+		for h = 1, height, 1 do
+			_invalid[h] = { }
 		end
 	end
 
@@ -506,17 +627,18 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 
 
 	monitors.set_scale = function (scale)
-		_scale = math.min (math.max (tonumber (scale) or 1, 1), 5)
+		_scale = fixScale (tonumber (scale) or 1)
+		local sx, sy = getScaleResolution (_scale)
 
 		local buffer = { }
-		for y = 1, _scale * 6 * width, 1 do
+		for y = 1, sy * height, 1 do
 			buffer[y] = { }
 
-			if type(_buffer[y]) ~= "table" then
+			if type (_buffer[y]) ~= "table" then
 				_buffer[y] = { }
 			end
 
-			for x = 1, _scale * 9 * height, 1 do
+			for x = 1, sx * width, 1 do
 				buffer[y][x] = tonumber (_buffer[y][x]) or 0
 			end
 		end
@@ -531,7 +653,16 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 											 "scale:"..tostring (_scale))
 		end
 
-		_cur_pos = 0
+		_invalid = { }
+		for h = 1, height, 1 do
+			_invalid[h] = { }
+			for w = 1, width, 1 do
+				_invalid[h][w] = true
+			end
+		end
+
+		_cur_x = 0
+		_cur_y = 0
 	end
 
 
@@ -541,16 +672,14 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 
 
 	monitors.get_resolution = function ()
-		return (_scale * 9 * width), (_scale * 6 * height)
+		local sx, sy = getScaleResolution (_scale)
+
+		return (sx * width), (sy * height)
 	end
 
 
 	monitors.get_cursor = function ()
-		local mw = monitors.get_resolution ()
-		local y = math.floor (_cur_pos / mw)
-		local x = _cur_pos - math.floor (y * mw)
-
-		return x, y
+		return _cur_x, _cur_y
 	end
 
 
@@ -559,7 +688,35 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 		x = math.min (math.max (math.floor (tonumber (x) or 0), 0), mw)
 		y = math.min (math.max (math.floor (tonumber (y) or 0), 0), mh)
 
-		_cur_pos = (y * (_scale * 9 * width)) + x
+		if _cur_blink then
+			invalidate (_cur_x, _cur_y)
+		end
+
+		_cur_x = x
+		_cur_y = y
+
+		if _cur_blink then
+			invalidate (_cur_x, _cur_y)
+			monitors.update ()
+		end
+	end
+
+
+	monitors.set_blink = function (blink, update)
+		if _cur_blink ~= blink then
+			invalidate (_cur_x, _cur_y)
+
+			_cur_blink = blink
+
+			if update ~= false then
+				monitors.update ()
+			end
+		end
+	end
+
+
+	monitors.get_blink = function ()
+		return _cur_blink
 	end
 
 
@@ -589,6 +746,8 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 
 			_buffer[y + 1][x + 1] = lwcomputers.format_character (char, fg, bg)
 
+			invalidate (x, y)
+
 			if update ~= false then
 				monitors.update ()
 			end
@@ -598,8 +757,8 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 
 	monitors.get_char = function (x, y)
 		local mw, mh = monitors.get_resolution ()
-		x = (math.modf (x))
-		y = (math.modf (y))
+		x = (math.modf (x or -1))
+		y = (math.modf (y or -1))
 
 		if x >= 0 and x < mw and y >= 0 and y < mh then
 			return lwcomputers.unformat_character (_buffer[y + 1][x + 1])
@@ -742,14 +901,16 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 		end
 
 		local str = string.rep (char, w)
-		local cur_pos = _cur_pos
+		local cur_x = _cur_x
+		local cur_y = _cur_y
 
 		for r = 0, h - 1 do
 			monitors.set_cursor (x, y + r)
 			monitors.write (str, false)
 		end
 
-		_cur_pos = cur_pos
+		_cur_x = cur_x
+		_cur_y = cur_y
 
 		if update ~= false then
 			monitors.update ()
@@ -866,9 +1027,10 @@ function lwcomputers.get_multimonitor_interface (pos, width, height, ... )
 					if #coords == 2 then
 						local x = tonumber (coords[1])
 						local y = tonumber (coords[2])
+						local sx, sy = getScaleResolution (_scale)
 
-						local mx = ((i - 1) % width) * (_scale * 9)
-						local my = math.floor ((i - 1) / width) * (_scale * 6)
+						local mx = ((i - 1) % width) * sx
+						local my = math.floor ((i - 1) / width) * sy
 
 						return (x + mx), (y + my)
 					end

@@ -163,8 +163,9 @@ function safefile:new (file, max_size, root)
 	obj.max_size = max_size
 	obj.root = root
 
-	obj.last_write_time = minetest.get_us_time ()
-	obj.last_size, obj.last_items = get_disk_used (root)
+	obj.last_write_time = 0
+	obj.last_size = 0
+	obj.last_items = 0
 
 	return obj
 end
@@ -172,42 +173,70 @@ end
 
 
 function safefile:close ()
+	if not self or not self.file then
+		error ("file:close () not called as class", 2)
+	end
+
 	return self.file:close ()
 end
 
 
 
 function safefile:flush ()
+	if not self or not self.file then
+		error ("file:flush () not called as class", 2)
+	end
+
 	return self.file:flush ()
 end
 
 
 
 function safefile:lines ()
+	if not self or not self.file then
+		error ("file:lines () not called as class", 2)
+	end
+
 	return self.file:lines ()
 end
 
 
 
 function safefile:read ( ... )
+	if not self or not self.file then
+		error ("file:read () not called as class", 2)
+	end
+
 	return self.file:read ( ... )
 end
 
 
 
 function safefile:seek ( ... )
+	if not self or not self.file then
+		error ("file:seek () not called as class", 2)
+	end
+
 	return self.file:seek ( ... )
 end
 
 
 
 function safefile:setvbuf ( ... )
+	if not self or not self.file then
+		error ("file:setvbuf () not called as class", 2)
+	end
+
 	return self.file:setvbuf ( ... )
 end
 
 
 
 function safefile:get_disk_used ()
+	if not self or not self.file then
+		error ("file:get_disk_used () not called as class", 2)
+	end
+
 	local us_time = minetest.get_us_time ()
 
 	if (us_time < self.last_write_time) or
@@ -223,6 +252,10 @@ end
 
 
 function safefile:write ( ... )
+	if not self or not self.file then
+		error ("file:write () not called as class", 2)
+	end
+
 	local args = { ... }
 	local used = self:get_disk_used ()
 	local size = 0

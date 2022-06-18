@@ -99,5 +99,11 @@ lwcomp.settings.use_mod_on_place =
 lwcomp.settings.alert_handler_errors =
 	minetest.settings:get_bool ("lwcomputers_alert_handler_errors", true)
 
+lwcomp.settings.awake_on_event =
+	minetest.settings:get_bool ("lwcomputers_awake_on_event", true)
+
+lwcomp.settings.default_stack_max =
+	tonumber (minetest.settings:get ("default_stack_max")) or 99
+
 
 --
