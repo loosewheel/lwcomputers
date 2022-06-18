@@ -233,6 +233,10 @@ os.chat (message, name)
 os.clock ()
 	Seconds since lwcomputer computer was started.
 
+os.clock_speed ()
+	The time in seconds of the running interval for the computer.
+	* This returns the "Running interval seconds" setting.
+
 os.computer_id ()
 	Returns the computer's unique id number.
 
@@ -280,6 +284,10 @@ os.get_name ()
 	Returns the computer's string name. This is an arbitrary value. An empty
 	string is returned if the name has not been set.
 
+os.has_clipboard ()
+	Returns true if a clipboard is currently in one of the computer's slots,
+	otherwise false.
+
 os.key_state (key)
 	Returns the current state of the queried key, true for down or false for up.
 	key: if one of `keys.KEY_CTRL`, `keys.KEY_ALT`, `keys.KEY_SHIFT` or `keys.KEY_CAPS`
@@ -319,6 +327,14 @@ os.remove (path)
 	Deletes the file or directory with the given name. Directories must be
 	empty to be removed. If this function fails, it returns nil, plus a string
 	describing the error.
+
+os.remove_event ([event])
+	Checks the event queue and returns the next available event and removes
+	it from the queue. Returns nil if no event is available.
+	event: if nil the next available event is removed, if any. If event type
+	(should be string) removes the next available event of that type, if any.
+	See events.
+	* This function does not yield.
 
 os.rename (oldname, newname)
 	Routs file paths to computers file system.
@@ -366,6 +382,9 @@ os.to_worldtime (secs)
 os.to_realtime (secs)
 	Returns real world seconds converted from in games seconds.
 	* If the setting 'time_speed' is zero, `secs` is returned.
+
+os.version ()
+	Returns lwcomputer's version string, eg. "0.2.9".
 
 
 security
@@ -1110,6 +1129,13 @@ mon.set_cursor (x, y)
 	Sets cursors current position. Position is clipped to monitor's
 	resolution. Note, the monitor does not display a cursor. This is the
 	current write position.
+
+mon.set_blink (blink, update)
+	Sets the visible state of the cursor (true or false). If update is not
+	false the changes are flushed to the monitor.
+
+mon.get_blink ()
+	Returns the visible state of the cursor (true or false).
 
 mon.set_char (x, y, char, fg, bg, update)
 	Sets the character at zero based coordinate x, y.
