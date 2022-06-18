@@ -152,7 +152,7 @@ end
 
 function install:run ()
 	term.set_colors (term.colors.orange, term.colors.black)
-	print ("Existing files will be overritten\n")
+	print ("Existing files will be overwritten\n")
 	term.set_colors (term.colors.silver, term.colors.black)
 	print ("Continue? (y to continue)")
 
