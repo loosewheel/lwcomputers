@@ -539,15 +539,17 @@ Monitors
 
 * This items is based on cheapie's digiscreen mod
 
-The monitors have 5 screen resolutions:
+The monitors have 7 screen resolutions:
 scale		resolution
+0.3		3x2
+0.6		6x4
 1			9x6
 2			18x12
 3			27x18
 4			36x24
 5			45x30
-The scale is set with a string digilines message "scale:n" where n is a
-number between 1 to 5.
+The scale is set with a string digilines message "scale:n" where n is one
+of the scale values above.
 
 Monitors support 16 colors for both fore-ground and back-ground.
 
